@@ -7,11 +7,17 @@
     "types": ["vite/client", "node"],
     "strict": true,
     "noEmit": true,
+    // The simulation has to be runnable two ways: bundled by Vite for the page,
+    // and directly by `node scripts/experiment.ts` for the headless experiment.
+    // Node's own TypeScript execution does no extension resolution, so every
+    // local import must say `.ts` — which needs this flag. Safe here because
+    // nothing is emitted from this config.
+    "allowImportingTsExtensions": true,
     "skipLibCheck": true,
     "moduleDetection": "force",
     "verbatimModuleSyntax": true,
     "useDefineForClassFields": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["*.ts", "spec"]
+  "include": ["*.ts", "src", "spec"]
 }
