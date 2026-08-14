@@ -68,5 +68,27 @@ export const EXPERIMENT = {
       "settled": 10,
       "signHeld": true
     }
+  },
+  "transient": {
+    "target": {
+      "beforeSeconds": 331.3,
+      "afterSeconds": 364.8,
+      "deltaPercent": 10.1,
+      "shortcutShare": 39,
+      "settledPercent": 3.4,
+      "decaysToEquilibrium": true,
+      "seedMeanPercent": 9.5,
+      "seedSignHeld": true
+    },
+    "control": {
+      "beforeSeconds": 318.6,
+      "afterSeconds": 309.9,
+      "deltaPercent": -2.7,
+      "shortcutShare": 37,
+      "settledPercent": -2.5,
+      "decaysToEquilibrium": false,
+      "seedMeanPercent": -2.7,
+      "seedSignHeld": true
+    }
   }
 } as const;

@@ -9,7 +9,13 @@
 import { describe, expect, it } from "vitest";
 import { CONTROL, TARGET, buildSchedule, horizonOf, networkOf } from "../src/experiment/config.ts";
 import type { ExperimentConfig } from "../src/experiment/config.ts";
-import { compare, horizonCheck, runExperiment } from "../src/experiment/run.ts";
+import {
+  compare,
+  horizonCheck,
+  intervene,
+  interventionHoldsUp,
+  runExperiment,
+} from "../src/experiment/run.ts";
 import { Simulation } from "../src/sim/engine.ts";
 import type { ScheduledDeparture } from "../src/sim/engine.ts";
 import { linkFreeFlowTime, routeFreeFlowTime } from "../src/sim/network.ts";
@@ -168,6 +174,73 @@ describe("a quoted result is an equilibrium, not a snapshot of a growing queue",
     // "inconclusive", not a number.
     const flooded = runExperiment({ ...TARGET, demandPerHour: 3000 }, { connectorOpen: true });
     expect(flooded.usable).toBe(false);
+  });
+});
+
+describe("building the road on a running network", () => {
+  // The protocol the page performs: settle with the connector closed, then open it
+  // on the running network. It matters that this is measured separately, because it
+  // does not give the same answer as starting with the connector already there —
+  // day-to-day route learning is path dependent, and a population with habits to
+  // unlearn takes a long detour to the same equilibrium.
+  it("makes the commute worse in the target configuration", () => {
+    const run = intervene(TARGET);
+    expect(run.usable, `unusable: ${run.after.steadyState.reason}`).toBe(true);
+    expect(run.conservationViolations).toEqual([]);
+    expect(run.deltaSeconds).toBeGreaterThan(0);
+    // Drivers found it on their own; nobody was routed onto it.
+    expect(run.after.shares.shortcut).toBeGreaterThan(0.15);
+    expect(run.before.shares.shortcut).toBe(0);
+  });
+
+  it("makes the commute better in the control configuration", () => {
+    const run = intervene(CONTROL);
+    expect(run.usable, `unusable: ${run.after.steadyState.reason}`).toBe(true);
+    expect(run.deltaSeconds).toBeLessThan(0);
+  });
+
+  it("holds its sign across seeds in both configurations", () => {
+    for (const [config, sign] of [
+      [TARGET, 1],
+      [CONTROL, -1],
+    ] as const) {
+      for (let i = 0; i < 4; i += 1) {
+        const run = intervene({ ...config, seed: config.seed + i * 7919 });
+        expect(Math.sign(run.deltaSeconds), `${config.label} flipped on seed ${i}`).toBe(sign);
+      }
+    }
+  });
+
+  it("decays towards the same equilibrium the cold start finds", () => {
+    // This is the check that stopped the page overstating its result. The
+    // warm-start effect is about three times the equilibrium at first, so the page
+    // has to say which number is which — and the two protocols have to agree once
+    // the adjustment is over, or one of them is wrong.
+    const transient = intervene(TARGET).deltaPercent;
+    const settled = interventionHoldsUp(TARGET).longPercent;
+    const coldStart = compare(TARGET).deltaPercent;
+    expect(transient).toBeGreaterThan(settled);
+    expect(
+      Math.abs(settled - coldStart),
+      `warm start settles at ${settled.toFixed(1)}% but cold start says ` +
+        `${coldStart.toFixed(1)}% — the two protocols disagree about the equilibrium`,
+    ).toBeLessThan(2.5);
+  });
+
+  it("closing the road again re-routes nobody onto a road that is gone", () => {
+    const network = networkOf(TARGET);
+    const sim = simulationFor(TARGET, true);
+    for (let i = 0; i < 8000; i += 1) sim.step();
+    sim.setConnectorOpen(false);
+    for (let i = 0; i < 8000; i += 1) sim.step();
+    // Nobody is left on the closed link, and nobody still plans to use it.
+    expect(sim.vehiclesOn("AB")).toHaveLength(0);
+    for (const id of ["SA", "AT", "SB", "BT"] as const) {
+      for (const vehicle of sim.vehiclesOn(id)) {
+        expect(vehicle.links).not.toContain("AB");
+        expect(Object.values(network.routes)).toContainEqual(vehicle.links);
+      }
+    }
   });
 });
 

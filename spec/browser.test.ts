@@ -240,14 +240,14 @@ describe("resizing mid-interaction", () => {
     expect(await overflow(page)).toBe(false);
 
     // And the simulation is still advancing, not frozen by the resize.
-    const first = await page.evaluate(() => document.querySelectorAll(".vehicle").length);
-    await page.waitForTimeout(1200);
-    const moved = await page.evaluate(() => {
-      const dot = document.querySelector<SVGCircleElement>(".vehicle");
-      return dot === null ? null : dot.getAttribute("cx");
-    });
-    expect(moved).not.toBeNull();
-    expect(first).toBeGreaterThan(0);
+    const read = (): Promise<number> =>
+      page.evaluate(
+        () => (window as unknown as { simulatedSeconds?: number }).simulatedSeconds ?? 0,
+      );
+    const t1 = await read();
+    await page.waitForTimeout(1000);
+    const t2 = await read();
+    expect(t2, "simulated time stopped advancing after the resize").toBeGreaterThan(t1);
     expect(errors).toEqual([]);
     await page.close();
   }, 60_000);

@@ -113,3 +113,58 @@ The honest effect is **~12 seconds on a five-and-a-half minute commute**. Every
 larger number I saw was an artefact. Open question for the direction of the
 piece: whether 12s can carry the reveal, or whether the visible change has to be
 the route shares (0% → 38% on the shortcut) with the seconds as the consequence.
+
+## Sat 15 Aug — the page and the experiment disagreed
+
+Built the chart, screenshotted it, and the caption said **54 seconds worse**. The
+controlled experiment says 11.6 seconds. Something had to be wrong.
+
+Probed the live run at increasing simulated times and it settled cleanly at 5:57
+against a 5:27 baseline — stable from sim 3,600s through 9,000s. So it was an
+equilibrium, not a growing queue. But it was a *different* equilibrium from the
+headless one, and the reason was the protocol:
+
+- **headless:** two independent runs, one with the link, one without. The "with"
+  run starts cold — the link is simply always there, and nobody has habits.
+- **live:** the network settles closed, and *then* the link opens on it.
+
+Day-to-day route learning is path dependent, so those converge differently. The
+warm start is obviously the honest one — nobody builds a road into a town whose
+drivers have no habits — and it is also what a visitor watches. So `intervene()`
+now does that: one run, settle closed, measure, open the link on the running
+network, let drivers re-learn, measure again. Both halves share one seed and one
+driver population by construction, which is stronger than two runs sharing a
+config object.
+
+Then the gate fired again. `interventionHoldsUp` gives the network twice as long
+to settle, and the warm-start effect fell from **+10.1% to +3.4%** — 67% apart, so
+FAIL. The +10% is a real transient that decays to the cold-start equilibrium of
++3.5%. Both protocols agree about the equilibrium; they disagree about how long it
+takes to get there.
+
+Which means the page was about to overstate its own result by three times, in a
+project whose whole argument is about not doing that. Fixed by stating both
+numbers and saying which is which: the adjustment period is ~10% worse, the
+settled equilibrium ~3.5% worse, both worse than before. A test now asserts the
+two protocols agree at equilibrium — if they ever stop agreeing, one of them is
+lying.
+
+Honestly the transient makes the piece better. The worst part of building the road
+is the year everyone spends working out that it did not help.
+
+## Sat 15 Aug — performance, decided by measurement
+
+The plan said choose SVG or canvas by measuring, not by preference. Measured at
+390×844 with the real vehicle count (88 on screen), CPU-throttled to emulate a
+slower device:
+
+| CPU throttle | first average | frame work (median / p95) |
+| --- | --- | --- |
+| 1× | 176 ms | 8.3 ms / 9.2 ms |
+| 4× | 266 ms | 8.3 ms / 9.2 ms |
+| 8× | 564 ms | 8.3 ms / 16.7 ms |
+
+Frame time is pinned to the browser's own 8.3 ms rAF cadence even at 8× throttle,
+so our per-frame work is well inside budget. SVG stays; no canvas fallback needed,
+and no need to cut the vehicle count. Caveat worth keeping: this is throttled
+headless Chromium on a laptop, not a real handset.

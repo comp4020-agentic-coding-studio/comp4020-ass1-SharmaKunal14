@@ -13,7 +13,7 @@
 import { writeFileSync } from "node:fs";
 import { CONTROL, TARGET } from "../src/experiment/config.ts";
 import type { ExperimentConfig } from "../src/experiment/config.ts";
-import { compare, horizonCheck, runExperiment } from "../src/experiment/run.ts";
+import { compare, horizonCheck, intervene, interventionHoldsUp, runExperiment } from "../src/experiment/run.ts";
 import { linkStats, meanOf, stdDevOf } from "../src/experiment/metrics.ts";
 
 const SEEDS = 10;
@@ -80,11 +80,41 @@ function uncongestedReference(): Record<string, number> {
   return reference;
 }
 
+/**
+ * The adjustment period, measured separately from the equilibrium.
+ *
+ * Opening the connector on a network whose drivers have already settled produces a
+ * transient noticeably worse than the equilibrium it decays to — around 10% at
+ * first against 3.5% once everyone has re-learned. This is what a visitor watches,
+ * because waiting out the decay would take minutes of real time. Both numbers are
+ * real and both are worse than before; quoting only one of them would be the
+ * dishonest option, so the page states both and says which is which.
+ */
+function transientOf(config: ExperimentConfig) {
+  const warm = intervene(config);
+  const holds = interventionHoldsUp(config);
+  const deltas: number[] = [];
+  for (let i = 0; i < SEEDS; i += 1) {
+    deltas.push(intervene({ ...config, seed: config.seed + i * SEED_STRIDE }).deltaPercent);
+  }
+  return {
+    beforeSeconds: round(warm.before.meanTravelTime),
+    afterSeconds: round(warm.after.meanTravelTime),
+    deltaPercent: round(warm.deltaPercent),
+    shortcutShare: Math.round(warm.after.shares.shortcut * 100),
+    settledPercent: round(holds.longPercent),
+    decaysToEquilibrium: !holds.ok,
+    seedMeanPercent: round(meanOf(deltas)),
+    seedSignHeld: new Set(deltas.map((d) => Math.sign(d))).size === 1,
+  };
+}
+
 const payload = {
   seedStride: SEED_STRIDE,
   uncongested: uncongestedReference(),
   target: summarise(TARGET),
   control: summarise(CONTROL),
+  transient: { target: transientOf(TARGET), control: transientOf(CONTROL) },
 };
 
 writeFileSync(

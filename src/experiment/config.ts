@@ -22,6 +22,12 @@ export type ExperimentConfig = {
   readonly window: number;
   /** seconds of extra running so the whole cohort can finish */
   readonly drain: number;
+  /**
+   * seconds allowed for drivers to re-learn after the connector opens, before the
+   * second measurement window starts. Measured, not guessed: the live run's
+   * rolling average stopped moving about 2,600 simulated seconds after the switch.
+   */
+  readonly adapt: number;
   /** logit sensitivity, 1/s */
   readonly theta: number;
   /** how fast a driver's estimate moves towards what it just experienced */
@@ -71,6 +77,7 @@ const BASE = {
   warmup: 900,
   window: 1200,
   drain: 1200,
+  adapt: 3000,
   theta: 0.015,
   alpha: 0.1,
   geometry: GEOMETRY,
@@ -103,8 +110,17 @@ export const CONTROL: ExperimentConfig = Object.freeze({
   demandPerHour: 300,
 });
 
+/** How long the two-run comparison needs to run. */
 export function horizonOf(config: ExperimentConfig): number {
   return config.warmup + config.window + config.drain;
+}
+
+/**
+ * How long the warm-start intervention needs: settle closed, measure, open the
+ * connector, let drivers re-learn, measure again, drain.
+ */
+export function interventionHorizonOf(config: ExperimentConfig): number {
+  return config.warmup + config.window + config.adapt + config.window + config.drain;
 }
 
 export function networkOf(config: ExperimentConfig): Network {
@@ -137,7 +153,9 @@ export function worstCaseLoad(config: ExperimentConfig): number {
 export function buildSchedule(config: ExperimentConfig): readonly ScheduledDeparture[] {
   const rand = mulberry32(config.seed);
   const rate = config.demandPerHour / 3600;
-  const horizon = horizonOf(config);
+  // Long enough for whichever protocol runs longest, so both read the same
+  // driver population from the same seed. Unreleased departures cost nothing.
+  const horizon = Math.max(horizonOf(config), interventionHorizonOf(config));
   const schedule: ScheduledDeparture[] = [];
 
   let t = 0;

@@ -526,3 +526,43 @@ if (args.has("--pair")) {
   }
   console.log(`  · = fails horizon invariance`);
 }
+
+if (args.has("--intervene")) {
+  // The experiment as the page performs it: settle closed, then open the connector
+  // on the running network. Compared against the two-run version, which starts the
+  // open case cold and converges somewhere else.
+  const { intervene, interventionHoldsUp } = await import("../src/experiment/run.ts");
+  console.log(`\n── warm start (settle, then build) vs cold start (two separate runs) ──`);
+  for (const base of [TARGET, CONTROL]) {
+    const warm = intervene(base);
+    const cold = compare(base);
+    const holds = interventionHoldsUp(base);
+    console.log(`\n  ${base.label} (${base.demandPerHour} veh/h)`);
+    console.log(
+      `    warm  ${warm.before.meanTravelTime.toFixed(1)}s → ${warm.after.meanTravelTime.toFixed(1)}s  `
+      + `${warm.deltaPercent >= 0 ? "+" : ""}${warm.deltaPercent.toFixed(1)}%  `
+      + `usable ${warm.usable}  n=${warm.before.cohortSize}/${warm.after.cohortSize}  `
+      + `unfin ${warm.before.unfinished}/${warm.after.unfinished}  `
+      + `shortcut ${(warm.after.shares.shortcut * 100).toFixed(0)}%`,
+    );
+    console.log(
+      `    cold  ${cold.closed.meanTravelTime.toFixed(1)}s → ${cold.open.meanTravelTime.toFixed(1)}s  `
+      + `${cold.deltaPercent >= 0 ? "+" : ""}${cold.deltaPercent.toFixed(1)}%  usable ${cold.usable}`,
+    );
+    console.log(`    settles: ${holds.ok ? "OK" : "FAIL"} — ${holds.reason}`);
+    const deltas: number[] = [];
+    let settled = 0;
+    for (let i = 0; i < 8; i += 1) {
+      const run = intervene({ ...base, seed: base.seed + i * 7919 });
+      deltas.push(run.deltaPercent);
+      if (run.usable) settled += 1;
+    }
+    const signs = new Set(deltas.map((d) => Math.sign(d)));
+    console.log(
+      `    8 seeds: mean ${meanOf(deltas) >= 0 ? "+" : ""}${meanOf(deltas).toFixed(1)}%  `
+      + `sd ${stdDevOf(deltas).toFixed(1)}%  `
+      + `min ${Math.min(...deltas).toFixed(1)}%  max ${Math.max(...deltas).toFixed(1)}%  `
+      + `settled ${settled}/8  sign held ${signs.size === 1}`,
+    );
+  }
+}

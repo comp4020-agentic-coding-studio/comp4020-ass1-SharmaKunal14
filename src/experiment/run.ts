@@ -7,7 +7,7 @@ import type { Arrival, LinkTraversal } from "../sim/engine.ts";
 import type { RouteId } from "../sim/network.ts";
 import { routeShares } from "../sim/routing.ts";
 import type { ExperimentConfig } from "./config.ts";
-import { buildSchedule, horizonOf, networkOf, worstCaseLoad } from "./config.ts";
+import { buildSchedule, horizonOf, interventionHorizonOf, networkOf, worstCaseLoad } from "./config.ts";
 import { cohortOf, meanOf, steadyStateOf } from "./metrics.ts";
 import type { SteadyState } from "./metrics.ts";
 
@@ -94,6 +94,154 @@ function sharesOfCohort(cohort: readonly Arrival[]): Record<RouteId, number> {
   const counts: Record<RouteId, number> = { north: 0, south: 0, shortcut: 0 };
   for (const arrival of cohort) counts[arrival.routeId] += 1;
   return routeShares(counts);
+}
+
+export type Phase = {
+  readonly meanTravelTime: number;
+  readonly cohortSize: number;
+  readonly unfinished: number;
+  readonly steadyState: SteadyState;
+  readonly shares: Record<RouteId, number>;
+};
+
+export type Intervention = {
+  readonly config: ExperimentConfig;
+  readonly before: Phase;
+  readonly after: Phase;
+  readonly deltaSeconds: number;
+  readonly deltaPercent: number;
+  readonly braess: boolean;
+  readonly conservationViolations: readonly string[];
+  readonly usable: boolean;
+};
+
+/**
+ * The experiment as the page actually performs it: let the network settle with the
+ * connector closed, measure, then *open the connector on the running network* and
+ * measure again once it has settled.
+ *
+ * This replaced two independent runs (closed-from-scratch vs open-from-scratch),
+ * and the reason is a discrepancy that showed up on the page: the live run kept
+ * reporting the connector about 9% worse where the two-run comparison said 3.5%.
+ * Both were converged. They converge to *different* equilibria, because
+ * day-to-day route learning is path dependent — a population that has settled
+ * into using two roads and is then offered a third does not end up where a
+ * population that never knew anything else ends up.
+ *
+ * The warm start is the honest one: nobody builds a road into a town whose drivers
+ * have no habits. It is also what a visitor watches, so it is what the page may
+ * quote.
+ *
+ * Both halves come from one run, so demand, seed, driver population, departure
+ * schedule, timestep and route-choice model are shared by construction — a
+ * stronger guarantee than two runs sharing a config object.
+ */
+export function intervene(config: ExperimentConfig): Intervention {
+  const network = networkOf(config);
+  const schedule = buildSchedule(config);
+  const sim = new Simulation({
+    network,
+    schedule,
+    dt: config.dt,
+    theta: config.theta,
+    alpha: config.alpha,
+    connectorOpen: false,
+    origin: "S",
+    destination: "T",
+  });
+
+  const beforeFrom = config.warmup;
+  const beforeTo = beforeFrom + config.window;
+  const switchAt = beforeTo;
+  const afterFrom = switchAt + config.adapt;
+  const afterTo = afterFrom + config.window;
+  const horizon = interventionHorizonOf(config);
+
+  const violations: string[] = [];
+  const steps = Math.round(horizon / config.dt);
+  let switched = false;
+  for (let i = 0; i < steps; i += 1) {
+    if (!switched && sim.t >= switchAt) {
+      sim.setConnectorOpen(true);
+      switched = true;
+    }
+    sim.step();
+    const accounted = sim.activeCount + sim.arrivals.length + sim.waitingCount;
+    if (accounted !== sim.dueCount) {
+      violations.push(`t=${sim.t.toFixed(2)}: ${sim.dueCount} due, ${accounted} accounted for`);
+      if (violations.length > 5) break;
+    }
+  }
+
+  const before = phaseOf(sim.arrivals, schedule, beforeFrom, beforeTo, config);
+  const after = phaseOf(sim.arrivals, schedule, afterFrom, afterTo, config);
+  const deltaSeconds = after.meanTravelTime - before.meanTravelTime;
+  return {
+    config,
+    before,
+    after,
+    deltaSeconds,
+    deltaPercent: (deltaSeconds / before.meanTravelTime) * 100,
+    braess: deltaSeconds > 0,
+    conservationViolations: violations,
+    usable:
+      violations.length === 0 &&
+      before.unfinished === 0 &&
+      after.unfinished === 0 &&
+      before.steadyState.ok &&
+      after.steadyState.ok,
+  };
+}
+
+function phaseOf(
+  arrivals: readonly Arrival[],
+  schedule: readonly { departTime: number }[],
+  from: number,
+  to: number,
+  config: ExperimentConfig,
+): Phase {
+  const cohort = arrivals.filter((a) => a.departTime >= from && a.departTime < to);
+  const expected = schedule.filter((d) => d.departTime >= from && d.departTime < to).length;
+  return {
+    meanTravelTime: meanOf(cohort.map((a) => a.travelTime)),
+    cohortSize: cohort.length,
+    unfinished: expected - cohort.length,
+    steadyState: steadyStateOf(cohort, { ...config, warmup: from, window: to - from }),
+    shares: sharesOfCohort(cohort),
+  };
+}
+
+/**
+ * Is the intervention's result an equilibrium, or a snapshot of a queue still
+ * growing? Give the network longer to settle after the switch and require the
+ * same answer.
+ */
+export function interventionHoldsUp(
+  config: ExperimentConfig,
+  { stretch = 2, tolerance = 0.25 } = {},
+): HorizonCheck {
+  const short = intervene(config);
+  const long = intervene({
+    ...config,
+    adapt: Math.round(config.adapt * stretch),
+    window: Math.round(config.window * stretch),
+  });
+  const scale = Math.max(Math.abs(short.deltaPercent), 1);
+  const divergence = Math.abs(long.deltaPercent - short.deltaPercent) / scale;
+  const ok = divergence <= tolerance && short.usable && long.usable;
+  return {
+    ok,
+    shortPercent: short.deltaPercent,
+    longPercent: long.deltaPercent,
+    divergence,
+    tolerance,
+    reason: ok
+      ? "result holds when the network is given longer to settle"
+      : !short.usable || !long.usable
+        ? "a phase did not settle"
+        : `effect moves with the settling time: ${short.deltaPercent.toFixed(1)}% vs ` +
+          `${long.deltaPercent.toFixed(1)}% (${(divergence * 100).toFixed(0)}% apart)`,
+  };
 }
 
 export type HorizonCheck = {

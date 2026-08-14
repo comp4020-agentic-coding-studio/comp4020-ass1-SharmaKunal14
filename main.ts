@@ -7,6 +7,7 @@ import { formatDuration } from "./src/experiment/metrics.ts";
 import { LiveRun, TIME_SCALE, WINDOW_TRIPS } from "./src/live.ts";
 import type { LinkId, RouteId } from "./src/sim/network.ts";
 import { DEFAULT_THROAT, linkFreeFlowTime } from "./src/sim/network.ts";
+import { Chart } from "./src/view/chart.ts";
 import { Scene, ROAD_NAMES } from "./src/view/scene.ts";
 import { layoutFor } from "./src/view/layout.ts";
 
@@ -64,10 +65,12 @@ const ui = {
   closingName: need<HTMLElement>("[data-closing-name]"),
   controlLine: need<HTMLElement>("[data-control-line]"),
   announce: need<HTMLElement>("[data-announce]"),
+  chart: need<HTMLElement>("[data-chart]"),
 };
 
 const network = networkOf(TARGET);
 const scene = new Scene(ui.figure);
+const chart = new Chart(ui.chart);
 let run = new LiveRun(TARGET, requestedTimeScale());
 let phase: Phase = "before";
 let phaseStartedAt = 0;
@@ -133,6 +136,7 @@ function renderReadout(): void {
     if (cell !== null) cell.textContent = `${Math.round(run.shareOf(route) * 100)}%`;
   }
   ui.shortcutRow.hidden = !run.connectorOpen;
+  chart.render(run, baselineSeconds);
   renderLoads();
 }
 
@@ -208,13 +212,17 @@ function drawVerdict(): void {
   // would. A live run is one sample and its average wanders; if it came out flat
   // the page says so and leans on the controlled experiment instead of claiming
   // something the visitor cannot see.
+  const equilibrium = EXPERIMENT.target.seeds.meanPercent;
   if (delta > 4) {
     ui.verdictHeadline.textContent = "You built the road. Everyone got home later.";
     ui.verdictBody.textContent =
       `The average commute went from ${formatDuration(baselineSeconds)} to ` +
       `${formatDuration(now)} — ${Math.round(delta)} seconds worse, ` +
       `${percent.toFixed(1)}% — with exactly the same number of drivers on exactly the same ` +
-      `network, plus one short road that nobody is queueing on.`;
+      `network, plus one short road that nobody is queueing on. ` +
+      `Some of that is the upheaval: drivers are still re-learning, and the adjustment is the ` +
+      `worst part of it. Left alone for long enough this network settles about ` +
+      `${equilibrium}% worse than it started. Both numbers are worse. Nobody ends up better off.`;
   } else if (delta > -4) {
     ui.verdictHeadline.textContent = "You built the road. Nobody got home sooner.";
     ui.verdictBody.textContent =
@@ -283,6 +291,9 @@ function frame(now: number): void {
   const wall = previous === 0 ? 0 : (now - previous) / 1000;
   previous = now;
   run.advance(wall);
+  // Exposed so a browser test can assert simulated time is actually advancing —
+  // a frozen simulation and a slow one look identical from the outside.
+  (window as unknown as { simulatedSeconds?: number }).simulatedSeconds = run.simTime;
   tickPhase();
   scene.render(run, network);
   renderReadout();
@@ -342,6 +353,15 @@ function fillModelNote(): void {
     trip finished — and only if it survives being re-run over a longer horizon, because a queue that
     is still growing looks exactly like a worse equilibrium if you stop watching at the right
     moment.</p>
+
+    <p><strong>Two honest numbers, not one.</strong> Opening the link on a town whose drivers have
+    already settled produces an adjustment period worse than the equilibrium it decays to:
+    about <strong>${EXPERIMENT.transient.target.deltaPercent}%</strong> at first, easing to about
+    <strong>${EXPERIMENT.transient.target.settledPercent}%</strong> once everyone has re-learned.
+    That is what you watched, because waiting out the decay takes minutes of real time. We report
+    both rather than the flattering one, and we checked they agree: run the experiment the other way
+    round — with the link present from the very start, so nobody has habits to unlearn — and it lands
+    on the same equilibrium. Both numbers are worse than before the link existed.</p>
 
     <p><strong>The effect is a few per cent, not a catastrophe.</strong>
     ${formatDuration(target.closedSeconds)} to ${formatDuration(target.openSeconds)}. Braess's
