@@ -160,3 +160,167 @@ catching you out, a fact about the stack the agent keeps getting wrong --- write
 it down here. Growing this file is the work of harness engineering, and the gap
 between this boilerplate and your own version is part of what your prototype
 says about the developer you're becoming.
+## What the sensors in `spec/` cannot see
+
+`spec/*.test.ts` catches *declared* fixed widths and similar static-markup
+facts. It cannot catch **intrinsic** overflow: a flex/grid item whose content
+can't wrap (`white-space: nowrap`, a long URL, a wide table) inherits a
+default `min-width: auto`, which resolves to that content's min-content width
+--- so the child silently sets the track's minimum, the track grows past the
+viewport, and the page scrolls sideways at 390px even though no rule in the
+CSS names a fixed width. `overflow: hidden` on the child hides the symptom
+without fixing it, and every static assertion stays green throughout.
+
+So: any grid or flex child that can contain nowrap content, a long URL, or a
+table needs an explicit `min-width: 0`.
+
+The same trap has a grid-track variant that isn't about items at all: a bare
+`max-content` track in `grid-template-columns` sizes to the widest single-line
+content across every row, not just the current viewport's rows --- so a
+two-column `dl` with short terms overflows the moment one row's term is long
+(a full FAQ question, say), even with `min-width: 0` on every child. Fix it at
+the track, not the child: `minmax(0, max-content)` lets the track shrink under
+space pressure instead of forcing the page to fit its longest single line.
+
+Before shipping, measure it rather than eyeballing it. A real narrow viewport
+is needed, because `resize_window` on this setup does not change `innerWidth`
+--- render the page in a 390px iframe instead and read `scrollWidth`:
+
+```js
+const f = document.createElement("iframe");
+f.src = "/";
+f.setAttribute("width", "390");
+f.setAttribute("height", "844");
+document.body.append(f);
+await new Promise((r) => f.addEventListener("load", r, { once: true }));
+const d = f.contentDocument;
+d.documentElement.scrollWidth > f.contentWindow.innerWidth; // must be false
+```
+
+Run it against every page, not just the home page.
+
+## This machine's runtime
+
+`mise.toml` pins Node 24, and this shell's bare `node` is 22.14. Node 22 cannot
+execute a `.ts` file, so `pnpm check:evidence` --- which runs
+`node scripts/check-evidence.ts` --- dies with
+`ERR_UNKNOWN_FILE_EXTENSION` for reasons that have nothing to do with the work,
+and two of the template's own tests in `scripts/check-evidence.test.ts` fail
+with it too.
+
+Run everything through the pinned runtime: `mise exec -- pnpm check`,
+`mise exec -- pnpm check:evidence`. If a check fails, confirm the runtime
+before believing the failure. CI uses `mise.toml`, so CI is unaffected either
+way.
+
+One failure is expected until `PROCESS.md` and `reflections/assignment-1.md` are
+real: `check:evidence`. Don't put a live-URL assertion in `spec/*.test.ts`
+itself — that suite runs inside CI's `check` job, which gates `deploy`, so a
+check for the live site would never be able to pass on the push that first
+ships it. Verify the deployed URL with a one-off `curl`, not a spec test.
+
+One stack fact worth remembering: `tsconfig.json` declares `lib: ["ES2022", …]`
+even though the runtime is Node 24, so ES2023 array methods like `toSorted`
+fail `pnpm typecheck` in `spec/*.ts`. Use `[...xs].sort()`.
+
+
+## Assignment 1: stack decision
+
+Staying on the template's **Vite + plain TypeScript**, deliberately, after Crit
+2 moved to Astro. Astro earned its place for a five-page content site; this is
+one page whose weight is all TypeScript, so a content framework adds a build
+layer and buys nothing. It would also reintroduce the `base`-path trap that this
+template's `base: "./"` already solves — the one thing in a swap that looks fine
+locally and 404s on the deployed URL.
+
+## Assignment 1: what this prototype is, and what it must stay
+
+**One More Road** — an interactive explainer of Braess's paradox. The visitor
+sees a small synthetic road network with a visible average commute, is offered a
+new connector, and builds it. Drivers gradually re-route, the shared streets
+choke, and the average commute settles *worse* than before. Then they can close
+the road again and watch it recover. Only then is the paradox named.
+
+**One idea, one mechanic.** The mechanic is a single road toggling between built
+and not built. `CLOSE THE ROAD` is that same mechanic run backwards — it
+completes the experiment; it is not a second idea. Route highlighting on
+hover/focus is inspection of an object already on screen, not a mechanic.
+
+Before adding anything, the question is *does this make the visitor understand
+the central idea more strongly?* If not, delete it. Prefer deleting UI over
+adding an explanatory control. There is no demand slider, no second network, no
+network editor, no traffic lights, no lane changing, no chart beyond the one
+time-series of average journey time, and no claim about any real city.
+
+## Assignment 1: rules the simulation must not break
+
+These exist because each one is a way of being wrong that would otherwise ship
+looking perfectly plausible.
+
+- **Never hard-code the outcome.** There is no `time = f(flow)` latency
+  function, and no branch anywhere that reads "if the connector is open". Travel
+  time is only ever *measured* from vehicle trajectories. The connector is the
+  fastest, emptiest link in the model; the harm happens on links that existed
+  before it.
+- **The control configuration is load-bearing.** The same engine must produce a
+  configuration where the connector *helps*. If that test ever goes red, the
+  engine has started hard-coding the answer — fix the engine, never the test.
+- **One frozen config, one boolean apart.** Baseline and treatment share the
+  same `ExperimentConfig` object; the only permitted difference is whether the
+  connector edge exists. Never build two scenario objects that are meant to
+  match — they drift. A check deep-compares them.
+- **Physics never sees a pixel.** Nothing under `src/sim/` or `src/experiment/`
+  may import from `src/view/` or touch `document`, `window`, or any dimension.
+  Positions are metres, time is seconds, geometry is normalised. Resizing must
+  not be able to change a result.
+- **Fixed timestep only.** The engine advances in fixed `dt` steps driven by an
+  accumulator. Never integrate with a `requestAnimationFrame` delta: that makes
+  the experiment a function of frame rate.
+- **All randomness comes from the seeded stream, drawn once.** Departure times,
+  driver parameters and each driver's route-choice draw are generated *before*
+  the run from `config.seed`, so both configs get a literally identical driver
+  population. `Math.random()` is banned outside tests.
+- **A result with a growing queue is not a result.** Report a number only if the
+  run reached steady state and no link's queue is growing monotonically.
+  Otherwise report "inconclusive". Demand must sit below every link's capacity
+  in *both* configurations.
+- **Measure cohorts, not arrivals.** Average over the drivers who *departed*
+  inside the measurement window, counted when they arrive. Averaging whoever
+  happened to finish lets a growing queue flatter its own average by excluding
+  its victims.
+- **The effect is statistical.** It is claimed across seeds with the spread
+  reported, never from a single run, and never from a run chosen because it
+  looked good.
+
+## Assignment 1: claims we are allowed to make
+
+The network is synthetic and the numbers are a controlled demonstration, not a
+measurement of anywhere. "Building roads makes traffic worse" is false and we
+never say it. What is true, and what the page says, is closer to: *under
+particular network, demand and routing conditions, adding a connection can
+change selfish route choices so that the resulting equilibrium is worse for
+everyone.* The control configuration is the honest other half of that sentence,
+and it earns its one line on the page.
+
+Every simplification gets disclosed in the model note, with the model cited to
+its primary source.
+
+## Assignment 1: verification that actually counts
+
+- Run everything through `mise exec --`.
+- The rendered page at **390×844** is a full marking environment, and the
+  simulation running there is part of what has to work — measure frame
+  behaviour at phone size with the real vehicle count, don't assume it.
+- **Resize mid-interaction** is explicitly in the artefact band. Test it while
+  the simulation is running, not while it is idle.
+- **Keyboard**: both buttons reachable by Tab, activated by Enter *and* Space,
+  with visible focus. State changes are announced through a live region, because
+  a screen reader user cannot see the queue grow.
+- **Reduced motion** removes decorative transitions and interpolation. It does
+  **not** stop the simulation — the simulation is the explanation. The readout,
+  the queues and the time series still have to carry the argument.
+- Hundreds of SVG vehicles must never be traversable by a screen reader: the
+  vehicle layer is `aria-hidden`, and the meaningful state is exposed as text.
+- No text is allowed to appear before the main decision that a visitor would
+  have to read as a paragraph. There is a word budget on the pre-decision copy
+  and it is checked.
