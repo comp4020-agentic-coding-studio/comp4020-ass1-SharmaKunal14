@@ -324,3 +324,58 @@ its primary source.
 - No text is allowed to appear before the main decision that a visitor would
   have to read as a paragraph. There is a word budget on the pre-decision copy
   and it is checked.
+
+## Assignment 1: what building this taught the harness
+
+Rules earned the hard way. Each one is here because it caught something, or
+because not having it cost hours.
+
+- **A result must be horizon-invariant, and that is a gate.** Re-run any
+  configuration over a longer horizon and require the same answer
+  (`horizonCheck`). The within-window steady-state check is *not enough*: a
+  configuration whose effect climbed +20% → +58% as the horizon grew passed the
+  drift check on 6 of 10 seeds, because a slow monotone ramp looks flat inside
+  any one window. A configuration that fails horizon invariance may not be
+  quoted at all — not with a caveat, not as "approximately".
+- **When an effect will not appear, measure the model before touching the
+  demand.** Raising demand until the sign flips produces oversaturation, which
+  looks exactly like the effect you wanted. `scripts/experiment.ts` has
+  `--curve`, `--grid`, `--parkway`, `--throat`, `--learning`, `--capacity`,
+  `--invariant` and `--pair` for this reason: every one of them was written to
+  answer a question instead of guessing at an answer.
+- **Suspect the route-choice dynamics before the traffic physics.** A symmetric
+  network cannot have an asymmetric equilibrium. When shares came out north
+  6% / south 34%, the learning was under-damped (θ too sharp, α too fast), not
+  the physics broken — and the "+24% Braess effect" was that non-convergence.
+  Asymmetry on a symmetric network is the tell.
+- **A reference value has to be measured, not derived.** "Free flowing" against
+  `length ÷ speed limit` made empty ring roads report *slowing*, because without
+  overtaking a long road's mean time exceeds free flow even when deserted.
+  References for anything the page words come from a near-empty run, checked in
+  via `scripts/snapshot.ts`.
+- **Numbers the page states come from a generated snapshot, and a test fails if
+  it is stale.** Never hand-type a figure into copy, and never compute the claim
+  in the visitor's browser — one live run is one sample and its average wanders
+  by more than the effect.
+- **Copy is a claim, so it is checked.** The lede once said traffic was bad while
+  the page's own readout showed every road free-flowing. If prose asserts a
+  number or a state, a test ties it to the measurement.
+- **Look at the rendered page, not the code.** The preroll silently ran 6 of its
+  900 seconds because the backgrounded-tab frame cap also clamped it; vehicles
+  parked off-canvas rendered as stray dots; labels sat on the roads they named.
+  All three were invisible in the source and obvious in a screenshot.
+- **A test-only speed control must change wall time and nothing else.**
+  `?speed=N` scales the wall-clock compression, never `dt`, the seed or the
+  schedule — so a browser test watches the same 900 simulated seconds in 14
+  seconds instead of 142.
+- **Scope is guarded by a test, not by good intentions.** Every feature this
+  project rejected would have arrived as a control, so `spec/page.test.ts`
+  asserts one primary action, zero sliders, and a word budget on the copy before
+  the decision. Adding a control means deleting an assertion, which is a decision
+  you have to make on purpose.
+- **Browser-level facts need a browser.** jsdom has no layout, so it reports a
+  page as fine while it scrolls sideways at 390 px. The viewport, keyboard,
+  resize-mid-interaction and payload checks run Playwright against `dist/`.
+- **Stylelint's standard config rejects BEM.** `selector-class-pattern` is set
+  explicitly in `.stylelintrc.json`; class names are lower-case, so a class built
+  from a link id needs `.toLowerCase()`.
