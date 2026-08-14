@@ -34,6 +34,16 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      # The spec includes real-browser checks (both marking viewports, keyboard
+      # operation, resize mid-interaction), which jsdom cannot do because it has no
+      # layout. Cached so the download is paid once per lockfile.
+      - name: Cache the Playwright browser
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+      - name: Install the Playwright browser
+        run: pnpm exec playwright install --with-deps chromium
       - name: Build, lint, and run the spec
         run: pnpm check
       - name: Check the process evidence

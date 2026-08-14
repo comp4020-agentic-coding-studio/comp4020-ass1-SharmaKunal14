@@ -1,0 +1,296 @@
+// Draws the network and the traffic on it. Reads simulation state; never writes
+// any. Everything here is allowed to know about pixels; nothing here is allowed
+// to decide anything the experiment depends on.
+
+import type { LinkId, RouteId } from "../sim/network.ts";
+import { buildNetwork } from "../sim/network.ts";
+import type { LiveRun } from "../live.ts";
+import type { LayoutKind, Point } from "./layout.ts";
+import { NODES, VIEWBOX, alongSamples, pathData, sampleSegment, segmentsFor } from "./layout.ts";
+
+const SVG_NS = "http://www.w3.org/2000/svg";
+
+export const NODE_NAMES: Record<string, string> = {
+  S: "Eastgate",
+  A: "Riverside",
+  B: "Millbrook",
+  T: "Central",
+};
+
+export const ROAD_NAMES: Record<LinkId, string> = {
+  SA: "Riverside Rd",
+  BT: "Millbrook Rd",
+  AT: "North Ring",
+  SB: "South Ring",
+  AB: "the new link",
+};
+
+/**
+ * The drawing cannot show that one road is three times the length of another and
+ * still fit a phone, so the label says it. Without this the network reads as a
+ * single oval and nothing distinguishes the short roads from the long way round.
+ */
+function labelFor(id: LinkId, network: ReturnType<typeof buildNetwork>): string {
+  const km = network.links[id].length / 1000;
+  return `${ROAD_NAMES[id]} · ${km.toFixed(1)} km`;
+}
+
+const LINK_ORDER: readonly LinkId[] = ["SB", "AT", "SA", "BT", "AB"];
+const ROUTE_LINKS: Record<RouteId, readonly LinkId[]> = {
+  north: ["SA", "AT"],
+  south: ["SB", "BT"],
+  shortcut: ["SA", "AB", "BT"],
+};
+
+/** Ceiling on drawn vehicles. Beyond this the picture is a jam either way. */
+const VEHICLE_POOL = 320;
+
+function el<K extends keyof SVGElementTagNameMap>(
+  name: K,
+  attrs: Record<string, string> = {},
+): SVGElementTagNameMap[K] {
+  const node = document.createElementNS(SVG_NS, name);
+  for (const [key, value] of Object.entries(attrs)) node.setAttribute(key, value);
+  return node;
+}
+
+export class Scene {
+  private readonly svg: SVGSVGElement;
+  private readonly roadLayer = el("g", { class: "roads" });
+  private readonly throatLayer = el("g", { class: "throats" });
+  private readonly vehicleLayer = el("g", { class: "vehicles", "aria-hidden": "true" });
+  private readonly nodeLayer = el("g", { class: "nodes" });
+  private readonly labelLayer = el("g", { class: "road-labels" });
+
+  private readonly roads = new Map<LinkId, SVGPathElement>();
+  private readonly labels = new Map<LinkId, SVGTextElement>();
+  private samples = new Map<LinkId, readonly Point[]>();
+  private readonly pool: SVGCircleElement[] = [];
+  private layout: LayoutKind | null = null;
+
+  constructor(host: HTMLElement) {
+    this.svg = el("svg", {
+      class: "network",
+      role: "img",
+      // The structure is described once, because it never changes. The state that
+      // does change is announced from the live region in the readout instead —
+      // a screen reader must not have to hear about 120 moving dots.
+      "aria-label":
+        "Road network. Two short roads through narrow bridges, Riverside Rd and Millbrook Rd, " +
+        "and two long ring roads, North Ring and South Ring, connecting Eastgate to Central. " +
+        "A proposed new link would join Riverside to Millbrook across the middle.",
+      preserveAspectRatio: "xMidYMid meet",
+    });
+    this.svg.append(
+      this.roadLayer,
+      this.throatLayer,
+      this.vehicleLayer,
+      this.nodeLayer,
+      this.labelLayer,
+    );
+    host.append(this.svg);
+  }
+
+  /**
+   * Rebuild the drawing for a viewport shape. Called on resize, including
+   * mid-interaction: it replaces geometry only, so the simulation carries on
+   * untouched and no state is lost.
+   */
+  setLayout(
+    kind: LayoutKind,
+    geometry: { streetLength: number; throatStart: number },
+    network: ReturnType<typeof buildNetwork>,
+  ): void {
+    if (this.layout === kind) return;
+    this.layout = kind;
+
+    const box = VIEWBOX[kind];
+    this.svg.setAttribute("viewBox", `0 0 ${box.width} ${box.height}`);
+    this.svg.dataset.layout = kind;
+
+    const segments = segmentsFor(kind);
+    this.roadLayer.replaceChildren();
+    this.throatLayer.replaceChildren();
+    this.nodeLayer.replaceChildren();
+    this.labelLayer.replaceChildren();
+    this.roads.clear();
+    this.labels.clear();
+    this.samples = new Map();
+
+    for (const id of LINK_ORDER) {
+      const segment = segments[id];
+      const path = el("path", {
+        class: `road road--${id.toLowerCase()}${id === "AB" ? " road--connector" : ""}`,
+        d: pathData(segment, kind),
+        "data-link": id,
+      });
+      this.roadLayer.append(path);
+      this.roads.set(id, path);
+      this.samples.set(id, sampleSegment(segment, kind));
+    }
+
+    // The pinch, drawn where it actually is. The queue that stands behind it is
+    // not drawn at all — it is the vehicles bunching, which is the honest way to
+    // show it.
+    for (const id of ["SA", "BT"] as const) {
+      const points = this.samples.get(id);
+      if (!points) continue;
+      const fraction = geometry.throatStart / geometry.streetLength;
+      const at = alongSamples(points, fraction);
+      const tangent = tangentAt(points, fraction);
+      const nx = -tangent.y;
+      const ny = tangent.x;
+      const marker = el("g", { class: "throat" });
+      // Two ticks squeezing in across the carriageway: a narrowing, not a dot.
+      for (const side of [1, -1]) {
+        marker.append(
+          el("line", {
+            class: "throat__tick",
+            x1: (at.x + nx * side * 13).toFixed(1),
+            y1: (at.y + ny * side * 13).toFixed(1),
+            x2: (at.x + nx * side * 5).toFixed(1),
+            y2: (at.y + ny * side * 5).toFixed(1),
+          }),
+        );
+      }
+      const tag = el("text", {
+        class: "throat__label",
+        x: (at.x + nx * 20).toFixed(1),
+        y: (at.y + ny * 20).toFixed(1),
+        "text-anchor": "middle",
+        dy: "4",
+      });
+      tag.textContent = "bridge";
+      marker.append(tag);
+      this.throatLayer.append(marker);
+    }
+
+    for (const [id, point] of Object.entries(NODES[kind])) {
+      const cx = point.x * box.width;
+      const cy = point.y * box.height;
+      const group = el("g", { class: `node node--${id.toLowerCase()}` });
+      group.append(el("circle", { cx: String(cx), cy: String(cy), r: "7", class: "node__dot" }));
+      const label = el("text", {
+        x: String(cx),
+        y: String(cy),
+        class: "node__label",
+        "text-anchor": labelAnchor(kind, id),
+        dy: labelOffset(kind, id),
+      });
+      label.textContent = NODE_NAMES[id] ?? id;
+      group.append(label);
+      this.nodeLayer.append(group);
+    }
+
+    for (const id of LINK_ORDER) {
+      const points = this.samples.get(id);
+      if (!points) continue;
+      const fraction = id === "AB" ? 0.62 : 0.5;
+      const at = alongSamples(points, fraction);
+      // Push the label clear of the road it names, along the road's own normal,
+      // on whichever side faces away from the middle of the picture. Placing it
+      // on the path made every label sit across its own line.
+      const tangent = tangentAt(points, fraction);
+      let nx = -tangent.y;
+      let ny = tangent.x;
+      const outX = at.x - box.width / 2;
+      const outY = at.y - box.height / 2;
+      if (nx * outX + ny * outY < 0) {
+        nx = -nx;
+        ny = -ny;
+      }
+      const offset = kind === "wide" ? 20 : 24;
+      const text = el("text", {
+        x: (at.x + nx * offset).toFixed(1),
+        y: (at.y + ny * offset).toFixed(1),
+        class: `road-label road-label--${id.toLowerCase()}`,
+        "text-anchor": "middle",
+        dy: "5",
+      });
+      text.textContent = labelFor(id, network);
+      this.labelLayer.append(text);
+      this.labels.set(id, text);
+    }
+
+    this.svg.append(this.vehicleLayer);
+    this.svg.append(this.nodeLayer, this.labelLayer);
+  }
+
+  setConnectorOpen(open: boolean): void {
+    this.svg.classList.toggle("network--connector-open", open);
+  }
+
+  /** Inspection, not a mechanic: show which roads a route actually uses. */
+  highlightRoute(route: RouteId | null): void {
+    const lit = route === null ? null : new Set(ROUTE_LINKS[route]);
+    this.svg.classList.toggle("network--highlighting", lit !== null);
+    for (const [id, path] of this.roads) {
+      path.classList.toggle("road--lit", lit !== null && lit.has(id));
+    }
+  }
+
+  render(run: LiveRun, network: ReturnType<typeof buildNetwork>): void {
+    for (const [id, path] of this.roads) {
+      const ratio = run.congestionOf(id);
+      // Width carries load as well as colour, so the state does not depend on
+      // being able to tell two hues apart.
+      path.style.setProperty("--load", ratio.toFixed(3));
+      path.classList.toggle("road--slow", ratio > 1.25);
+      path.classList.toggle("road--crawling", ratio > 1.8);
+    }
+
+    let drawn = 0;
+    for (const id of LINK_ORDER) {
+      const points = this.samples.get(id);
+      if (!points) continue;
+      const length = network.links[id].length;
+      const limit = network.links[id].speedLimit;
+      for (const vehicle of run.vehiclesOn(id)) {
+        if (drawn >= VEHICLE_POOL) break;
+        const at = alongSamples(points, vehicle.pos / length);
+        const dot = this.vehicleAt(drawn);
+        dot.style.display = "";
+        dot.setAttribute("cx", at.x.toFixed(1));
+        dot.setAttribute("cy", at.y.toFixed(1));
+        // Slower vehicles are drawn darker; the bunching is what shows the queue.
+        dot.style.setProperty("--speed", (vehicle.vel / limit).toFixed(2));
+        drawn += 1;
+      }
+    }
+    // Hidden, not parked off-canvas: an off-canvas coordinate still renders as a
+    // stray dot in empty space next to the network.
+    for (let i = drawn; i < this.pool.length; i += 1) {
+      this.pool[i].style.display = "none";
+    }
+  }
+
+  private vehicleAt(index: number): SVGCircleElement {
+    let dot = this.pool[index];
+    if (dot === undefined) {
+      dot = el("circle", { class: "vehicle", r: "4.6", cx: "0", cy: "0" });
+      dot.style.display = "none";
+      this.pool[index] = dot;
+      this.vehicleLayer.append(dot);
+    }
+    return dot;
+  }
+}
+
+/** Unit tangent at a fraction along a sampled path. */
+function tangentAt(samples: readonly Point[], fraction: number): Point {
+  const i = Math.min(samples.length - 2, Math.max(0, Math.floor(fraction * (samples.length - 1))));
+  const dx = samples[i + 1].x - samples[i].x;
+  const dy = samples[i + 1].y - samples[i].y;
+  const len = Math.hypot(dx, dy) || 1;
+  return { x: dx / len, y: dy / len };
+}
+
+function labelAnchor(kind: LayoutKind, node: string): string {
+  if (kind === "tall") return node === "A" ? "start" : node === "B" ? "end" : "middle";
+  return node === "S" ? "start" : node === "T" ? "end" : "middle";
+}
+
+function labelOffset(kind: LayoutKind, node: string): string {
+  if (kind === "tall") return node === "S" ? "-16" : node === "T" ? "26" : "-14";
+  return node === "A" ? "-16" : node === "B" ? "26" : "-16";
+}

@@ -3,22 +3,132 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>COMP4020 prototype</title>
+    <title>One More Road</title>
+    <meta
+      name="description"
+      content="The commute is five and a half minutes. A new link would make it four. Build it and watch what happens."
+    />
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
-    <header>
+    <a class="skip-link" href="#stage">Skip to the road network</a>
+
+    <header class="masthead">
       <nav aria-label="Primary">
-        <a href="./">Home</a>
+        <a href="./" class="masthead__home">One More Road</a>
       </nav>
     </header>
+
     <main>
-      <h1>COMP4020 prototype</h1>
-      <p data-testid="intro">
-        Replace this with your prototype. This week's brief is on the course website;
-        <code>spec/README.md</code> explains how the checks in this repo relate to it.
-      </p>
+      <h1 class="lede">
+        Five and a half minutes into town.<br />
+        There's an obvious way to make it four.
+      </h1>
+
+      <section class="stage" id="stage" aria-label="The road network">
+        <div class="stage__figure" data-figure></div>
+
+        <div class="stage__readout">
+          <p class="metric">
+            <span class="metric__value" data-metric-value>—</span>
+            <span class="metric__unit">min</span>
+            <span class="metric__label">average commute, last 80 arrivals</span>
+          </p>
+
+          <p class="metric metric--before" data-before hidden>
+            <span class="metric__value" data-before-value>—</span>
+            <span class="metric__unit">min</span>
+            <span class="metric__label">before the road was built</span>
+          </p>
+
+          <h2 class="readout__heading">Which way people go</h2>
+          <ul class="routes" data-routes>
+            <li>
+              <button type="button" class="route" data-route="north">
+                <span class="route__name">North Ring way</span>
+                <span class="route__share" data-share="north">—</span>
+              </button>
+            </li>
+            <li>
+              <button type="button" class="route" data-route="south">
+                <span class="route__name">South Ring way</span>
+                <span class="route__share" data-share="south">—</span>
+              </button>
+            </li>
+            <li data-route-row="shortcut" hidden>
+              <button type="button" class="route" data-route="shortcut">
+                <span class="route__name">Across the new link</span>
+                <span class="route__share" data-share="shortcut">—</span>
+              </button>
+            </li>
+          </ul>
+
+          <h2 class="readout__heading">How each road is running</h2>
+          <ul class="loads" data-loads></ul>
+        </div>
+      </section>
+
+      <p class="sr-only" aria-live="polite" data-announce></p>
+
+      <section class="verdict" data-verdict hidden>
+        <h2 class="verdict__headline" data-verdict-headline tabindex="-1"></h2>
+        <p class="verdict__body" data-verdict-body></p>
+
+        <div class="chain" data-chain hidden>
+          <h3 class="chain__heading">What happened, in order</h3>
+          <ol class="chain__steps">
+            <li>The new link looked quicker, because on an empty road it is.</li>
+            <li>Drivers tried it, got home sooner, and told their estimate so.</li>
+            <li>More drivers switched — until nearly everyone used <em>both</em> narrow bridges.</li>
+            <li>Queues stood behind both bridges instead of one.</li>
+            <li>Every route now crosses a queue. Including the ones nobody changed.</li>
+          </ol>
+          <p class="chain__kicker">
+            The new link never jammed. Look at it — it is the emptiest road on the map. It did not
+            add traffic. It changed where traffic chose to go.
+          </p>
+        </div>
+      </section>
+
+      <section class="decision" aria-label="Your decision">
+        <p class="decision__prompt" data-prompt>
+          Every driver crosses one narrow bridge, then takes a long ring road. The dotted link would
+          let them use both bridges and skip both rings — about a minute quicker, on an empty road.
+        </p>
+        <button type="button" class="action" data-action>Build the road</button>
+        <p class="decision__note" data-note hidden></p>
+      </section>
+
+      <section class="closing" data-closing hidden>
+        <h2 class="closing__name" data-closing-name tabindex="-1">Braess's paradox</h2>
+        <p class="closing__body">
+          Adding a road to a network can make every journey on it longer — not because the road is
+          slow, but because it changes what each driver decides is best for them. Every one of those
+          decisions is correct. The result they add up to is worse for all of them.
+        </p>
+        <p class="closing__body">
+          It is not a law that new roads make traffic worse. In this same network, with the same
+          simulation, light traffic makes the link a genuine improvement
+          <span data-control-line></span>. Whether it helps depends on how close the roads already
+          are to their limits.
+        </p>
+      </section>
+
+      <section class="notes">
+        <details class="notes__disclosure">
+          <summary>How this simulation works</summary>
+          <div class="notes__body" data-model-note></div>
+        </details>
+      </section>
     </main>
+
+    <footer class="footer">
+      <p>
+        A synthetic network, not a real place. Built for COMP4020 Agentic Coding Studio at the
+        Australian National University.
+      </p>
+    </footer>
+
     <script type="module" src="./main.ts"></script>
   </body>
 </html>
