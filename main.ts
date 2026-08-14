@@ -18,10 +18,20 @@ import { layoutFor } from "./src/view/layout.ts";
  */
 const PREROLL = 900;
 
-/** Simulated seconds to let drivers adapt before the verdict is drawn. */
-const ADAPT = 900;
-/** Simulated seconds to let the network recover after the road closes. */
-const RECOVER = 700;
+/**
+ * Simulated seconds before the verdict may be drawn at all, and the point at
+ * which it is drawn regardless.
+ *
+ * The reveal waits for the readout to *settle*, not for a countdown — see
+ * `LiveRun.hasSettledSince`. These only bound the wait: long enough that a
+ * verdict is never drawn on an average that has not caught up, capped so an
+ * unlucky run cannot leave a visitor watching forever.
+ */
+const ADAPT_MIN = 1100;
+const ADAPT_MAX = 2600;
+/** The same, for the recovery after the road closes. */
+const RECOVER_MIN = 800;
+const RECOVER_MAX = 1800;
 
 type Phase = "before" | "adapting" | "worse" | "recovering" | "done";
 
@@ -49,6 +59,7 @@ function need<T extends Element>(selector: string): T {
 const ui = {
   figure: need<HTMLElement>("[data-figure]"),
   metric: need<HTMLElement>("[data-metric-value]"),
+  metricLabel: need<HTMLElement>("[data-metric-label]"),
   before: need<HTMLElement>("[data-before]"),
   beforeValue: need<HTMLElement>("[data-before-value]"),
   loads: need<HTMLUListElement>("[data-loads]"),
@@ -75,6 +86,7 @@ let run = new LiveRun(TARGET, requestedTimeScale());
 let phase: Phase = "before";
 let phaseStartedAt = 0;
 let baselineSeconds = Number.NaN;
+let anchoredLabel = "average commute";
 
 // ------------------------------------------------------------------- rendering
 
@@ -128,9 +140,22 @@ function describeLoad(ratio: number): string {
   return `queueing, ${ratio.toFixed(1)}× slower`;
 }
 
+/** Trips needed before "since you built it" is an average rather than an anecdote. */
+const ANCHOR_MINIMUM = 8;
+
 function renderReadout(): void {
-  const mean = run.meanTravelTime();
+  // The headline is the running average since the last decision, not a rolling
+  // window: a converging number cannot contradict the verdict a minute later.
+  //
+  // For the first few seconds after a decision, nobody has completed a trip since
+  // it, so that average does not exist yet. Rather than blank the number at the
+  // exact moment the visitor acts, fall back to the recent-arrivals average — and
+  // move the label with it, so the figure on screen always matches its caption.
+  const anchored = run.meanSinceAnchor();
+  const ready = run.anchoredTrips >= ANCHOR_MINIMUM && Number.isFinite(anchored);
+  const mean = ready ? anchored : run.meanTravelTime();
   ui.metric.textContent = Number.isFinite(mean) ? formatDuration(mean) : "—";
+  ui.metricLabel.textContent = ready ? anchoredLabel : "average commute, recent arrivals";
   for (const route of ["north", "south", "shortcut"] as const) {
     const cell = document.querySelector<HTMLElement>(`[data-share="${route}"]`);
     if (cell !== null) cell.textContent = `${Math.round(run.shareOf(route) * 100)}%`;
@@ -163,6 +188,7 @@ function setPhase(next: Phase): void {
   document.body.dataset.phase = next;
 
   if (next === "adapting") {
+    anchoredLabel = "average commute since you built it";
     ui.action.hidden = true;
     ui.note.hidden = false;
     ui.note.textContent = "The link is open. Drivers are finding out whether it is quicker.";
@@ -180,6 +206,8 @@ function setPhase(next: Phase): void {
   }
 
   if (next === "recovering") {
+    anchoredLabel = "average commute since you closed it";
+    run.setAnchor(run.simTime);
     ui.action.hidden = true;
     ui.note.hidden = false;
     ui.note.textContent = "The link is shut. Drivers are going back to what they knew.";
@@ -193,14 +221,14 @@ function setPhase(next: Phase): void {
     ui.action.textContent = "Run it again";
     ui.note.hidden = true;
     announce(
-      `With the link closed again the average commute is ${formatDuration(run.meanTravelTime())}. ` +
+      `With the link closed again the average commute is ${formatDuration(run.meanSinceAnchor())}. ` +
         `This is Braess's paradox.`,
     );
   }
 }
 
 function drawVerdict(): void {
-  const now = run.meanTravelTime();
+  const now = run.meanSinceAnchor();
   const delta = now - baselineSeconds;
   const percent = (delta / baselineSeconds) * 100;
   ui.before.hidden = false;
@@ -244,7 +272,8 @@ function drawVerdict(): void {
 
 function onAction(): void {
   if (phase === "before") {
-    baselineSeconds = run.meanTravelTime();
+    baselineSeconds = run.meanSinceAnchor();
+    run.setAnchor(run.simTime);
     ui.before.hidden = false;
     ui.beforeValue.textContent = formatDuration(baselineSeconds);
     run.setConnectorOpen(true);
@@ -267,14 +296,56 @@ function onAction(): void {
     ui.before.hidden = true;
     baselineSeconds = Number.NaN;
     ui.action.textContent = "Build the road";
+    anchoredLabel = "average commute";
+    run.setAnchor(run.simTime);
     setPhase("before");
   }
 }
 
 function tickPhase(): void {
   const elapsed = run.simTime - phaseStartedAt;
-  if (phase === "adapting" && elapsed >= ADAPT) setPhase("worse");
-  else if (phase === "recovering" && elapsed >= RECOVER) setPhase("done");
+  if (phase === "adapting") {
+    const enough = run.anchoredTrips >= 40;
+    if (
+      elapsed >= ADAPT_MAX ||
+      (elapsed >= ADAPT_MIN && enough && run.hasSettledSince(phaseStartedAt))
+    ) {
+      setPhase("worse");
+    } else {
+      describeAdapting();
+    }
+  } else if (phase === "recovering") {
+    if (elapsed >= RECOVER_MAX || (elapsed >= RECOVER_MIN && run.hasSettledSince(phaseStartedAt))) {
+      setPhase("done");
+    } else {
+      describeRecovering();
+    }
+  }
+}
+
+/**
+ * Say what is happening while the network adjusts, in words that name what to
+ * watch. Timed at real speed there is a stretch where the number barely moves,
+ * and a visitor with no idea what to look at reads that as nothing happening.
+ */
+function describeAdapting(): void {
+  const share = Math.round(run.shareOf("shortcut") * 100);
+  const next =
+    share < 6
+      ? "The link is open — but nobody has tried it yet. Drivers only know the routes they have actually driven."
+      : share < 22
+        ? `${share}% have switched to the new link, and it is quicker for them. Watch the two bridges.`
+        : `${share}% now cross both bridges instead of one. Watch what that does to the queues.`;
+  if (ui.note.textContent !== next) ui.note.textContent = next;
+}
+
+function describeRecovering(): void {
+  const share = Math.round(run.shareOf("shortcut") * 100);
+  const next =
+    share > 6
+      ? `The link is shut. ${share}% of recent arrivals still came across it before it closed.`
+      : "The link is shut and everyone is back on the routes they started with.";
+  if (ui.note.textContent !== next) ui.note.textContent = next;
 }
 
 // ---------------------------------------------------------------------- driver
@@ -415,5 +486,8 @@ window.addEventListener("resize", () => {
 applyLayout();
 fillModelNote();
 preroll();
+// Start the running average from the settled peak the preroll produced, so the
+// baseline the visitor compares against is a real average and not one trip.
+run.setAnchor(run.simTime);
 setPhase("before");
 requestAnimationFrame(frame);

@@ -79,7 +79,7 @@ const BASE = {
   drain: 1200,
   adapt: 3000,
   theta: 0.015,
-  alpha: 0.1,
+  alpha: 0.06,
   geometry: GEOMETRY,
   driver: DRIVER_SPREAD,
 } as const;

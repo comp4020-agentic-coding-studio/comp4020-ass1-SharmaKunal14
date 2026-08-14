@@ -14,10 +14,10 @@ export const EXPERIMENT = {
   "target": {
     "label": "target",
     "demandPerHour": 860,
-    "closedSeconds": 331.2,
-    "openSeconds": 342.8,
-    "deltaSeconds": 11.6,
-    "deltaPercent": 3.5,
+    "closedSeconds": 331.3,
+    "openSeconds": 343.8,
+    "deltaSeconds": 12.5,
+    "deltaPercent": 3.8,
     "cohortSize": 280,
     "sharesClosed": {
       "north": 47,
@@ -32,10 +32,10 @@ export const EXPERIMENT = {
     "horizonInvariant": true,
     "seeds": {
       "count": 10,
-      "meanPercent": 5.4,
-      "sdPercent": 3.1,
-      "minPercent": 2.2,
-      "maxPercent": 11.6,
+      "meanPercent": 5.3,
+      "sdPercent": 3,
+      "minPercent": 2,
+      "maxPercent": 11.2,
       "settled": 8,
       "signHeld": true
     }
@@ -62,7 +62,7 @@ export const EXPERIMENT = {
     "seeds": {
       "count": 10,
       "meanPercent": -3,
-      "sdPercent": 0.4,
+      "sdPercent": 0.3,
       "minPercent": -3.6,
       "maxPercent": -2.5,
       "settled": 10,
@@ -71,13 +71,13 @@ export const EXPERIMENT = {
   },
   "transient": {
     "target": {
-      "beforeSeconds": 331.3,
-      "afterSeconds": 364.8,
-      "deltaPercent": 10.1,
-      "shortcutShare": 39,
-      "settledPercent": 3.4,
+      "beforeSeconds": 331.4,
+      "afterSeconds": 352.5,
+      "deltaPercent": 6.4,
+      "shortcutShare": 40,
+      "settledPercent": 3.1,
       "decaysToEquilibrium": true,
-      "seedMeanPercent": 9.5,
+      "seedMeanPercent": 7.9,
       "seedSignHeld": true
     },
     "control": {

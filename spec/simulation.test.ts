@@ -13,7 +13,7 @@ import {
   compare,
   horizonCheck,
   intervene,
-  interventionHoldsUp,
+  measureDecay,
   runExperiment,
 } from "../src/experiment/run.ts";
 import { Simulation } from "../src/sim/engine.ts";
@@ -160,6 +160,32 @@ describe("a quoted result is an equilibrium, not a snapshot of a growing queue",
     }
   });
 
+  it("still rejects the configuration that fooled it once", () => {
+    // A regression test for the *check*, not the model. This is the configuration
+    // that reported +23.9% and grew to +58.4% as the horizon lengthened — an
+    // oversaturated network with under-damped route learning. The gate's tolerance
+    // was later given an absolute floor so it would stop rejecting small settled
+    // effects; this is the evidence that the floor did not blunt it.
+    const artefact: ExperimentConfig = {
+      ...TARGET,
+      label: "known-artefact",
+      demandPerHour: 800,
+      theta: 0.04,
+      alpha: 0.3,
+      geometry: {
+        ...TARGET.geometry,
+        parkwayLength: 8200,
+        throat: { speedLimit: 14 / 3.6, headway: 2.8, length: 120, taper: 180 },
+      },
+    };
+    const check = horizonCheck(artefact);
+    expect(
+      check.ok,
+      `the gate accepted the artefact: ${check.shortPercent.toFixed(1)}% then ` +
+        `${check.longPercent.toFixed(1)}%`,
+    ).toBe(false);
+  });
+
   it("finishes every measured trip, so no cohort member is quietly excluded", () => {
     for (const config of [TARGET, CONTROL]) {
       for (const connectorOpen of [false, true]) {
@@ -217,7 +243,7 @@ describe("building the road on a running network", () => {
     // has to say which number is which — and the two protocols have to agree once
     // the adjustment is over, or one of them is wrong.
     const transient = intervene(TARGET).deltaPercent;
-    const settled = interventionHoldsUp(TARGET).longPercent;
+    const settled = measureDecay(TARGET).longPercent;
     const coldStart = compare(TARGET).deltaPercent;
     expect(transient).toBeGreaterThan(settled);
     expect(

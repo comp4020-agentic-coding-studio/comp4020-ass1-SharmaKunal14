@@ -531,12 +531,12 @@ if (args.has("--intervene")) {
   // The experiment as the page performs it: settle closed, then open the connector
   // on the running network. Compared against the two-run version, which starts the
   // open case cold and converges somewhere else.
-  const { intervene, interventionHoldsUp } = await import("../src/experiment/run.ts");
+  const { intervene, measureDecay } = await import("../src/experiment/run.ts");
   console.log(`\n── warm start (settle, then build) vs cold start (two separate runs) ──`);
   for (const base of [TARGET, CONTROL]) {
     const warm = intervene(base);
     const cold = compare(base);
-    const holds = interventionHoldsUp(base);
+    const holds = measureDecay(base);
     console.log(`\n  ${base.label} (${base.demandPerHour} veh/h)`);
     console.log(
       `    warm  ${warm.before.meanTravelTime.toFixed(1)}s → ${warm.after.meanTravelTime.toFixed(1)}s  `
@@ -564,5 +564,37 @@ if (args.has("--intervene")) {
       + `min ${Math.min(...deltas).toFixed(1)}%  max ${Math.max(...deltas).toFixed(1)}%  `
       + `settled ${settled}/8  sign held ${signs.size === 1}`,
     );
+  }
+}
+
+if (args.has("--damping")) {
+  // The live readout oscillated after the verdict (shortcut share swinging
+  // 52% → 27% → 37%), which is real day-to-day route-choice oscillation, not just
+  // measurement noise. Honest, but it makes the page look unreliable. Does more
+  // damping calm it without losing the effect?
+  const { intervene, measureDecay } = await import("../src/experiment/run.ts");
+  console.log(`\n── learning damping vs effect and stability ──`);
+  console.log(`  alpha  theta   target Δ   settles   control Δ   8-seed sd  sign held`);
+  for (const alpha of [0.1, 0.06, 0.04, 0.02]) {
+    for (const theta of [0.015, 0.01]) {
+      const t = { ...TARGET, alpha, theta };
+      const c = { ...CONTROL, alpha, theta };
+      const warm = intervene(t);
+      const holds = measureDecay(t);
+      const ctrl = intervene(c);
+      const deltas: number[] = [];
+      for (let i = 0; i < 8; i += 1) {
+        deltas.push(intervene({ ...t, seed: t.seed + i * 7919 }).deltaPercent);
+      }
+      const signs = new Set(deltas.map((d) => Math.sign(d)));
+      console.log(
+        `  ${alpha.toFixed(2)}   ${theta.toFixed(3)}  `
+        + `${warm.deltaPercent >= 0 ? "+" : ""}${warm.deltaPercent.toFixed(1)}%`.padStart(9)
+        + `   ${holds.ok ? "OK  " : "FAIL"}     `
+        + `${ctrl.deltaPercent >= 0 ? "+" : ""}${ctrl.deltaPercent.toFixed(1)}%`.padStart(8)
+        + `   ${stdDevOf(deltas).toFixed(1)}%`.padStart(9)
+        + `   ${signs.size === 1 && Math.sign(deltas[0]) > 0 ? "yes" : "NO"}`,
+      );
+    }
   }
 }

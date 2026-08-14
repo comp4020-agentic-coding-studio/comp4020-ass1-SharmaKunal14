@@ -39,6 +39,7 @@ export class Chart {
     host.append(this.svg, this.caption);
   }
 
+  /** The rolling trace, which is where the oscillation is shown honestly. */
   render(run: LiveRun, baselineSeconds: number): void {
     const samples = run.samples;
     if (samples.length < 3) {

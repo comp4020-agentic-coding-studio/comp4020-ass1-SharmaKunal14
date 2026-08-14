@@ -16,7 +16,7 @@ import { meanOf } from "./experiment/metrics.ts";
 import { EXPERIMENT } from "./experiment/result.generated.ts";
 
 /** How many simulated seconds pass per second of wall clock. Disclosed on page. */
-export const TIME_SCALE = 25;
+export const TIME_SCALE = 45;
 
 /**
  * Bounds for an overridden time scale. Raising it compresses wall time only: the
@@ -27,8 +27,8 @@ export const TIME_SCALE = 25;
 export const MIN_TIME_SCALE = 1;
 export const MAX_TIME_SCALE = 800;
 
-/** Trips averaged for the live readout. Enough that a ~12s shift clears the noise. */
-export const WINDOW_TRIPS = 80;
+/** Trips averaged for the live readout. Enough that the shift clears the noise. */
+export const WINDOW_TRIPS = 60;
 
 /** Longest single frame we will simulate, so a backgrounded tab cannot stall. */
 const MAX_FRAME_SECONDS = 0.25;
@@ -57,6 +57,9 @@ export class LiveRun {
     AB: [],
   };
   private lastSampleAt = -Infinity;
+  private anchor = 0;
+  private anchorSum = 0;
+  private anchorCount = 0;
 
   readonly samples: Sample[] = [];
   readonly markers: Marker[] = [];
@@ -134,6 +137,33 @@ export class LiveRun {
     this.maybeSample();
   }
 
+  /**
+   * Start a fresh running average from this moment: "the average commute since you
+   * built it".
+   *
+   * The headline number used to be a rolling average of the last N arrivals, and
+   * that was a mistake. Route learning genuinely oscillates — day-to-day route
+   * choice does — so a short rolling window swings, and a visitor could easily
+   * catch it at a moment that read level with the baseline while the page claimed
+   * it had got worse. A running average over everyone who has departed since the
+   * decision cannot swing back: it converges, and it is exactly the quantity a
+   * resident would notice. The oscillation is still shown, honestly, in the chart.
+   */
+  setAnchor(simTime: number): void {
+    this.anchor = simTime;
+    this.anchorSum = 0;
+    this.anchorCount = 0;
+  }
+
+  /** Mean door-to-door time of everyone who departed since the last anchor. */
+  meanSinceAnchor(): number {
+    return this.anchorCount === 0 ? Number.NaN : this.anchorSum / this.anchorCount;
+  }
+
+  get anchoredTrips(): number {
+    return this.anchorCount;
+  }
+
   /** Pull whatever the engine has produced since last time into rolling windows. */
   private drain(): void {
     const arrivals = this.sim.arrivals;
@@ -141,6 +171,10 @@ export class LiveRun {
       const arrival = arrivals[this.arrivalCursor];
       this.recentTrips.push({ time: arrival.travelTime, route: arrival.routeId });
       if (this.recentTrips.length > WINDOW_TRIPS) this.recentTrips.shift();
+      if (arrival.departTime >= this.anchor) {
+        this.anchorSum += arrival.travelTime;
+        this.anchorCount += 1;
+      }
     }
     const traversals = this.sim.traversals;
     for (; this.traversalCursor < traversals.length; this.traversalCursor += 1) {
@@ -174,6 +208,31 @@ export class LiveRun {
   shareOf(route: RouteId): number {
     if (this.recentTrips.length === 0) return 0;
     return this.recentTrips.filter((trip) => trip.route === route).length / this.recentTrips.length;
+  }
+
+  /**
+   * Has the network re-settled since a given moment?
+   *
+   * The page used to reveal its verdict after a fixed countdown, and that was
+   * wrong: the readout can only know a trip's duration once the trip has
+   * finished, so it lags departures by a whole journey. Timed at real speed, the
+   * verdict fired while the average still reflected the first few drivers to try
+   * the link — who genuinely did get home sooner. The reveal landed on a number
+   * that had not moved yet, or had moved the wrong way.
+   *
+   * So the page now waits for the same thing the harness waits for: two
+   * consecutive stretches of the rolling average that agree. Compare the last
+   * four samples with the four before them; if they agree, the adjustment is
+   * over and there is something true to say.
+   */
+  hasSettledSince(simTime: number, tolerance = 0.02): boolean {
+    const since = this.samples.filter((sample) => sample.simTime > simTime);
+    if (since.length < 8) return false;
+    const recent = since.slice(-4).map((sample) => sample.mean);
+    const earlier = since.slice(-8, -4).map((sample) => sample.mean);
+    const a = meanOf(recent);
+    const b = meanOf(earlier);
+    return Math.abs(a - b) / b <= tolerance;
   }
 
   /**
