@@ -164,3 +164,48 @@ describe("accessibility that markup can carry", () => {
     }
   });
 });
+
+describe("the process evidence meets this assignment's own requirements", () => {
+  // I once wrote "574 words" in a commit message for a file that held 679. The
+  // brief sets 400–600 words and three or four moments, and both are checkable, so
+  // neither should ever again depend on me estimating.
+  const process = readFileSync(resolve("PROCESS.md"), "utf8");
+
+  function prose(markdown: string): string[] {
+    return markdown
+      .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1") // links count as their text
+      .replace(/[#*`_]/g, "")
+      .split(/\s+/)
+      .filter(Boolean);
+  }
+
+  it("runs to 400-600 words", () => {
+    const count = prose(process).length;
+    expect(count, `PROCESS.md is ${count} words; the brief asks for 400-600`).toBeGreaterThanOrEqual(
+      400,
+    );
+    expect(count, `PROCESS.md is ${count} words; the brief asks for 400-600`).toBeLessThanOrEqual(
+      600,
+    );
+  });
+
+  it("carries three or four moments, not more", () => {
+    const moments = process.match(/^\*\*\d+\. /gm) ?? [];
+    expect(moments.length, "three or four, because each needs room to do its job").toBeGreaterThanOrEqual(3);
+    expect(moments.length).toBeLessThanOrEqual(4);
+  });
+
+  it("cites every moment", () => {
+    const moments = process.split(/^\*\*\d+\. /m).slice(1);
+    for (const [index, moment] of moments.entries()) {
+      expect(
+        /\[`[0-9a-f]{7,40}(\.\.\.[0-9a-f]{7,40})?`\]\(/.test(moment),
+        `moment ${index + 1} has no commit citation`,
+      ).toBe(true);
+    }
+  });
+
+  it("has a reflection under the name the marker reads", () => {
+    expect(() => readFileSync(resolve("reflections/assignment-1.md"), "utf8")).not.toThrow();
+  });
+});
