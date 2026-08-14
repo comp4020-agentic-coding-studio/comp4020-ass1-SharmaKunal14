@@ -379,3 +379,42 @@ because not having it cost hours.
 - **Stylelint's standard config rejects BEM.** `selector-class-pattern` is set
   explicitly in `.stylelintrc.json`; class names are lower-case, so a class built
   from a link id needs `.toLowerCase()`.
+
+## Assignment 1: traps the redesign found
+
+All five of these were invisible in the source and obvious the moment something
+measured them.
+
+- **`[hidden]` loses to any class that sets `display`.** It is a user-agent rule,
+  so `.metric { display: flex }` beat it and the before/after figure sat on screen
+  through the opening beat reading "— before you built it" before anything had
+  been built. There is now a global `[hidden] { display: none !important }`.
+- **One breakpoint, read by both sides.** The network arrangement was chosen in
+  JavaScript from the measured aspect of the figure while CSS sized that figure
+  from the viewport width. Capping the figure's height on a phone made its box
+  landscape, so the phone silently switched to the desktop arrangement — the
+  portrait network vanished on the one viewport it exists for. Both sides now read
+  `NARROW_QUERY`.
+- **A viewBox that does not match its container's aspect ratio letterboxes.**
+  `preserveAspectRatio="meet"` quietly padded the drawing, which read as a band of
+  dead paper under the map. Keep `VIEWBOX` and the figure's `aspect-ratio` in step.
+- **Hiding a focused element drops focus to `<body>`.** The action button is
+  hidden while the story plays itself, which stranded a keyboard visitor: their
+  place was gone and Tab restarted from the top of the page. Hand focus somewhere
+  deliberate first — here, the headline, which is what just changed.
+- **Clamping a centred label's anchor does not stop it overflowing.** Text with
+  `text-anchor: middle` spreads half its width either side, so the ring-road labels
+  ran off a phone and rendered as "lorth Ring" and "5.6 kr". Measure `getBBox()`
+  once per layout change and turn the anchor.
+
+Two rules of judgement from the same pass:
+
+- **Every number on screen must be the same number.** At one point the headline
+  said 5:57, the chart caption said 6:05, and the finding said 5:48 — three
+  figures, all captioned as the average commute, because one was a rolling window,
+  one was frozen at the moment a beat opened, and one was live. Pick one quantity,
+  put it in one place, and let the other elements describe shape rather than
+  restate the total.
+- **Copy is a claim and gets a check.** The opening line said the link was "about
+  a minute quicker" when the measured empty-road saving is 31 seconds. A test now
+  ties that phrase to the geometry.

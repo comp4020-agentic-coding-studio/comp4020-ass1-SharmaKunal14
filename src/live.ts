@@ -41,6 +41,14 @@ export type Sample = {
   readonly shortcutShare: number;
 };
 
+/** Two consecutive stretches of a series that agree: the adjustment is over. */
+function settled(series: readonly number[], tolerance: number): boolean {
+  if (series.length < 8) return false;
+  const recent = meanOf(series.slice(-4));
+  const earlier = meanOf(series.slice(-8, -4));
+  return Math.abs(recent - earlier) / earlier <= tolerance;
+}
+
 export class LiveRun {
   readonly config: ExperimentConfig;
   readonly timeScale: number;
@@ -60,6 +68,11 @@ export class LiveRun {
   private anchor = 0;
   private anchorSum = 0;
   private anchorCount = 0;
+  private anchorByRoute: Record<RouteId, { sum: number; count: number }> = {
+    north: { sum: 0, count: 0 },
+    south: { sum: 0, count: 0 },
+    shortcut: { sum: 0, count: 0 },
+  };
 
   readonly samples: Sample[] = [];
   readonly markers: Marker[] = [];
@@ -153,6 +166,27 @@ export class LiveRun {
     this.anchor = simTime;
     this.anchorSum = 0;
     this.anchorCount = 0;
+    this.anchorByRoute = {
+      north: { sum: 0, count: 0 },
+      south: { sum: 0, count: 0 },
+      shortcut: { sum: 0, count: 0 },
+    };
+  }
+
+  /**
+   * Mean time for one route since the last anchor.
+   *
+   * This is what lets the page make the claim that matters: at the new equilibrium
+   * the drivers who never changed route are slower too. Without it, "everyone got
+   * home later" is an assertion about an average rather than about everyone.
+   */
+  meanSinceAnchorFor(route: RouteId): number {
+    const bucket = this.anchorByRoute[route];
+    return bucket.count === 0 ? Number.NaN : bucket.sum / bucket.count;
+  }
+
+  tripsSinceAnchorFor(route: RouteId): number {
+    return this.anchorByRoute[route].count;
   }
 
   /** Mean door-to-door time of everyone who departed since the last anchor. */
@@ -174,6 +208,9 @@ export class LiveRun {
       if (arrival.departTime >= this.anchor) {
         this.anchorSum += arrival.travelTime;
         this.anchorCount += 1;
+        const bucket = this.anchorByRoute[arrival.routeId];
+        bucket.sum += arrival.travelTime;
+        bucket.count += 1;
       }
     }
     const traversals = this.sim.traversals;
@@ -227,12 +264,12 @@ export class LiveRun {
    */
   hasSettledSince(simTime: number, tolerance = 0.02): boolean {
     const since = this.samples.filter((sample) => sample.simTime > simTime);
-    if (since.length < 8) return false;
-    const recent = since.slice(-4).map((sample) => sample.mean);
-    const earlier = since.slice(-8, -4).map((sample) => sample.mean);
-    const a = meanOf(recent);
-    const b = meanOf(earlier);
-    return Math.abs(a - b) / b <= tolerance;
+    return settled(since.map((sample) => sample.mean), tolerance);
+  }
+
+  /** The same test over the most recent samples, whenever the anchor was set. */
+  hasSettledAcrossWindow(tolerance = 0.02): boolean {
+    return settled(this.samples.map((sample) => sample.mean), tolerance);
   }
 
   /**

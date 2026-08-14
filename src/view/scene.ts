@@ -58,12 +58,15 @@ export class Scene {
   private readonly svg: SVGSVGElement;
   private readonly roadLayer = el("g", { class: "roads" });
   private readonly throatLayer = el("g", { class: "throats" });
+  private readonly hitLayer = el("g", { class: "road-hits" });
   private readonly vehicleLayer = el("g", { class: "vehicles", "aria-hidden": "true" });
   private readonly nodeLayer = el("g", { class: "nodes" });
   private readonly labelLayer = el("g", { class: "road-labels" });
 
   private readonly roads = new Map<LinkId, SVGPathElement>();
   private readonly labels = new Map<LinkId, SVGTextElement>();
+  private readonly stateLabels = new Map<LinkId, SVGTSpanElement>();
+  private readonly hitAreas = new Map<LinkId, SVGPathElement>();
   private samples = new Map<LinkId, readonly Point[]>();
   private readonly pool: SVGCircleElement[] = [];
   private layout: LayoutKind | null = null;
@@ -87,6 +90,7 @@ export class Scene {
       this.vehicleLayer,
       this.nodeLayer,
       this.labelLayer,
+      this.hitLayer,
     );
     host.append(this.svg);
   }
@@ -111,10 +115,13 @@ export class Scene {
     const segments = segmentsFor(kind);
     this.roadLayer.replaceChildren();
     this.throatLayer.replaceChildren();
+    this.hitLayer.replaceChildren();
     this.nodeLayer.replaceChildren();
     this.labelLayer.replaceChildren();
     this.roads.clear();
     this.labels.clear();
+    this.stateLabels.clear();
+    this.hitAreas.clear();
     this.samples = new Map();
 
     for (const id of LINK_ORDER) {
@@ -127,6 +134,20 @@ export class Scene {
       this.roadLayer.append(path);
       this.roads.set(id, path);
       this.samples.set(id, sampleSegment(segment, kind));
+
+      // A generous invisible stroke over each road: a 5px line is not a touch
+      // target, and pointing at a road is how a visitor explores the picture.
+      // Keyboard parity comes from the route legend, which lights the same roads
+      // and carries the same numbers.
+      const hit = el("path", {
+        class: "road-hit",
+        d: pathData(segment, kind),
+        "data-link": id,
+      });
+      hit.addEventListener("pointerenter", () => this.emphasise(id));
+      hit.addEventListener("pointerleave", () => this.emphasise(null));
+      this.hitLayer.append(hit);
+      this.hitAreas.set(id, hit);
     }
 
     // The pinch, drawn where it actually is. The queue that stands behind it is
@@ -200,20 +221,94 @@ export class Scene {
         ny = -ny;
       }
       const offset = kind === "wide" ? 20 : 24;
+      // Keep the label inside the viewBox and turn its anchor to suit. Pushed
+      // outward unclamped, the ring labels ran off the edge of a phone and were
+      // drawn as "lorth Ring" and "5.6 kr".
+      const labelX = at.x + nx * offset;
       const text = el("text", {
-        x: (at.x + nx * offset).toFixed(1),
+        x: labelX.toFixed(1),
         y: (at.y + ny * offset).toFixed(1),
         class: `road-label road-label--${id.toLowerCase()}`,
         "text-anchor": "middle",
-        dy: "5",
       });
-      text.textContent = labelFor(id, network);
+      const name = el("tspan", { class: "road-label__name", x: labelX.toFixed(1), dy: "0" });
+      name.textContent = labelFor(id, network);
+      // A second line for how the road is running right now. The state belongs at
+      // the road, not in a status list beside the picture — that list was the
+      // dashboard this project is supposed not to be.
+      const state = el("tspan", {
+        class: "road-label__state",
+        x: labelX.toFixed(1),
+        dy: "15",
+      });
+      text.append(name, state);
       this.labelLayer.append(text);
       this.labels.set(id, text);
+      this.stateLabels.set(id, state);
     }
 
-    this.svg.append(this.vehicleLayer);
-    this.svg.append(this.nodeLayer, this.labelLayer);
+    this.svg.append(this.vehicleLayer, this.nodeLayer, this.labelLayer, this.hitLayer);
+    this.keepLabelsInFrame();
+  }
+
+  /** Lift one road out of the picture on hover, or clear it. */
+  private emphasise(link: LinkId | null): void {
+    this.svg.classList.toggle("network--emphasising", link !== null);
+    for (const [id, path] of this.roads) {
+      path.classList.toggle("road--emphasis", id === link);
+    }
+  }
+
+  /**
+   * Spotlight the roads a story beat is about — the link when it opens, the two
+   * bridges when they start to queue. The narrative points at the picture instead
+   * of describing it.
+   */
+  spotlight(links: readonly LinkId[]): void {
+    const lit = new Set(links);
+    this.svg.classList.toggle("network--spotlight", lit.size > 0);
+    for (const [id, path] of this.roads) {
+      path.classList.toggle("road--spot", lit.has(id));
+    }
+    for (const [id, label] of this.labels) {
+      label.classList.toggle("road-label--spot", lit.has(id));
+    }
+  }
+
+  /**
+   * Pull any label that overhangs the viewBox back inside and turn its anchor to
+   * suit.
+   *
+   * Clamping the anchor point is not enough: a centred label spreads half its width
+   * either side, so the ring-road labels ran off the edge of a phone and rendered as
+   * "lorth Ring" and "5.6 kr". This needs the measured box, so it runs once per
+   * layout change — never per frame.
+   */
+  private keepLabelsInFrame(): void {
+    const box = this.svg.viewBox.baseVal;
+    const margin = 4;
+    for (const label of this.labels.values()) {
+      let bounds: DOMRect;
+      try {
+        bounds = label.getBBox();
+      } catch {
+        return; // not laid out yet (jsdom, or a detached tree)
+      }
+      if (bounds.width === 0) continue;
+      let x: number | null = null;
+      let anchor: string | null = null;
+      if (bounds.x < margin) {
+        x = margin;
+        anchor = "start";
+      } else if (bounds.x + bounds.width > box.width - margin) {
+        x = box.width - margin;
+        anchor = "end";
+      }
+      if (x === null || anchor === null) continue;
+      label.setAttribute("text-anchor", anchor);
+      label.setAttribute("x", x.toFixed(1));
+      for (const child of label.children) child.setAttribute("x", x.toFixed(1));
+    }
   }
 
   setConnectorOpen(open: boolean): void {
@@ -232,6 +327,11 @@ export class Scene {
   render(run: LiveRun, network: ReturnType<typeof buildNetwork>): void {
     for (const [id, path] of this.roads) {
       const ratio = run.congestionOf(id);
+      const state = this.stateLabels.get(id);
+      if (state !== undefined) {
+        const words = describeLoad(ratio);
+        if (state.textContent !== words) state.textContent = words;
+      }
       // Width carries load as well as colour, so the state does not depend on
       // being able to tell two hues apart.
       path.style.setProperty("--load", ratio.toFixed(3));
@@ -283,6 +383,14 @@ function tangentAt(samples: readonly Point[], fraction: number): Point {
   const dy = samples[i + 1].y - samples[i].y;
   const len = Math.hypot(dx, dy) || 1;
   return { x: dx / len, y: dy / len };
+}
+
+/** Words for how a road is running. Never colour alone. */
+export function describeLoad(ratio: number): string {
+  if (ratio < 1.08) return "";
+  if (ratio < 1.25) return "slowing";
+  if (ratio < 1.8) return `${ratio.toFixed(1)}× slower`;
+  return `queueing · ${ratio.toFixed(1)}× slower`;
 }
 
 function labelAnchor(kind: LayoutKind, node: string): string {

@@ -102,6 +102,12 @@ export type Phase = {
   readonly unfinished: number;
   readonly steadyState: SteadyState;
   readonly shares: Record<RouteId, number>;
+  /**
+   * Mean door-to-door time of the drivers who took each route, NaN where nobody
+   * did. This is the heart of the paradox and the thing the page has to be able to
+   * say: at the new equilibrium the drivers who never changed route are slower too.
+   */
+  readonly routeMeans: Record<RouteId, number>;
 };
 
 export type Intervention = {
@@ -202,12 +208,19 @@ function phaseOf(
 ): Phase {
   const cohort = arrivals.filter((a) => a.departTime >= from && a.departTime < to);
   const expected = schedule.filter((d) => d.departTime >= from && d.departTime < to).length;
+  const perRoute = (route: RouteId): number =>
+    meanOf(cohort.filter((a) => a.routeId === route).map((a) => a.travelTime));
   return {
     meanTravelTime: meanOf(cohort.map((a) => a.travelTime)),
     cohortSize: cohort.length,
     unfinished: expected - cohort.length,
     steadyState: steadyStateOf(cohort, { ...config, warmup: from, window: to - from }),
     shares: sharesOfCohort(cohort),
+    routeMeans: {
+      north: perRoute("north"),
+      south: perRoute("south"),
+      shortcut: perRoute("shortcut"),
+    },
   };
 }
 

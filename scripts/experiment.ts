@@ -598,3 +598,30 @@ if (args.has("--damping")) {
     }
   }
 }
+
+if (args.has("--punchline")) {
+  // Braess's actual sting is not that the average rose — it is that the drivers who
+  // never changed route are worse off too. The page cannot claim that until it is
+  // checked, so: measure each route's own mean before and after.
+  const { intervene } = await import("../src/experiment/run.ts");
+  console.log(`\n── is everyone worse off, including the drivers who never switched? ──`);
+  for (const base of [TARGET, CONTROL]) {
+    console.log(`\n  ${base.label} (${base.demandPerHour} veh/h)`);
+    let allWorse = 0;
+    for (let i = 0; i < 6; i += 1) {
+      const run = intervene({ ...base, seed: base.seed + i * 7919 });
+      const north = run.after.routeMeans.north - run.before.routeMeans.north;
+      const south = run.after.routeMeans.south - run.before.routeMeans.south;
+      const stayers = Math.min(north, south);
+      if (north > 0 && south > 0) allWorse += 1;
+      console.log(
+        `    seed+${i}  overall ${run.deltaPercent >= 0 ? "+" : ""}${run.deltaPercent.toFixed(1)}%`
+        + `   north ${north >= 0 ? "+" : ""}${north.toFixed(0)}s`
+        + `   south ${south >= 0 ? "+" : ""}${south.toFixed(0)}s`
+        + `   shortcut ${run.after.routeMeans.shortcut.toFixed(0)}s`
+        + `   worst-off stayer ${stayers >= 0 ? "+" : ""}${stayers.toFixed(0)}s`,
+      );
+    }
+    console.log(`    both old routes worse on ${allWorse}/6 seeds`);
+  }
+}

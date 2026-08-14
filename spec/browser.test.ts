@@ -126,7 +126,7 @@ describe.each([
     expect(await overflow(page)).toBe(false);
     // Also with the reveal open, which adds the longest lines on the page.
     await page.locator("[data-action]").click();
-    await page.waitForFunction(() => document.body.dataset.phase === "worse", null, {
+    await page.waitForFunction(() => document.body.dataset.act === "worse", null, {
       timeout: 90_000,
     });
     expect(await overflow(page)).toBe(false);
@@ -177,29 +177,53 @@ describe("the core interaction works from the keyboard alone", () => {
     expect(focusRing).not.toBe("none");
 
     await page.keyboard.press("Enter");
-    await page.waitForFunction(() => document.body.dataset.phase === "adapting", null, {
+    // The story advances on measured state, so each beat is waited for by name.
+    await page.waitForFunction(() => document.body.dataset.act === "trying", null, {
       timeout: 10_000,
     });
-    await page.waitForFunction(() => document.body.dataset.phase === "worse", null, {
+    await page.waitForFunction(() => document.body.dataset.act === "switching", null, {
       timeout: 90_000,
     });
+    await page.waitForFunction(() => document.body.dataset.act === "worse", null, {
+      timeout: 90_000,
+    });
+
+    // Focus must never be dropped on the floor when the button comes and goes:
+    // hiding a focused element sends focus to <body> and loses the visitor's place.
+    const kept = await page.evaluate(() => document.activeElement !== document.body);
+    expect(kept, "focus was dropped to <body> when the action was hidden").toBe(true);
 
     // The reveal takes focus, so the outcome is what a keyboard visitor meets.
     const focusedHeadline = await page.evaluate(
-      () => document.activeElement?.getAttribute("data-verdict-headline") !== null,
+      () => document.activeElement?.getAttribute("data-headline") !== null,
     );
     expect(focusedHeadline).toBe(true);
-    const headline = await page.locator("[data-verdict-headline]").textContent();
-    expect(headline?.length ?? 0).toBeGreaterThan(10);
+    const finding = await page.locator("[data-finding-kicker]").textContent();
+    expect(finding?.length ?? 0).toBeGreaterThan(20);
+    // The punchline has to be on the page, with numbers: the drivers who never
+    // switched are slower too.
+    const rows = await page.locator(".finding__row").count();
+    expect(rows).toBe(2);
+
+    // And Tab from the reveal reaches the next action, rather than restarting.
+    await page.keyboard.press("Tab");
+    const next = await page.evaluate(
+      () => document.activeElement?.getAttribute("data-action") !== null,
+    );
+    expect(next, "Tab from the reveal did not reach the next action").toBe(true);
 
     await page.locator("[data-action]").focus();
     await page.keyboard.press(" ");
-    await page.waitForFunction(() => document.body.dataset.phase === "recovering", null, {
+    await page.waitForFunction(() => document.body.dataset.act === "closed", null, {
       timeout: 10_000,
     });
-    await page.waitForFunction(() => document.body.dataset.phase === "done", null, {
-      timeout: 90_000,
-    });
+    // The name is revealed only once the recovery has settled, not the instant the
+    // road shuts.
+    await page.waitForFunction(
+      () => document.querySelector("[data-closing]")?.hasAttribute("hidden") === false,
+      null,
+      { timeout: 90_000 },
+    );
     expect(await page.locator("[data-closing]").isVisible()).toBe(true);
     expect(errors).toEqual([]);
     await page.close();
@@ -210,12 +234,12 @@ describe("resizing mid-interaction", () => {
   it("keeps the phase, the numbers and the running simulation", async () => {
     const { page, errors } = await open(DESKTOP);
     await page.locator("[data-action]").click();
-    await page.waitForFunction(() => document.body.dataset.phase === "adapting", null, {
+    await page.waitForFunction(() => document.body.dataset.act === "trying", null, {
       timeout: 10_000,
     });
 
     const before = await page.evaluate(() => ({
-      phase: document.body.dataset.phase,
+      phase: document.body.dataset.act,
       simTrips: document.querySelectorAll<SVGElement>(".vehicle").length,
       layout: document.querySelector<SVGSVGElement>("svg.network")?.dataset.layout,
     }));
@@ -225,7 +249,7 @@ describe("resizing mid-interaction", () => {
     await page.waitForTimeout(900);
 
     const after = await page.evaluate(() => ({
-      phase: document.body.dataset.phase,
+      phase: document.body.dataset.act,
       layout: document.querySelector<SVGSVGElement>("svg.network")?.dataset.layout,
       metric: document.querySelector("[data-metric-value]")?.textContent ?? "",
       connectorVisible:
@@ -267,7 +291,7 @@ describe("reduced motion", () => {
     const state = await page.evaluate(() => ({
       metric: document.querySelector("[data-metric-value]")?.textContent ?? "",
       roadTransition: getComputedStyle(document.querySelector(".road") as Element).transitionDuration,
-      loadWords: [...document.querySelectorAll(".load__state")].map((n) => n.textContent ?? ""),
+      loadWords: [...document.querySelectorAll("[data-loads] li")].map((n) => n.textContent ?? ""),
     }));
     expect(state.metric).toMatch(/^\d+:\d{2}$/);
     // Decoration is gone…

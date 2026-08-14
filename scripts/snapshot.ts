@@ -97,9 +97,15 @@ function transientOf(config: ExperimentConfig) {
   for (let i = 0; i < SEEDS; i += 1) {
     deltas.push(intervene({ ...config, seed: config.seed + i * SEED_STRIDE }).deltaPercent);
   }
+  const stayerCost = (route: "north" | "south"): number =>
+    warm.after.routeMeans[route] - warm.before.routeMeans[route];
   return {
     beforeSeconds: round(warm.before.meanTravelTime),
     afterSeconds: round(warm.after.meanTravelTime),
+    /** Extra seconds borne by the drivers who never changed route — the punchline. */
+    stayerCostSeconds: round(Math.min(stayerCost("north"), stayerCost("south"))),
+    stayerCostNorth: round(stayerCost("north")),
+    stayerCostSouth: round(stayerCost("south")),
     deltaPercent: round(warm.deltaPercent),
     shortcutShare: Math.round(warm.after.shares.shortcut * 100),
     settledPercent: round(holds.longPercent),

@@ -73,6 +73,9 @@ export const EXPERIMENT = {
     "target": {
       "beforeSeconds": 331.4,
       "afterSeconds": 352.5,
+      "stayerCostSeconds": 22.4,
+      "stayerCostNorth": 22.4,
+      "stayerCostSouth": 25.1,
       "deltaPercent": 6.4,
       "shortcutShare": 40,
       "settledPercent": 3.1,
@@ -83,6 +86,9 @@ export const EXPERIMENT = {
     "control": {
       "beforeSeconds": 318.6,
       "afterSeconds": 309.9,
+      "stayerCostSeconds": -0.1,
+      "stayerCostNorth": -0.1,
+      "stayerCostSouth": 5.3,
       "deltaPercent": -2.7,
       "shortcutShare": 37,
       "settledPercent": -2.5,

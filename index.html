@@ -6,99 +6,105 @@
     <title>One More Road</title>
     <meta
       name="description"
-      content="The commute is five and a half minutes. A new link would make it four. Build it and watch what happens."
+      content="Two roads into town, and both of them work. A new link would make the trip shorter. Build it and watch what happens."
     />
     <link rel="stylesheet" href="./styles.css" />
   </head>
-  <body>
+  <body data-act="commute">
     <a class="skip-link" href="#stage">Skip to the road network</a>
 
     <header class="masthead">
       <nav aria-label="Primary">
         <a href="./" class="masthead__home">One More Road</a>
       </nav>
+      <!-- Five beats. Decorative here; the same position is announced as text in
+           the live region, so a screen reader is told where it is too. -->
+      <ol class="progress" data-progress aria-hidden="true">
+        <li class="progress__beat"></li>
+        <li class="progress__beat"></li>
+        <li class="progress__beat"></li>
+        <li class="progress__beat"></li>
+        <li class="progress__beat"></li>
+      </ol>
     </header>
 
     <main>
-      <h1 class="lede">
-        Five and a half minutes into town.<br />
-        There's an obvious way to make it four.
-      </h1>
+      <div class="layout">
+      <div class="act">
+        <p class="act__step" data-step>One of five</p>
+        <h1 class="act__headline" data-headline tabindex="-1">Two ways into town. Both of them work.</h1>
+        <p class="act__body" data-body>
+          Every driver crosses one narrow bridge, then takes a long ring road. The dotted link would
+          let them use both bridges and skip both rings — about half a minute quicker, on an empty road.
+        </p>
+      </div>
 
       <section class="stage" id="stage" aria-label="The road network">
         <div class="stage__figure" data-figure></div>
-
-        <div class="stage__readout">
-          <p class="metric">
-            <span class="metric__value" data-metric-value>—</span>
-            <span class="metric__unit">min</span>
-            <span class="metric__label" data-metric-label>average commute</span>
-          </p>
-
-          <p class="metric metric--before" data-before hidden>
-            <span class="metric__value" data-before-value>—</span>
-            <span class="metric__unit">min</span>
-            <span class="metric__label">before the road was built</span>
-          </p>
-
-          <div class="chart-holder" data-chart></div>
-
-          <h2 class="readout__heading">Which way people go</h2>
-          <ul class="routes" data-routes>
-            <li>
-              <button type="button" class="route" data-route="north">
-                <span class="route__name">North Ring way</span>
-                <span class="route__share" data-share="north">—</span>
-              </button>
-            </li>
-            <li>
-              <button type="button" class="route" data-route="south">
-                <span class="route__name">South Ring way</span>
-                <span class="route__share" data-share="south">—</span>
-              </button>
-            </li>
-            <li data-route-row="shortcut" hidden>
-              <button type="button" class="route" data-route="shortcut">
-                <span class="route__name">Across the new link</span>
-                <span class="route__share" data-share="shortcut">—</span>
-              </button>
-            </li>
-          </ul>
-
-          <h2 class="readout__heading">How each road is running</h2>
-          <ul class="loads" data-loads></ul>
-        </div>
       </section>
+
+      <div class="readout">
+        <p class="metric">
+          <span class="metric__value" data-metric-value>—</span>
+          <span class="metric__label" data-metric-label>average commute</span>
+        </p>
+        <p class="metric metric--before" data-before hidden>
+          <span class="metric__value" data-before-value>—</span>
+          <span class="metric__label">before you built it</span>
+        </p>
+      </div>
 
       <p class="sr-only" aria-live="polite" data-announce></p>
 
-      <section class="verdict" data-verdict hidden>
-        <h2 class="verdict__headline" data-verdict-headline tabindex="-1"></h2>
-        <p class="verdict__body" data-verdict-body></p>
-
-        <div class="chain" data-chain hidden>
-          <h3 class="chain__heading">What happened, in order</h3>
-          <ol class="chain__steps">
-            <li>The new link looked quicker, because on an empty road it is.</li>
-            <li>Drivers tried it, got home sooner, and told their estimate so.</li>
-            <li>More drivers switched — until nearly everyone used <em>both</em> narrow bridges.</li>
-            <li>Queues stood behind both bridges instead of one.</li>
-            <li>Every route now crosses a queue. Including the ones nobody changed.</li>
-          </ol>
-          <p class="chain__kicker">
-            The new link never jammed. Look at it — it is the emptiest road on the map. It did not
-            add traffic. It changed where traffic chose to go.
-          </p>
-        </div>
-      </section>
-
-      <section class="decision" aria-label="Your decision">
-        <p class="decision__prompt" data-prompt>
-          Every driver crosses one narrow bridge, then takes a long ring road. The dotted link would
-          let them use both bridges and skip both rings — about a minute quicker, on an empty road.
-        </p>
+      <div class="decision">
         <button type="button" class="action" data-action>Build the road</button>
         <p class="decision__note" data-note hidden></p>
+      </div>
+
+      <div class="detail">
+        <div class="chart-holder" data-chart></div>
+
+        <h2 class="detail__heading">Which way people go</h2>
+        <ul class="routes" data-routes>
+          <li>
+            <button type="button" class="route" data-route="north">
+              <span class="route__name">Over the north bridge</span>
+              <span class="route__bar" aria-hidden="true"><i data-bar="north"></i></span>
+              <span class="route__share" data-share="north">—</span>
+              <span class="route__time" data-time="north"></span>
+            </button>
+          </li>
+          <li>
+            <button type="button" class="route" data-route="south">
+              <span class="route__name">Over the south bridge</span>
+              <span class="route__bar" aria-hidden="true"><i data-bar="south"></i></span>
+              <span class="route__share" data-share="south">—</span>
+              <span class="route__time" data-time="south"></span>
+            </button>
+          </li>
+          <li data-route-row="shortcut" hidden>
+            <button type="button" class="route route--new" data-route="shortcut">
+              <span class="route__name">Across the new link</span>
+              <span class="route__bar" aria-hidden="true"><i data-bar="shortcut"></i></span>
+              <span class="route__share" data-share="shortcut">—</span>
+              <span class="route__time" data-time="shortcut"></span>
+            </button>
+          </li>
+        </ul>
+        <p class="detail__hint">Point at a route to see which roads it uses.</p>
+
+        <!-- Sighted readers get this at the roads themselves, on the map. This is the
+             same information for a screen reader, which cannot see a label change. -->
+        <h2 class="sr-only">How each road is running</h2>
+        <ul class="sr-only" data-loads></ul>
+      </div>
+
+      </div>
+
+      <section class="finding" data-finding hidden>
+        <p class="finding__lead" data-finding-lead></p>
+        <ul class="finding__rows" data-finding-rows></ul>
+        <p class="finding__kicker" data-finding-kicker></p>
       </section>
 
       <section class="closing" data-closing hidden>
@@ -110,9 +116,8 @@
         </p>
         <p class="closing__body">
           It is not a law that new roads make traffic worse. In this same network, with the same
-          simulation, light traffic makes the link a genuine improvement
-          <span data-control-line></span>. Whether it helps depends on how close the roads already
-          are to their limits.
+          simulation, light traffic makes the link a real improvement<span data-control-line></span>.
+          Whether it helps depends on how close the roads already are to their limits.
         </p>
       </section>
 

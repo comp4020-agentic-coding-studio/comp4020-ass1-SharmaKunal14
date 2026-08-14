@@ -253,6 +253,25 @@ describe("building the road on a running network", () => {
     ).toBeLessThan(2.5);
   });
 
+  it("leaves even the drivers who never switched worse off", () => {
+    // The actual sting of Braess, and the claim the page makes hardest. It is not
+    // enough that the average rose: the people who kept their old route have to be
+    // slower too, or "everyone got home later" is false. Checked on every seed,
+    // because a claim that holds on average is not the claim being made.
+    for (let i = 0; i < 5; i += 1) {
+      const run = intervene({ ...TARGET, seed: TARGET.seed + i * 7919 });
+      for (const route of ["north", "south"] as const) {
+        const before = run.before.routeMeans[route];
+        const after = run.after.routeMeans[route];
+        expect(
+          after,
+          `seed ${i}: drivers still on the ${route} route went ${before.toFixed(0)}s → ` +
+            `${after.toFixed(0)}s, so "everyone got home later" would be false`,
+        ).toBeGreaterThan(before);
+      }
+    }
+  });
+
   it("closing the road again re-routes nobody onto a road that is gone", () => {
     const network = networkOf(TARGET);
     const sim = simulationFor(TARGET, true);

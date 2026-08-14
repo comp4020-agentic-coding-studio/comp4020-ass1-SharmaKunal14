@@ -3,15 +3,24 @@
 :root {
   --ink: #16181d;
   --ink-soft: #5a6070;
-  --ink-faint: #8a90a0;
+
+  /* Solved against --paper for WCAG AA, not chosen by eye: --ink-faint carries
+     every label and caption on the page and was failing at 2.95:1, and --road is
+     the primary object, which was almost invisible at 1.90:1. spec/page.test.ts
+     recomputes these from this file so they cannot drift back. */
+  --ink-faint: #6a6f7b;
   --paper: #f7f6f2;
-  --rule: #d9d6cd;
-  --road: #b9b5a9;
+  --rule: #b6b4ac;
+  --road: #8e8b82;
   --road-slow: #8a5a2b;
   --road-crawl: #7a2e22;
   --connector: #1f6f8b;
   --accent: #1a1c22;
   --focus: #1f6f8b;
+
+  /* Font stacks as tokens: they were repeated inline in a dozen rules. */
+  --serif: ui-serif, georgia, "Times New Roman", serif;
+  --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --step-0: clamp(0.95rem, 0.9rem + 0.2vw, 1.05rem);
   --step-1: clamp(1.1rem, 1rem + 0.5vw, 1.35rem);
   --step-2: clamp(1.5rem, 1.2rem + 1.6vw, 2.4rem);
@@ -22,10 +31,10 @@
   :root {
     --ink: #eceae4;
     --ink-soft: #a8adba;
-    --ink-faint: #767c8b;
+    --ink-faint: #7b8190;
     --paper: #14161a;
-    --rule: #2b2f37;
-    --road: #4c5158;
+    --rule: #42464d;
+    --road: #61666c;
     --road-slow: #c8874a;
     --road-crawl: #d9614b;
     --connector: #57b6d4;
@@ -40,12 +49,21 @@
   box-sizing: border-box;
 }
 
+/*
+ * `[hidden]` is a user-agent rule, so any `display` set by a class beats it. The
+ * before/after figure is a flex row and stayed on screen through the opening beat,
+ * showing "— before you built it" before anything had been built.
+ */
+[hidden] {
+  display: none !important;
+}
+
 body {
   margin: 0;
   padding: 0;
   background: var(--paper);
   color: var(--ink);
-  font-family: ui-serif, Georgia, "Times New Roman", serif;
+  font-family: var(--serif);
   font-size: var(--step-0);
   line-height: 1.55;
   /* stylelint-disable-next-line property-no-vendor-prefix -- the unprefixed
@@ -63,12 +81,6 @@ main {
 /* Any grid or flex child that can hold nowrap content needs this, or it sets the
    track's minimum from its own min-content width and the page scrolls sideways at
    390px with no rule in the CSS naming a fixed width. */
-.stage > *,
-.load,
-.route {
-  min-width: 0;
-}
-
 .skip-link {
   position: absolute;
   left: -9999px;
@@ -107,10 +119,14 @@ main {
   max-width: 68rem;
   margin: 0 auto;
   padding: 1.2rem clamp(1rem, 4vw, 2.5rem) 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
 }
 
 .masthead__home {
-  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--sans);
   font-size: 0.75rem;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -122,46 +138,138 @@ main {
   color: var(--ink);
 }
 
-/* ---------------------------------------------------------------------- lede */
+/* ----------------------------------------------------------------------- act */
 
-.lede {
+.act {
+  grid-area: act;
+  margin: clamp(1.1rem, 4vh, 2.2rem) 0 clamp(1rem, 2.5vh, 1.6rem);
+  max-width: 34em;
+}
+
+.act__step {
+  font-family: var(--sans);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin: 0 0 0.5rem;
+}
+
+.act__headline {
   font-size: var(--step-3);
-  line-height: 1.03;
-  letter-spacing: -0.02em;
+  line-height: 1.04;
+  letter-spacing: -0.022em;
   font-weight: 500;
-  margin: clamp(1.5rem, 5vh, 3rem) 0 clamp(1.2rem, 3vh, 2rem);
-  max-width: 22em;
+  margin: 0;
   text-wrap: balance;
+}
+
+.act__body {
+  font-size: var(--step-1);
+  color: var(--ink-soft);
+  margin: 0.7rem 0 0;
+  max-width: 32em;
+  text-wrap: pretty;
+}
+
+/* Five beats, filling as the story advances. Never the only signal — the step
+   label says "Three of five" in words and the live region announces it. */
+.progress {
+  display: flex;
+  gap: 6px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.progress__beat {
+  width: 26px;
+  height: 3px;
+  background: var(--rule);
+  transition: background 300ms ease;
+}
+
+.progress__beat--done {
+  background: var(--ink-faint);
+}
+
+.progress__beat--now {
+  background: var(--ink);
 }
 
 /* --------------------------------------------------------------------- stage */
 
-.stage {
+/*
+ * One grid for the whole instrument, so the phone can put the decision where a
+ * phone needs it. Measured before this existed: the button sat 1325px down a
+ * 844px screen, so the only action on the page was off screen until you scrolled.
+ * Desktop keeps the network large on the left with the numbers beside it; phone
+ * runs headline → network → number → button → detail, which fits the fold.
+ */
+.layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 17rem);
-  gap: clamp(1rem, 2.5vw, 2rem);
+  gap: clamp(0.9rem, 2vw, 1.6rem) clamp(1rem, 2.5vw, 2rem);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 16rem);
+  grid-template-areas:
+    "act    act"
+    "figure key"
+    "figure detail"
+    "decide decide";
   align-items: start;
-  border-top: 1px solid var(--rule);
-  padding-top: 1.2rem;
 }
 
-@media (width < 60rem) {
-  .stage {
+@media (width < 62rem) {
+  .layout {
     grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "act"
+      "figure"
+      "key"
+      "decide"
+      "detail";
   }
 }
 
+.stage {
+  grid-area: figure;
+  min-width: 0;
+  border-top: 1px solid var(--rule);
+  padding-top: 1rem;
+}
+
+.readout {
+  grid-area: key;
+  min-width: 0;
+  font-family: var(--sans);
+}
+
+.decision {
+  grid-area: decide;
+  min-width: 0;
+  max-width: 34rem;
+}
+
+.detail {
+  grid-area: detail;
+  min-width: 0;
+  font-family: var(--sans);
+  border-top: 1px solid var(--rule);
+  padding-top: 0.9rem;
+}
+
 .stage__figure {
-  /* The aspect ratio is what the layout choice reads, so it must be set here and
-     not inferred from content. */
-  aspect-ratio: 25 / 13;
+  /* Sized to sit alongside the numbers without leaving a hole under the map, and
+     capped on a phone so the button stays above the fold. */
+  aspect-ratio: 16 / 10;
   width: 100%;
 }
 
-@media (width < 60rem) {
+@media (width < 62rem) {
   .stage__figure {
-    aspect-ratio: 5 / 7;
-    max-height: 62vh;
+    /* Square, matching the tall viewBox. No height cap: a cap makes this box
+       landscape, which used to flip the phone onto the wide arrangement. */
+    aspect-ratio: 1 / 1;
     margin-inline: auto;
   }
 }
@@ -233,7 +341,7 @@ main {
 }
 
 .throat__label {
-  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--sans);
   font-size: 13px;
   font-weight: 600;
   fill: var(--ink-faint);
@@ -264,7 +372,7 @@ svg[data-layout="tall"] .throat__label {
 
 .node__label,
 .road-label {
-  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--sans);
   fill: var(--ink);
   paint-order: stroke;
   stroke: var(--paper);
@@ -298,8 +406,28 @@ svg[data-layout="tall"] .road-label {
 
 /* ------------------------------------------------------------------- readout */
 
-.stage__readout {
-  font-family: ui-sans-serif, system-ui, sans-serif;
+
+
+.detail__heading {
+  font-family: var(--sans);
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  font-weight: 600;
+  margin: 1.5rem 0 0.5rem;
+}
+
+.detail__hint {
+  font-size: 0.72rem;
+  color: var(--ink-faint);
+  margin: 0.5rem 0 0;
+}
+
+@media (hover: none) {
+  .detail__hint::after {
+    content: " Tap to keep it lit.";
+  }
 }
 
 .metric {
@@ -311,16 +439,11 @@ svg[data-layout="tall"] .road-label {
 }
 
 .metric__value {
-  font-family: ui-serif, Georgia, serif;
-  font-size: var(--step-2);
+  font-family: var(--serif);
+  font-size: clamp(2.4rem, 1.6rem + 3.4vw, 3.6rem);
   font-variant-numeric: tabular-nums;
   line-height: 1;
   letter-spacing: -0.01em;
-}
-
-.metric__unit {
-  font-size: 0.8rem;
-  color: var(--ink-faint);
 }
 
 .metric__label {
@@ -329,6 +452,10 @@ svg[data-layout="tall"] .road-label {
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--ink-faint);
+}
+
+.metric--before {
+  margin-top: 0.2rem;
 }
 
 .metric--before .metric__value {
@@ -375,7 +502,7 @@ svg[data-layout="tall"] .road-label {
 }
 
 .chart__marker-label {
-  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--sans);
   font-size: 9px;
   fill: var(--ink-faint);
   letter-spacing: 0.06em;
@@ -398,98 +525,92 @@ svg[data-layout="tall"] .road-label {
   margin: 1.4rem 0 0.4rem;
 }
 
-.routes,
-.loads {
+.routes {
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
 .route {
-  display: flex;
-  justify-content: space-between;
-  gap: 0.5rem;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 2.6rem 3rem;
+  grid-template-areas:
+    "name share time"
+    "bar  bar   bar";
+  align-items: baseline;
+  gap: 0.3rem 0.5rem;
   width: 100%;
-  padding: 0.3rem 0;
+
+  /* 44px minimum touch target, which a 0.3rem-padded row was not. */
+  min-height: 44px;
+  padding: 0.45rem 0;
   background: none;
   border: 0;
   border-bottom: 1px solid var(--rule);
   font: inherit;
-  font-size: 0.88rem;
+  font-size: 0.85rem;
   color: var(--ink);
   text-align: left;
   cursor: pointer;
+  transition: color 160ms ease;
 }
 
-.route__share {
-  font-variant-numeric: tabular-nums;
+.route__name {
+  grid-area: name;
   color: var(--ink-soft);
 }
 
-.load {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(5.6rem, auto);
-  gap: 0.2rem 0.5rem;
-  padding: 0.3rem 0;
-  border-bottom: 1px solid var(--rule);
-  font-size: 0.82rem;
-}
-
-.load__name {
+.route:hover .route__name,
+.route[aria-pressed="true"] .route__name {
   color: var(--ink);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
 }
 
-.load__bar {
-  grid-column: 1 / -1;
-  grid-row: 2;
+.route__share {
+  grid-area: share;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.route__time {
+  grid-area: time;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-faint);
+  font-size: 0.78rem;
+}
+
+.route__bar {
+  grid-area: bar;
   display: block;
   height: 3px;
   background: var(--rule);
 }
 
-.load__bar i {
+.route__bar i {
   display: block;
   height: 100%;
-  width: 4%;
   background: var(--ink-soft);
-  transition: width 400ms ease;
+  transform-origin: left;
+  transform: scaleX(0);
+  transition: transform 400ms ease;
 }
 
-.load__state {
-  text-align: right;
-  color: var(--ink-faint);
-  font-variant-numeric: tabular-nums;
-  font-size: 0.75rem;
+.route--new .route__bar i {
+  background: var(--connector);
 }
 
-.load--slow .load__bar i {
-  background: var(--road-slow);
-}
 
-.load--crawling .load__bar i {
-  background: var(--road-crawl);
-}
-
-.load--slow .load__state,
-.load--crawling .load__state {
-  color: var(--ink);
-}
 
 /* ------------------------------------------------------------------ decision */
 
-.decision {
-  margin: clamp(1.5rem, 4vh, 2.6rem) 0 0;
-  max-width: 34rem;
-}
-
-.decision__prompt {
-  font-size: var(--step-1);
-  margin: 0 0 1.1rem;
-  text-wrap: pretty;
-}
-
 .action {
-  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--sans);
   font-size: 0.82rem;
   font-weight: 650;
   letter-spacing: 0.12em;
@@ -517,7 +638,7 @@ svg[data-layout="tall"] .road-label {
 }
 
 .decision__note {
-  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--sans);
   font-size: 0.85rem;
   color: var(--ink-soft);
   margin: 0.4rem 0 0;
@@ -555,7 +676,7 @@ svg[data-layout="tall"] .road-label {
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--ink-faint);
-  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--sans);
   font-weight: 600;
   margin: 1.6rem 0 0.6rem;
 }
@@ -565,7 +686,7 @@ svg[data-layout="tall"] .road-label {
   letter-spacing: -0.015em;
   text-transform: none;
   color: var(--ink);
-  font-family: ui-serif, Georgia, serif;
+  font-family: var(--serif);
   font-weight: 500;
   margin: 0 0 0.8rem;
 }
@@ -590,7 +711,7 @@ svg[data-layout="tall"] .road-label {
 /* --------------------------------------------------------------------- notes */
 
 .notes__disclosure summary {
-  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--sans);
   font-size: 0.8rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -623,7 +744,7 @@ svg[data-layout="tall"] .road-label {
   margin: 0 auto;
   padding: 2rem clamp(1rem, 4vw, 2.5rem) 3rem;
   border-top: 1px solid var(--rule);
-  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--sans);
   font-size: 0.75rem;
   color: var(--ink-faint);
 }
@@ -643,5 +764,189 @@ svg[data-layout="tall"] .road-label {
 
   .action:hover {
     transform: none;
+  }
+}
+
+/* Matched to the hover rule's specificity and placed after it, so the link keeps
+   its own colour whether or not it is hovered. */
+.route.route--new .route__name {
+  color: var(--connector);
+}
+
+/* -------------------------------------------------------- spotlight and hover */
+
+/* A beat points at the picture instead of describing it: the roads the story is
+   about stay full strength, the rest recede. Never the only cue — the copy names
+   them too. */
+.network--spotlight .road:not(.road--spot) {
+  opacity: 0.32;
+}
+
+.network--spotlight .road-label:not(.road-label--spot) {
+  opacity: 0.4;
+}
+
+
+
+.road-hit {
+  fill: none;
+  stroke: transparent;
+
+  /* Fat enough to point at and to hit with a thumb; the visible road is 5px. */
+  stroke-width: 30px;
+  cursor: pointer;
+  pointer-events: stroke;
+}
+
+.network--emphasising .road:not(.road--emphasis) {
+  opacity: 0.28;
+}
+
+.road--emphasis {
+  opacity: 1;
+}
+
+.road-label__name {
+  fill: var(--ink-soft);
+}
+
+.road-label--spot .road-label__name {
+  fill: var(--ink);
+  font-weight: 600;
+}
+
+.road-label__state {
+  fill: var(--road-slow);
+  font-weight: 600;
+  font-size: 0.82em;
+}
+
+.road--crawling ~ .road-label__state,
+.road-label--spot .road-label__state {
+  fill: var(--road-crawl);
+}
+
+/* ----------------------------------------------------------------- the finding */
+
+.finding {
+  margin-top: clamp(1.4rem, 4vh, 2.4rem);
+  padding-top: 1.3rem;
+  border-top: 1px solid var(--rule);
+  max-width: 42rem;
+}
+
+.finding__lead {
+  font-size: var(--step-1);
+  margin: 0 0 1.2rem;
+  text-wrap: pretty;
+}
+
+.finding__rows {
+  list-style: none;
+  margin: 0 0 1.2rem;
+  padding: 0;
+  font-family: var(--sans);
+  font-size: 0.86rem;
+}
+
+.finding__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 3.2rem 3.2rem 3.2rem;
+  gap: 0.6rem;
+  align-items: baseline;
+  padding: 0.55rem 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.finding__who {
+  color: var(--ink-soft);
+  min-width: 0;
+}
+
+.finding__then,
+.finding__now,
+.finding__gap {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.finding__then {
+  color: var(--ink-faint);
+}
+
+.finding__gap {
+  font-weight: 700;
+}
+
+.finding__row--worse .finding__gap {
+  color: var(--road-crawl);
+}
+
+.finding__row--worse .finding__gap::before {
+  /* An arrow as well as a colour, so the direction survives being seen in
+     greyscale or by someone who cannot separate the two hues. */
+  content: "▲ ";
+  font-size: 0.8em;
+}
+
+.finding__kicker {
+  margin: 0;
+  border-left: 2px solid var(--connector);
+  padding-left: 1rem;
+  color: var(--ink-soft);
+  text-wrap: pretty;
+}
+
+@media (width < 34rem) {
+  .finding__row {
+    grid-template-columns: minmax(0, 1fr) 3rem 3rem;
+    grid-template-areas:
+      "who  then now"
+      "gap  gap  gap";
+  }
+
+  .finding__who {
+    grid-area: who;
+  }
+
+  .finding__then {
+    grid-area: then;
+  }
+
+  .finding__now {
+    grid-area: now;
+  }
+
+  .finding__gap {
+    grid-area: gap;
+    text-align: left;
+  }
+}
+
+/* --------------------------------------------------- short viewports */
+
+/*
+ * The whole loop — headline, network, number, button — has to be reachable without
+ * scrolling, and the marking viewports are fixed heights. Measured: at 1440×900 the
+ * button sat 58px below the fold and on a 390×844 phone 33px below it, purely
+ * because the headline and its margins are sized for a tall screen. So the type
+ * scale answers to height as well as width.
+ */
+@media (height < 60rem) {
+  .act {
+    margin-block: 0.7rem 0.5rem;
+  }
+
+  .act__headline {
+    font-size: clamp(1.55rem, 1.1rem + 2.2vw, 2.5rem);
+  }
+
+  .act__body {
+    font-size: var(--step-0);
+    margin-top: 0.5rem;
+  }
+
+  .metric__value {
+    font-size: clamp(2rem, 1.4rem + 2.4vw, 2.9rem);
   }
 }

@@ -1,54 +1,42 @@
-// Wires the simulation to the page. This file owns the narrative state machine
-// and nothing else: it reads simulation state and writes DOM, never the reverse.
+// Wires the simulation to the page. This file owns the narrative and nothing else:
+// it reads simulation state and writes DOM, never the reverse.
 
 import { TARGET, networkOf } from "./src/experiment/config.ts";
 import { EXPERIMENT } from "./src/experiment/result.generated.ts";
 import { formatDuration } from "./src/experiment/metrics.ts";
-import { LiveRun, TIME_SCALE, WINDOW_TRIPS } from "./src/live.ts";
+import { LiveRun, TIME_SCALE } from "./src/live.ts";
 import type { LinkId, RouteId } from "./src/sim/network.ts";
 import { DEFAULT_THROAT, linkFreeFlowTime } from "./src/sim/network.ts";
+import { ACTS, STORY, shouldAdvance } from "./src/story.ts";
+import type { ActId } from "./src/story.ts";
 import { Chart } from "./src/view/chart.ts";
-import { Scene, ROAD_NAMES } from "./src/view/scene.ts";
-import { layoutFor } from "./src/view/layout.ts";
+import { Scene, ROAD_NAMES, describeLoad } from "./src/view/scene.ts";
+import { currentLayout } from "./src/view/layout.ts";
 
 /**
  * Simulated seconds of settled morning peak to run before the visitor sees
- * anything. Without it the first twenty seconds of the page are a network filling
- * up from empty, and the average commute on screen means nothing yet.
+ * anything, so the page opens on a real average rather than an empty map.
  */
-const PREROLL = 900;
+const PREROLL_FILL = 400;
+const PREROLL_SETTLED = 700;
 
-/**
- * Simulated seconds before the verdict may be drawn at all, and the point at
- * which it is drawn regardless.
- *
- * The reveal waits for the readout to *settle*, not for a countdown — see
- * `LiveRun.hasSettledSince`. These only bound the wait: long enough that a
- * verdict is never drawn on an average that has not caught up, capped so an
- * unlucky run cannot leave a visitor watching forever.
- */
-const ADAPT_MIN = 1100;
-const ADAPT_MAX = 2600;
-/** The same, for the recovery after the road closes. */
-const RECOVER_MIN = 800;
-const RECOVER_MAX = 1800;
+/** Trips needed before "since you built it" is an average rather than an anecdote. */
+const ANCHOR_MINIMUM = 8;
 
-type Phase = "before" | "adapting" | "worse" | "recovering" | "done";
+const LOAD_ORDER: readonly LinkId[] = ["SA", "BT", "AT", "SB", "AB"];
+const ROUTES: readonly RouteId[] = ["north", "south", "shortcut"];
 
 /**
  * `?speed=N` compresses wall time without touching the simulation: same fixed
- * timestep, same seed, same schedule, same simulated seconds. It exists so the
- * browser tests can watch a full 900-second adaptation in a couple of seconds
- * instead of thirty-six, and so this is iterable by hand. It cannot change a
- * result — only how long you wait for it.
+ * timestep, same seed, same schedule, same simulated seconds. It exists so browser
+ * tests can watch a full adjustment in seconds, and so this is iterable by hand. It
+ * cannot change a result — only how long you wait for it.
  */
 function requestedTimeScale(): number {
   const raw = new URLSearchParams(window.location.search).get("speed");
   const parsed = raw === null ? Number.NaN : Number.parseFloat(raw);
   return Number.isFinite(parsed) ? parsed : TIME_SCALE;
 }
-
-const LOAD_ORDER: readonly LinkId[] = ["SA", "BT", "AT", "SB", "AB"];
 
 function need<T extends Element>(selector: string): T {
   const found = document.querySelector<T>(selector);
@@ -58,20 +46,22 @@ function need<T extends Element>(selector: string): T {
 
 const ui = {
   figure: need<HTMLElement>("[data-figure]"),
+  step: need<HTMLElement>("[data-step]"),
+  headline: need<HTMLElement>("[data-headline]"),
+  body: need<HTMLElement>("[data-body]"),
+  progress: need<HTMLElement>("[data-progress]"),
   metric: need<HTMLElement>("[data-metric-value]"),
   metricLabel: need<HTMLElement>("[data-metric-label]"),
   before: need<HTMLElement>("[data-before]"),
   beforeValue: need<HTMLElement>("[data-before-value]"),
   loads: need<HTMLUListElement>("[data-loads]"),
-  routes: need<HTMLElement>("[data-routes]"),
   shortcutRow: need<HTMLElement>('[data-route-row="shortcut"]'),
-  prompt: need<HTMLElement>("[data-prompt]"),
   action: need<HTMLButtonElement>("[data-action]"),
   note: need<HTMLElement>("[data-note]"),
-  verdict: need<HTMLElement>("[data-verdict]"),
-  verdictHeadline: need<HTMLElement>("[data-verdict-headline]"),
-  verdictBody: need<HTMLElement>("[data-verdict-body]"),
-  chain: need<HTMLElement>("[data-chain]"),
+  finding: need<HTMLElement>("[data-finding]"),
+  findingLead: need<HTMLElement>("[data-finding-lead]"),
+  findingRows: need<HTMLElement>("[data-finding-rows]"),
+  findingKicker: need<HTMLElement>("[data-finding-kicker]"),
   closing: need<HTMLElement>("[data-closing]"),
   closingName: need<HTMLElement>("[data-closing-name]"),
   controlLine: need<HTMLElement>("[data-control-line]"),
@@ -82,98 +72,94 @@ const ui = {
 const network = networkOf(TARGET);
 const scene = new Scene(ui.figure);
 const chart = new Chart(ui.chart);
+const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+
 let run = new LiveRun(TARGET, requestedTimeScale());
-let phase: Phase = "before";
-let phaseStartedAt = 0;
+let act: ActId = "commute";
+let actStartedAt = 0;
 let baselineSeconds = Number.NaN;
+let baselineByRoute: Partial<Record<RouteId, number>> = {};
 let anchoredLabel = "average commute";
 
 // ------------------------------------------------------------------- rendering
 
 function applyLayout(): void {
-  const box = ui.figure.getBoundingClientRect();
   scene.setLayout(
-    layoutFor(box.width || 1, box.height || 1),
+    currentLayout(),
     {
       streetLength: network.links.SA.length,
       throatStart: network.links.SA.bottleneck?.start ?? network.links.SA.length,
     },
     network,
   );
+  scene.spotlight(STORY[act].spotlight);
+  scene.setConnectorOpen(run.connectorOpen);
 }
 
+/** The road-state list, visually hidden: the map carries this for sighted readers. */
 function renderLoads(): void {
   if (ui.loads.children.length === 0) {
     for (const id of LOAD_ORDER) {
       const row = document.createElement("li");
-      row.className = "load";
       row.dataset.load = id;
-      row.innerHTML =
-        `<span class="load__name"></span>` +
-        `<span class="load__bar" aria-hidden="true"><i></i></span>` +
-        `<span class="load__state"></span>`;
-      const name = row.querySelector<HTMLElement>(".load__name");
-      if (name !== null) name.textContent = ROAD_NAMES[id];
       ui.loads.append(row);
     }
   }
   for (const id of LOAD_ORDER) {
     const row = ui.loads.querySelector<HTMLElement>(`[data-load="${id}"]`);
     if (row === null) continue;
-    const isConnector = id === "AB";
-    row.hidden = isConnector && !run.connectorOpen;
-    const ratio = run.congestionOf(id);
-    const bar = row.querySelector<HTMLElement>(".load__bar i");
-    if (bar !== null) bar.style.width = `${Math.min(100, (ratio - 1) * 90 + 4).toFixed(0)}%`;
-    const state = row.querySelector<HTMLElement>(".load__state");
-    if (state !== null) state.textContent = describeLoad(ratio);
-    row.classList.toggle("load--slow", ratio > 1.25);
-    row.classList.toggle("load--crawling", ratio > 1.8);
+    row.hidden = id === "AB" && !run.connectorOpen;
+    const words = describeLoad(run.congestionOf(id)) || "free flowing";
+    const next = `${ROAD_NAMES[id]}: ${words}`;
+    if (row.textContent !== next) row.textContent = next;
   }
 }
 
-/** Words, not just a colour or a bar: the state has to survive being read aloud. */
-function describeLoad(ratio: number): string {
-  if (ratio < 1.08) return "free flowing";
-  if (ratio < 1.25) return "slowing";
-  if (ratio < 1.8) return `${ratio.toFixed(1)}× slower`;
-  return `queueing, ${ratio.toFixed(1)}× slower`;
+function renderRoutes(): void {
+  for (const route of ROUTES) {
+    const share = run.shareOf(route);
+    const cell = document.querySelector<HTMLElement>(`[data-share="${route}"]`);
+    if (cell !== null) cell.textContent = `${Math.round(share * 100)}%`;
+    const bar = document.querySelector<HTMLElement>(`[data-bar="${route}"]`);
+    if (bar !== null) bar.style.transform = `scaleX(${share.toFixed(3)})`;
+    // Each route's own current time is what carries the punchline: the drivers who
+    // never switched can be seen getting slower, not just told about it.
+    const time = document.querySelector<HTMLElement>(`[data-time="${route}"]`);
+    if (time !== null) {
+      const mean = run.meanSinceAnchorFor(route);
+      const ready = run.tripsSinceAnchorFor(route) >= 6 && Number.isFinite(mean);
+      time.textContent = ready ? formatDuration(mean) : "";
+    }
+  }
+  ui.shortcutRow.hidden = !run.connectorOpen;
 }
-
-/** Trips needed before "since you built it" is an average rather than an anecdote. */
-const ANCHOR_MINIMUM = 8;
 
 function renderReadout(): void {
   // The headline is the running average since the last decision, not a rolling
-  // window: a converging number cannot contradict the verdict a minute later.
-  //
-  // For the first few seconds after a decision, nobody has completed a trip since
-  // it, so that average does not exist yet. Rather than blank the number at the
-  // exact moment the visitor acts, fall back to the recent-arrivals average — and
-  // move the label with it, so the figure on screen always matches its caption.
+  // window: a converging number cannot contradict the verdict a minute later. For
+  // the first few seconds after a decision that average does not exist yet, so fall
+  // back to the recent-arrivals average and move the label with it, keeping the
+  // figure and its caption in agreement.
   const anchored = run.meanSinceAnchor();
   const ready = run.anchoredTrips >= ANCHOR_MINIMUM && Number.isFinite(anchored);
   const mean = ready ? anchored : run.meanTravelTime();
   ui.metric.textContent = Number.isFinite(mean) ? formatDuration(mean) : "—";
-  ui.metricLabel.textContent = ready ? anchoredLabel : "average commute, recent arrivals";
-  for (const route of ["north", "south", "shortcut"] as const) {
-    const cell = document.querySelector<HTMLElement>(`[data-share="${route}"]`);
-    if (cell !== null) cell.textContent = `${Math.round(run.shareOf(route) * 100)}%`;
-  }
-  ui.shortcutRow.hidden = !run.connectorOpen;
+  ui.metricLabel.textContent =
+    ready || act === "commute" ? anchoredLabel : "average commute, recent arrivals";
   chart.render(run, baselineSeconds);
+  renderRoutes();
   renderLoads();
+  // The finding quotes the same average as the headline, live. It used to freeze at
+  // the instant the beat opened, so the two disagreed by ten seconds on screen.
+  if (act === "worse") drawFinding(false);
 }
 
-// -------------------------------------------------------------------- phases
+// ----------------------------------------------------------------------- acts
 
 function announce(message: string): void {
   ui.announce.textContent = message;
 }
 
-const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-
-/** Bring a newly revealed region into view and put focus on it. */
 function reveal(heading: HTMLElement): void {
   heading.scrollIntoView({
     behavior: reducedMotion.matches ? "auto" : "smooth",
@@ -182,179 +168,182 @@ function reveal(heading: HTMLElement): void {
   heading.focus({ preventScroll: true });
 }
 
-function setPhase(next: Phase): void {
-  phase = next;
-  phaseStartedAt = run.simTime;
-  document.body.dataset.phase = next;
+function enter(next: ActId): void {
+  act = next;
+  actStartedAt = run.simTime;
+  const beat = STORY[next];
+  document.body.dataset.act = next;
 
-  if (next === "adapting") {
-    anchoredLabel = "average commute since you built it";
-    ui.action.hidden = true;
-    ui.note.hidden = false;
-    ui.note.textContent = "The link is open. Drivers are finding out whether it is quicker.";
-    announce("The road is open. Drivers are starting to change route.");
+  ui.step.textContent = beat.step;
+  ui.headline.textContent = beat.headline;
+  if (beat.body !== undefined) ui.body.textContent = beat.body;
+  ui.body.hidden = beat.body === undefined;
+  scene.spotlight(beat.spotlight);
+
+  for (const [index, dot] of [...ui.progress.children].entries()) {
+    dot.classList.toggle("progress__beat--done", index < ACTS.indexOf(next));
+    dot.classList.toggle("progress__beat--now", index === ACTS.indexOf(next));
   }
 
-  if (next === "worse") {
-    drawVerdict();
-    ui.action.hidden = false;
-    ui.action.textContent = "Close the road";
-    ui.note.hidden = true;
-    // Move focus to the reveal, not to the button: a keyboard visitor should meet
-    // the outcome, and the next Tab from here is "Close the road".
-    reveal(ui.verdictHeadline);
-  }
+  // Hand focus to the headline before hiding the button. Hiding a focused element
+  // drops focus to <body>, which stranded a keyboard visitor for the whole
+  // adjustment: their place was gone and Tab restarted from the top of the page.
+  // The headline is where they should be anyway — it is what just changed.
+  const hadFocus = document.activeElement === ui.action;
+  ui.action.hidden = beat.action === null;
+  if (beat.action !== null) ui.action.textContent = beat.action;
+  ui.note.hidden = beat.action !== null;
+  if (hadFocus && beat.action === null) ui.headline.focus({ preventScroll: true });
 
-  if (next === "recovering") {
-    anchoredLabel = "average commute since you closed it";
-    run.setAnchor(run.simTime);
-    ui.action.hidden = true;
-    ui.note.hidden = false;
-    ui.note.textContent = "The link is shut. Drivers are going back to what they knew.";
-    announce("The road is closed again. Watch the average come back down.");
-  }
-
-  if (next === "done") {
-    ui.closing.hidden = false;
-    reveal(ui.closingName);
-    ui.action.hidden = false;
-    ui.action.textContent = "Run it again";
-    ui.note.hidden = true;
-    announce(
-      `With the link closed again the average commute is ${formatDuration(run.meanSinceAnchor())}. ` +
-        `This is Braess's paradox.`,
-    );
-  }
+  if (next === "worse") drawFinding(true);
+  if (next === "closed") ui.finding.hidden = true;
+  announce(`${beat.step}. ${beat.headline}`);
+  if (next === "worse") reveal(ui.headline);
 }
 
-function drawVerdict(): void {
+/** Live commentary while a beat plays, so a visitor knows what to watch. */
+function narrate(): void {
+  const share = Math.round(run.shareOf("shortcut") * 100);
+  let next = "";
+  if (act === "trying") {
+    next =
+      share < 4
+        ? "The link is open — nobody has tried it yet. Drivers only know the roads they have driven."
+        : `${share}% have switched, and for them it really is quicker.`;
+  } else if (act === "switching") {
+    next = `${share}% now cross both bridges instead of one. Watch the bridges.`;
+  } else if (act === "closed") {
+    next =
+      share > 5
+        ? `The link is shut. ${share}% of recent arrivals still crossed it before it closed.`
+        : "The link is shut and everyone is back on the roads they started with.";
+  }
+  if (next !== "" && ui.note.textContent !== next) ui.note.textContent = next;
+}
+
+function drawFinding(announceIt: boolean): void {
   const now = run.meanSinceAnchor();
   const delta = now - baselineSeconds;
-  const percent = (delta / baselineSeconds) * 100;
   ui.before.hidden = false;
   ui.beforeValue.textContent = formatDuration(baselineSeconds);
-  ui.verdict.hidden = false;
-  ui.chain.hidden = false;
+  ui.finding.hidden = false;
 
-  // The copy is written from what this run measured, not from what we hoped it
-  // would. A live run is one sample and its average wanders; if it came out flat
-  // the page says so and leans on the controlled experiment instead of claiming
-  // something the visitor cannot see.
-  const equilibrium = EXPERIMENT.target.seeds.meanPercent;
-  if (delta > 4) {
-    ui.verdictHeadline.textContent = "You built the road. Everyone got home later.";
-    ui.verdictBody.textContent =
-      `The average commute went from ${formatDuration(baselineSeconds)} to ` +
-      `${formatDuration(now)} — ${Math.round(delta)} seconds worse, ` +
-      `${percent.toFixed(1)}% — with exactly the same number of drivers on exactly the same ` +
-      `network, plus one short road that nobody is queueing on. ` +
-      `Some of that is the upheaval: drivers are still re-learning, and the adjustment is the ` +
-      `worst part of it. Left alone for long enough this network settles about ` +
-      `${equilibrium}% worse than it started. Both numbers are worse. Nobody ends up better off.`;
-  } else if (delta > -4) {
-    ui.verdictHeadline.textContent = "You built the road. Nobody got home sooner.";
-    ui.verdictBody.textContent =
-      `This run came out about level: ${formatDuration(baselineSeconds)} before, ` +
-      `${formatDuration(now)} now. A single run is one sample and its average wanders by more ` +
-      `than the effect. Run as a controlled experiment over ${EXPERIMENT.target.seeds.count} ` +
-      `seeds, the same network settles ${EXPERIMENT.target.seeds.meanPercent}% worse with the ` +
-      `link open — worse on every seed.`;
-  } else {
-    ui.verdictHeadline.textContent = "In this run, the road helped.";
-    ui.verdictBody.textContent =
-      `${formatDuration(baselineSeconds)} before, ${formatDuration(now)} now. That happens: the ` +
-      `effect is a few per cent and one run is one sample. Across ` +
-      `${EXPERIMENT.target.seeds.count} seeds the same network settles ` +
-      `${EXPERIMENT.target.seeds.meanPercent}% worse with the link open.`;
+  ui.findingLead.textContent =
+    delta > 4
+      ? `Same drivers, same roads, plus one short road nobody is queueing on — and the average ` +
+        `commute went from ${formatDuration(baselineSeconds)} to ${formatDuration(now)}.`
+      : `This run came out close to level: ${formatDuration(baselineSeconds)} before, ` +
+        `${formatDuration(now)} now. One run is one sample. Over ` +
+        `${EXPERIMENT.target.seeds.count} seeds the same network settles ` +
+        `${EXPERIMENT.target.seeds.meanPercent}% worse, and worse on every seed.`;
+
+  // The punchline. It is not that the average rose — it is that the drivers who
+  // never changed route are slower too, and that is measured, not asserted.
+  ui.findingRows.replaceChildren();
+  const stayers: number[] = [];
+  for (const route of ["north", "south"] as const) {
+    const before = baselineByRoute[route];
+    const after = run.meanSinceAnchorFor(route);
+    if (before === undefined || !Number.isFinite(before) || !Number.isFinite(after)) continue;
+    const gap = Math.round(after - before);
+    const row = document.createElement("li");
+    row.className = gap > 0 ? "finding__row finding__row--worse" : "finding__row";
+    for (const [cls, text] of [
+      ["finding__who", route === "north" ? "Kept to the north bridge" : "Kept to the south bridge"],
+      ["finding__then", formatDuration(before)],
+      ["finding__now", formatDuration(after)],
+      ["finding__gap", gap > 0 ? `+${gap}s` : `${gap}s`],
+    ] as const) {
+      const cell = document.createElement("span");
+      cell.className = cls;
+      cell.textContent = text;
+      row.append(cell);
+    }
+    ui.findingRows.append(row);
+    if (gap > 0) stayers.push(gap);
   }
-  announce(`${ui.verdictHeadline.textContent} ${ui.verdictBody.textContent}`);
+
+  ui.findingKicker.textContent =
+    stayers.length === 2
+      ? `That is the part that stings. The drivers who never changed route are ` +
+        `${stayers[0]} and ${stayers[1]} seconds slower as well. Nobody switched onto a slow ` +
+        `road — the link is the emptiest road on the map. They all just ended up sharing two ` +
+        `bridges instead of one.`
+      : `Look at the link itself: it is the emptiest road on the map. It did not add traffic. It ` +
+        `changed where traffic chose to go, and both bridges now carry everyone.`;
+
+  // Announced once, on arrival. The numbers keep updating while this beat is on
+  // screen; re-announcing every frame would make the live region unusable.
+  if (announceIt) announce(`${ui.findingLead.textContent} ${ui.findingKicker.textContent}`);
 }
 
 function onAction(): void {
-  if (phase === "before") {
+  if (act === "commute") {
     baselineSeconds = run.meanSinceAnchor();
-    run.setAnchor(run.simTime);
+    baselineByRoute = {
+      north: run.meanSinceAnchorFor("north"),
+      south: run.meanSinceAnchorFor("south"),
+    };
     ui.before.hidden = false;
     ui.beforeValue.textContent = formatDuration(baselineSeconds);
     run.setConnectorOpen(true);
     scene.setConnectorOpen(true);
-    setPhase("adapting");
+    anchoredLabel = "average commute since you built it";
+    run.setAnchor(run.simTime);
+    enter("trying");
     return;
   }
-  if (phase === "worse") {
+  if (act === "worse") {
     run.setConnectorOpen(false);
     scene.setConnectorOpen(false);
-    setPhase("recovering");
+    anchoredLabel = "average commute since you closed it";
+    run.setAnchor(run.simTime);
+    enter("closed");
     return;
   }
-  if (phase === "done") {
+  if (act === "closed") {
     run = new LiveRun(TARGET, requestedTimeScale());
     preroll();
     scene.setConnectorOpen(false);
-    ui.verdict.hidden = true;
+    ui.finding.hidden = true;
     ui.closing.hidden = true;
     ui.before.hidden = true;
     baselineSeconds = Number.NaN;
-    ui.action.textContent = "Build the road";
+    baselineByRoute = {};
     anchoredLabel = "average commute";
-    run.setAnchor(run.simTime);
-    setPhase("before");
+    enter("commute");
   }
 }
 
-function tickPhase(): void {
-  const elapsed = run.simTime - phaseStartedAt;
-  if (phase === "adapting") {
-    const enough = run.anchoredTrips >= 40;
-    if (
-      elapsed >= ADAPT_MAX ||
-      (elapsed >= ADAPT_MIN && enough && run.hasSettledSince(phaseStartedAt))
-    ) {
-      setPhase("worse");
-    } else {
-      describeAdapting();
-    }
-  } else if (phase === "recovering") {
-    if (elapsed >= RECOVER_MAX || (elapsed >= RECOVER_MIN && run.hasSettledSince(phaseStartedAt))) {
-      setPhase("done");
-    } else {
-      describeRecovering();
-    }
+function tick(): void {
+  const elapsed = run.simTime - actStartedAt;
+  if (act === "trying" && shouldAdvance("trying", run, elapsed)) {
+    enter("switching");
+    return;
   }
-}
-
-/**
- * Say what is happening while the network adjusts, in words that name what to
- * watch. Timed at real speed there is a stretch where the number barely moves,
- * and a visitor with no idea what to look at reads that as nothing happening.
- */
-function describeAdapting(): void {
-  const share = Math.round(run.shareOf("shortcut") * 100);
-  const next =
-    share < 6
-      ? "The link is open — but nobody has tried it yet. Drivers only know the routes they have actually driven."
-      : share < 22
-        ? `${share}% have switched to the new link, and it is quicker for them. Watch the two bridges.`
-        : `${share}% now cross both bridges instead of one. Watch what that does to the queues.`;
-  if (ui.note.textContent !== next) ui.note.textContent = next;
-}
-
-function describeRecovering(): void {
-  const share = Math.round(run.shareOf("shortcut") * 100);
-  const next =
-    share > 6
-      ? `The link is shut. ${share}% of recent arrivals still came across it before it closed.`
-      : "The link is shut and everyone is back on the routes they started with.";
-  if (ui.note.textContent !== next) ui.note.textContent = next;
+  if (act === "switching" && shouldAdvance("switching", run, elapsed)) {
+    enter("worse");
+    return;
+  }
+  narrate();
+  // The name is revealed once the recovery has settled, not the instant the road
+  // shuts: watching it come back down is part of the story, not a footnote.
+  if (act === "closed" && ui.closing.hidden && shouldAdvance("closed", run, elapsed)) {
+    ui.closing.hidden = false;
+    reveal(ui.closingName);
+  }
 }
 
 // ---------------------------------------------------------------------- driver
 
 function preroll(): void {
-  // Fast-forward with no rendering: a few thousand fixed steps, so the visitor
-  // arrives at a settled peak hour rather than an empty map. Uses the uncapped
-  // entry point — the per-frame cap is for backgrounded tabs, not for this.
-  run.advanceSimulated(PREROLL);
+  // Two stages on purpose. The first fills an empty network, which is not
+  // representative of anything; the anchor is set after it, so the average on
+  // screen at the first frame already rests on hundreds of settled trips instead
+  // of counting up from nothing while the visitor watches.
+  run.advanceSimulated(PREROLL_FILL);
+  run.setAnchor(run.simTime);
+  run.advanceSimulated(PREROLL_SETTLED);
 }
 
 let previous = 0;
@@ -362,10 +351,10 @@ function frame(now: number): void {
   const wall = previous === 0 ? 0 : (now - previous) / 1000;
   previous = now;
   run.advance(wall);
-  // Exposed so a browser test can assert simulated time is actually advancing —
-  // a frozen simulation and a slow one look identical from the outside.
+  // Exposed so a browser test can assert simulated time is really advancing — a
+  // frozen simulation and a slow one look identical from the outside.
   (window as unknown as { simulatedSeconds?: number }).simulatedSeconds = run.simTime;
-  tickPhase();
+  tick();
   scene.render(run, network);
   renderReadout();
   requestAnimationFrame(frame);
@@ -379,7 +368,7 @@ function fillModelNote(): void {
   const target = EXPERIMENT.target;
   const control = EXPERIMENT.control;
   ui.controlLine.textContent =
-    `— ${Math.abs(control.deltaSeconds).toFixed(0)} seconds faster on average at ` +
+    ` — ${Math.abs(control.deltaSeconds).toFixed(0)} seconds faster on average at ` +
     `${control.demandPerHour} cars an hour, against ${target.demandPerHour} here`;
 
   need<HTMLElement>("[data-model-note]").innerHTML = `
@@ -408,31 +397,36 @@ function fillModelNote(): void {
     uncertainty. A route nobody has driven starts at its empty-road time, which is why the new link
     gets tried at all. Nobody is ever sent down it.</p>
 
-    <p><strong>The before and after are the same experiment.</strong> One frozen configuration is
-    run twice. Same demand, same drivers, same departure times, same random seed — each driver even
-    carries the same pre-drawn number for choosing its route. The only difference permitted is
-    whether the link is offered. A test compares the two configurations and fails if anything else
+    <p><strong>The before and after are the same experiment.</strong> One frozen configuration,
+    measured twice in one run: settle with the link shut, measure, open it on the running network,
+    let drivers re-learn, measure again. Same demand, same drivers, same departure times, same
+    random seed — each driver even carries the same pre-drawn number for choosing its route. The
+    only difference permitted is whether the link is offered, and a test fails if anything else
     differs.</p>
 
-    <p><strong>What the numbers are.</strong> The figure on screen is a live run: the mean of the
-    last ${WINDOW_TRIPS} completed trips, with simulated time running ${run.timeScale}× real time. One
-    run is one sample and its average wanders by more than the effect, so the claim comes from the
-    controlled experiment instead: over ${target.seeds.count} seeds the link makes the average
-    commute <strong>${target.seeds.meanPercent}% worse</strong> (standard deviation
+    <p><strong>What the numbers are.</strong> The figure on screen is a live run: the mean of
+    everyone who has departed since your last decision, with simulated time running
+    ${run.timeScale}× real time. One run is one sample, so the claim comes from the controlled
+    experiment instead: over ${target.seeds.count} seeds the link makes the average commute
+    <strong>${target.seeds.meanPercent}% worse</strong> (standard deviation
     ${target.seeds.sdPercent}%, range ${target.seeds.minPercent}% to ${target.seeds.maxPercent}%,
-    and worse on every single seed). A result is only reported if the run settled and every measured
-    trip finished — and only if it survives being re-run over a longer horizon, because a queue that
-    is still growing looks exactly like a worse equilibrium if you stop watching at the right
-    moment.</p>
+    worse on every single seed). A result is reported only if the run settled, every measured trip
+    finished, and it survives being re-run over a longer horizon — because a queue that is still
+    growing looks exactly like a worse equilibrium if you stop watching at the right moment.</p>
 
     <p><strong>Two honest numbers, not one.</strong> Opening the link on a town whose drivers have
-    already settled produces an adjustment period worse than the equilibrium it decays to:
-    about <strong>${EXPERIMENT.transient.target.deltaPercent}%</strong> at first, easing to about
-    <strong>${EXPERIMENT.transient.target.settledPercent}%</strong> once everyone has re-learned.
-    That is what you watched, because waiting out the decay takes minutes of real time. We report
-    both rather than the flattering one, and we checked they agree: run the experiment the other way
-    round — with the link present from the very start, so nobody has habits to unlearn — and it lands
-    on the same equilibrium. Both numbers are worse than before the link existed.</p>
+    already settled produces an adjustment period worse than the equilibrium it decays to: about
+    <strong>${EXPERIMENT.transient.target.deltaPercent}%</strong> at first, easing to a few per cent
+    once everyone has re-learned (${EXPERIMENT.transient.target.settledPercent}% in this run's
+    long-horizon check, ${target.seeds.meanPercent}% averaged over ${target.seeds.count} seeds).
+    That is what you watched, because waiting out the decay takes minutes of real time. We checked
+    the two agree: run it the other way round, with the link there from the start so nobody has
+    habits to unlearn, and it lands on the same equilibrium.</p>
+
+    <p><strong>Everyone, not just the average.</strong> At the new equilibrium the drivers who never
+    changed route are slower too — about
+    ${Math.abs(EXPERIMENT.transient.target.stayerCostSeconds)} seconds worse for the better-off of
+    the two, on every seed tested. That is what makes it a paradox rather than a trade.</p>
 
     <p><strong>The effect is a few per cent, not a catastrophe.</strong>
     ${formatDuration(target.closedSeconds)} to ${formatDuration(target.openSeconds)}. Braess's
@@ -463,18 +457,31 @@ ui.action.addEventListener("click", onAction);
 
 for (const button of document.querySelectorAll<HTMLButtonElement>("[data-route]")) {
   const route = button.dataset.route as RouteId;
-  const on = (): void => scene.highlightRoute(route);
-  const off = (): void => scene.highlightRoute(null);
-  button.addEventListener("pointerenter", on);
-  button.addEventListener("pointerleave", off);
-  button.addEventListener("focus", on);
-  button.addEventListener("blur", off);
+  button.setAttribute("aria-pressed", "false");
+  button.addEventListener("pointerenter", () => scene.highlightRoute(route));
+  button.addEventListener("pointerleave", () => {
+    if (button.getAttribute("aria-pressed") !== "true") scene.highlightRoute(null);
+  });
+  button.addEventListener("focus", () => scene.highlightRoute(route));
+  button.addEventListener("blur", () => {
+    if (button.getAttribute("aria-pressed") !== "true") scene.highlightRoute(null);
+  });
+  // Tapping is not hovering. On a touch screen the only way to inspect a route is
+  // to tap it, so a tap latches the same highlight rather than doing nothing.
+  button.addEventListener("click", () => {
+    const already = button.getAttribute("aria-pressed") === "true";
+    for (const other of document.querySelectorAll("[data-route]")) {
+      other.setAttribute("aria-pressed", "false");
+    }
+    button.setAttribute("aria-pressed", already ? "false" : "true");
+    scene.highlightRoute(already ? null : route);
+  });
 }
 
 let resizePending = false;
 window.addEventListener("resize", () => {
-  // Geometry only. The simulation is not told the window changed, because it has
-  // no reason to care — which is what makes a resize mid-run harmless.
+  // Geometry only. The simulation is not told the window changed, because it has no
+  // reason to care — which is what makes a resize mid-run harmless.
   if (resizePending) return;
   resizePending = true;
   requestAnimationFrame(() => {
@@ -486,8 +493,5 @@ window.addEventListener("resize", () => {
 applyLayout();
 fillModelNote();
 preroll();
-// Start the running average from the settled peak the preroll produced, so the
-// baseline the visitor compares against is a real average and not one trip.
-run.setAnchor(run.simTime);
-setPhase("before");
+enter("commute");
 requestAnimationFrame(frame);

@@ -64,10 +64,26 @@ export const NODES: Record<LayoutKind, Record<NodeId, Point>> = {
 };
 
 /** The viewBox each arrangement draws into. */
+/**
+ * Must match the aspect ratio the figure is given in CSS (16/10 wide, 5/6 tall).
+ * `preserveAspectRatio="meet"` letterboxes any mismatch, which showed up as a band
+ * of empty paper under the network that looked like a layout bug and was one.
+ */
 export const VIEWBOX: Record<LayoutKind, { readonly width: number; readonly height: number }> = {
-  wide: { width: 1000, height: 520 },
-  tall: { width: 560, height: 820 },
+  wide: { width: 1000, height: 625 },
+  tall: { width: 600, height: 600 },
 };
+
+/**
+ * The one breakpoint, shared with the stylesheet.
+ *
+ * It has to be shared. The arrangement used to be chosen from the measured aspect
+ * of the figure while CSS sized that figure from the viewport width, so the two
+ * could disagree: capping the figure's height on a phone made its box landscape,
+ * the wide arrangement was selected, and the portrait network vanished on the one
+ * viewport it exists for. Both sides now read this string.
+ */
+export const NARROW_QUERY = "(width < 62rem)";
 
 /** A half turn about the centre of the unit square. */
 function halfTurn(p: Point): Point {
@@ -180,9 +196,9 @@ export function alongSamples(samples: readonly Point[], fraction: number): Point
 }
 
 /**
- * Which arrangement suits a viewport. Called on resize; the simulation is not
+ * Which arrangement suits the viewport. Called on resize; the simulation is not
  * told, because it has no reason to care.
  */
-export function layoutFor(width: number, height: number): LayoutKind {
-  return width >= height * 1.15 ? "wide" : "tall";
+export function currentLayout(): LayoutKind {
+  return window.matchMedia(NARROW_QUERY).matches ? "tall" : "wide";
 }

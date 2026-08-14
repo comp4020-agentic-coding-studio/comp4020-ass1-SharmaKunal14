@@ -107,28 +107,22 @@ export class Chart {
     this.caption.textContent = this.describe(samples, baselineSeconds);
   }
 
-  /** The trend in words, because the drawing is hidden from screen readers. */
+  /**
+   * What the trace is, in words, because the drawing is hidden from screen readers.
+   *
+   * Deliberately quotes no number. It used to report its own rolling average, which
+   * sat on screen next to the headline figure showing something different — two
+   * numbers, both labelled as the average commute, four seconds apart. The chart's
+   * job is the shape of the change; the headline owns the figure.
+   */
   private describe(samples: readonly Sample[], baselineSeconds: number): string {
-    const now = samples[samples.length - 1].mean;
+    const minutes = Math.round(
+      (samples[samples.length - 1].simTime - samples[0].simTime) / 60,
+    );
     if (!Number.isFinite(baselineSeconds)) {
-      return `Average commute over the last ${Math.round(
-        (samples[samples.length - 1].simTime - samples[0].simTime) / 60,
-      )} simulated minutes, holding around ${formatDuration(now)}.`;
+      return `Recent arrivals over the last ${minutes} simulated minutes.`;
     }
-    const delta = Math.round(now - baselineSeconds);
-    if (delta > 3) {
-      return `Now ${formatDuration(now)} — ${delta} seconds above the ${formatDuration(
-        baselineSeconds,
-      )} it ran at before. Part of that is drivers still re-learning; it settles lower than this, ` +
-        `but not back down.`;
-    }
-    if (delta < -3) {
-      return `Now ${formatDuration(now)} — ${Math.abs(delta)} seconds below the ${formatDuration(
-        baselineSeconds,
-      )} it ran at before.`;
-    }
-    return `Now ${formatDuration(now)}, level with the ${formatDuration(
-      baselineSeconds,
-    )} it ran at before.`;
+    return `Recent arrivals over the last ${minutes} simulated minutes. Above the dashed line is ` +
+      `slower than before you built it.`;
   }
 }

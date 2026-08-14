@@ -9,7 +9,8 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { JSDOM } from "jsdom";
 import { describe, expect, it } from "vitest";
-import { CONTROL, TARGET } from "../src/experiment/config.ts";
+import { CONTROL, TARGET, networkOf } from "../src/experiment/config.ts";
+import { routeFreeFlowTime } from "../src/sim/network.ts";
 import { compare } from "../src/experiment/run.ts";
 import { EXPERIMENT } from "../src/experiment/result.generated.ts";
 
@@ -50,13 +51,21 @@ describe("the numbers on the page are the numbers we tested", () => {
     expect(EXPERIMENT.control.horizonInvariant).toBe(true);
   });
 
-  it("keeps the headline copy honest about the commute length", () => {
-    // The lede says "five and a half minutes". If calibration moves the baseline
-    // out of that range the copy is wrong, and only a check will notice.
-    const lede = doc.querySelector("h1")?.textContent ?? "";
-    expect(lede).toMatch(/five and a half minutes/i);
-    expect(EXPERIMENT.target.closedSeconds).toBeGreaterThan(315);
-    expect(EXPERIMENT.target.closedSeconds).toBeLessThan(345);
+  it("keeps the opening claim honest about how good the shortcut looks", () => {
+    // The first beat tells the visitor the link is "about half a minute quicker, on
+    // an empty road". That is a measurable claim about this network, and it was
+    // wrong when written — the copy said "about a minute" against a real saving of
+    // 31 seconds. Tie it to the geometry so calibration cannot quietly falsify it.
+    const network = networkOf(TARGET);
+    const saving =
+      routeFreeFlowTime(network, "north") - routeFreeFlowTime(network, "shortcut");
+    const body = doc.querySelector("[data-body]")?.textContent ?? "";
+    expect(body).toMatch(/half a minute/i);
+    expect(
+      saving,
+      `the link's empty-road saving is ${saving.toFixed(0)}s, so "half a minute" is wrong`,
+    ).toBeGreaterThan(20);
+    expect(saving).toBeLessThan(45);
   });
 });
 
@@ -88,7 +97,7 @@ describe("one idea, one mechanic, nothing else", () => {
     // button." Text before the decision is the first thing to bloat, so it is
     // budgeted.
     const lede = words(doc.querySelector("h1")?.textContent ?? "");
-    const prompt = words(doc.querySelector("[data-prompt]")?.textContent ?? "");
+    const prompt = words(doc.querySelector("[data-body]")?.textContent ?? "");
     expect(lede).toBeLessThanOrEqual(20);
     expect(prompt).toBeLessThanOrEqual(45);
     expect(
@@ -208,4 +217,64 @@ describe("the process evidence meets this assignment's own requirements", () => 
   it("has a reflection under the name the marker reads", () => {
     expect(() => readFileSync(resolve("reflections/assignment-1.md"), "utf8")).not.toThrow();
   });
+});
+
+describe("colour contrast meets WCAG AA in both themes", () => {
+  // Recomputed from styles.css rather than trusted, because contrast is the one
+  // design property that is invisible until someone cannot read the page. Two of
+  // these were failing when this was first measured: the token behind every label
+  // (2.95:1) and the token behind the roads themselves (1.90:1).
+  const css = readFileSync(resolve("styles.css"), "utf8");
+
+  function tokensIn(block: string): Record<string, string> {
+    const found: Record<string, string> = {};
+    for (const [, name, hex] of block.matchAll(/--([a-z-]+):\s*(#[0-9a-fA-F]{6})/g)) {
+      found[name] = hex;
+    }
+    return found;
+  }
+
+  function relativeLuminance(hex: string): number {
+    const channels = [1, 3, 5].map((i) => Number.parseInt(hex.slice(i, i + 2), 16) / 255);
+    const linear = channels.map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
+    return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2];
+  }
+
+  function contrast(a: string, b: string): number {
+    const [hi, lo] = [relativeLuminance(a), relativeLuminance(b)].sort((x, y) => y - x);
+    return (hi + 0.05) / (lo + 0.05);
+  }
+
+  // `:root { … }` is the light theme; the dark block overrides a subset of it.
+  const light = tokensIn(css.slice(css.indexOf(":root {"), css.indexOf("@media (prefers-color-scheme: dark)")));
+  const darkBlock = css.slice(css.indexOf("@media (prefers-color-scheme: dark)"));
+  const dark = { ...light, ...tokensIn(darkBlock.slice(0, darkBlock.indexOf("}\n}"))) };
+
+  for (const [theme, tokens] of [
+    ["light", light],
+    ["dark", dark],
+  ] as const) {
+    describe(theme, () => {
+      it("has every text token at 4.5:1 or better against the page", () => {
+        for (const token of ["ink", "ink-soft", "ink-faint"]) {
+          const ratio = contrast(tokens[token], tokens.paper);
+          expect(ratio, `--${token} is ${ratio.toFixed(2)}:1 on --paper, needs 4.5:1`).toBeGreaterThanOrEqual(4.5);
+        }
+      });
+
+      it("has every meaningful graphic at 3:1 or better", () => {
+        // The roads are the primary object and the connector is the thing the
+        // whole page is about; neither may be a subtle tint.
+        for (const token of ["road", "road-slow", "road-crawl", "connector", "focus"]) {
+          const ratio = contrast(tokens[token], tokens.paper);
+          expect(ratio, `--${token} is ${ratio.toFixed(2)}:1 on --paper, needs 3:1`).toBeGreaterThanOrEqual(3);
+        }
+      });
+
+      it("has readable text on the primary action", () => {
+        const ratio = contrast(tokens.paper, tokens.accent);
+        expect(ratio, `button label is ${ratio.toFixed(2)}:1`).toBeGreaterThanOrEqual(4.5);
+      });
+    });
+  }
 });
