@@ -6,7 +6,7 @@
 import { IDM_TABLE_I, idmAcceleration, MAX_DECELERATION, step } from "./idm.ts";
 import type { IdmParams } from "./idm.ts";
 import type { LinkId, Network, NodeId, RouteId } from "./network.ts";
-import { ROUTES_CLOSED, ROUTES_OPEN } from "./network.ts";
+import { headwayAt, ROUTES_CLOSED, ROUTES_OPEN, speedLimitAt } from "./network.ts";
 import { chooseRoute, initialBeliefs, updateBelief } from "./routing.ts";
 import type { Beliefs } from "./routing.ts";
 
@@ -196,19 +196,40 @@ export class Simulation {
     }
   }
 
-  /** First come, first served: nobody overtakes the queue to get on the road. */
+  /**
+   * Let waiting drivers onto the road: first come first served *per road out of
+   * the origin*, not across all of them.
+   *
+   * This queue is one per first link on purpose. Blocking the whole waiting list
+   * on its head vehicle turns the origin into a single server shared by every
+   * route, so a driver heading for an empty parkway sits behind a driver waiting
+   * for a full street — and every route's cost then carries the same shared
+   * wait, which quietly couples routes that share no road. That coupling is what
+   * made the street's own travel time look capped while the delay piled up in an
+   * invisible buffer at the origin.
+   */
   private admitWaiting(): void {
-    while (this.waiting.length > 0) {
-      const vehicle = this.waiting[0];
+    const blocked = new Set<LinkId>();
+    for (let i = 0; i < this.waiting.length; ) {
+      const vehicle = this.waiting[i];
       const first = vehicle.links[0];
+      if (blocked.has(first)) {
+        i += 1;
+        continue;
+      }
       const list = this.byLink[first];
       const back = list[list.length - 1];
-      if (back !== undefined && back.pos < IDM_TABLE_I.s0 + IDM_TABLE_I.vehicleLength) return;
+      if (back !== undefined && back.pos < IDM_TABLE_I.s0 + IDM_TABLE_I.vehicleLength) {
+        // This road is full. Everyone behind who wants *this* road waits too.
+        blocked.add(first);
+        i += 1;
+        continue;
+      }
 
       const limit = this.opts.network.links[first].speedLimit * vehicle.v0Factor;
       vehicle.vel = back === undefined ? limit : Math.min(limit, back.vel);
       vehicle.legEnteredAt = this.t;
-      this.waiting.shift();
+      this.waiting.splice(i, 1);
       list.push(vehicle);
       this.entered += 1;
     }
@@ -240,8 +261,10 @@ export class Simulation {
     const vehicle = list[index];
     const link = this.opts.network.links[vehicle.links[vehicle.leg]];
     const params: IdmParams = {
-      v0: link.speedLimit * vehicle.v0Factor,
-      T: link.headway * vehicle.TFactor,
+      // The desired speed depends on *where* on the link the vehicle is, so a
+      // throat is a place drivers slow down for rather than a number on a road.
+      v0: speedLimitAt(link, vehicle.pos) * vehicle.v0Factor,
+      T: headwayAt(link, vehicle.pos) * vehicle.TFactor,
       a: IDM_TABLE_I.a,
       b: IDM_TABLE_I.b,
       delta: IDM_TABLE_I.delta,

@@ -96,6 +96,61 @@ function sharesOfCohort(cohort: readonly Arrival[]): Record<RouteId, number> {
   return routeShares(counts);
 }
 
+export type HorizonCheck = {
+  readonly ok: boolean;
+  readonly shortPercent: number;
+  readonly longPercent: number;
+  readonly divergence: number;
+  readonly tolerance: number;
+  readonly reason: string;
+};
+
+/**
+ * Is this configuration's result an equilibrium, or just a snapshot of a growing
+ * queue?
+ *
+ * The within-window drift check is not enough, and that is not a hypothetical:
+ * a configuration passed it on 6 of 10 seeds while its effect climbed +20% →
+ * +39% → +50% → +58% as the horizon lengthened. A slow monotone ramp looks flat
+ * inside any one window. The only honest test is whether the *answer* stops
+ * depending on how long you watch — so run the same config over a longer horizon
+ * and require the same result.
+ *
+ * A configuration that fails this may not be quoted. Not with a caveat, not as
+ * "approximately": the number means nothing.
+ */
+export function horizonCheck(
+  config: ExperimentConfig,
+  { stretch = 1.75, tolerance = 0.25 } = {},
+): HorizonCheck {
+  const short = compare(config);
+  const long = compare({
+    ...config,
+    warmup: Math.round(config.warmup * stretch),
+    window: Math.round(config.window * stretch),
+    drain: Math.round(config.drain * stretch),
+  });
+  const scale = Math.max(Math.abs(short.deltaPercent), 1);
+  const divergence = Math.abs(long.deltaPercent - short.deltaPercent) / scale;
+  const ok = divergence <= tolerance && short.usable && long.usable;
+  return {
+    ok,
+    shortPercent: short.deltaPercent,
+    longPercent: long.deltaPercent,
+    divergence,
+    tolerance,
+    reason: ok
+      ? "result holds as the horizon grows"
+      : !short.usable || !long.usable
+        ? "a run did not settle"
+        : `effect moves with the horizon: ${short.deltaPercent.toFixed(1)}% over `
+          + `${config.warmup + config.window + config.drain}s vs `
+          + `${long.deltaPercent.toFixed(1)}% over `
+          + `${Math.round((config.warmup + config.window + config.drain) * stretch)}s `
+          + `(${(divergence * 100).toFixed(0)}% apart) — a growing queue, not an equilibrium`,
+  };
+}
+
 export type Comparison = {
   readonly closed: RunResult;
   readonly open: RunResult;

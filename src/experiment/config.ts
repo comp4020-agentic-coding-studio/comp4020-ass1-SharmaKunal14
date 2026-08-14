@@ -3,8 +3,8 @@
 // whether the connector is on offer. There is deliberately no second scenario
 // object anywhere in this project, because two objects meant to match drift.
 
-import type { Network } from "../sim/network.ts";
-import { buildNetwork, linkCapacity } from "../sim/network.ts";
+import type { Network, ThroatSpec } from "../sim/network.ts";
+import { buildNetwork, DEFAULT_THROAT, linkNarrowestCapacity } from "../sim/network.ts";
 import { IDM_TABLE_I } from "../sim/idm.ts";
 import { clippedNormal, exponential, mulberry32 } from "../sim/rng.ts";
 import type { ScheduledDeparture } from "../sim/engine.ts";
@@ -30,6 +30,7 @@ export type ExperimentConfig = {
     readonly streetLength: number;
     readonly parkwayLength: number;
     readonly connectorLength: number;
+    readonly throat: ThroatSpec;
   };
   readonly driver: {
     readonly v0Sd: number;
@@ -50,27 +51,28 @@ export type ExperimentConfig = {
  * and both stay reproducible because both come from the seed.
  */
 const DRIVER_SPREAD = Object.freeze({
-  v0Sd: 0.1,
-  v0Min: 0.8,
-  v0Max: 1.2,
-  TSd: 0.15,
-  TMin: 0.7,
-  TMax: 1.4,
+  v0Sd: 0.05,
+  v0Min: 0.9,
+  v0Max: 1.1,
+  TSd: 0.08,
+  TMin: 0.85,
+  TMax: 1.2,
 });
 
 const GEOMETRY = Object.freeze({
   streetLength: 1800,
   parkwayLength: 5600,
   connectorLength: 600,
+  throat: DEFAULT_THROAT,
 });
 
 const BASE = {
   dt: 0.25,
-  warmup: 400,
-  window: 800,
-  drain: 700,
-  theta: 0.04,
-  alpha: 0.3,
+  warmup: 900,
+  window: 1200,
+  drain: 1200,
+  theta: 0.015,
+  alpha: 0.1,
   geometry: GEOMETRY,
   driver: DRIVER_SPREAD,
 } as const;
@@ -84,7 +86,7 @@ export const TARGET: ExperimentConfig = Object.freeze({
   ...BASE,
   label: "target",
   seed: 20260817,
-  demandPerHour: 1000,
+  demandPerHour: 860,
 });
 
 /**
@@ -98,7 +100,7 @@ export const CONTROL: ExperimentConfig = Object.freeze({
   ...BASE,
   label: "control",
   seed: 20260817,
-  demandPerHour: 520,
+  demandPerHour: 300,
 });
 
 export function horizonOf(config: ExperimentConfig): number {
@@ -117,7 +119,7 @@ export function networkOf(config: ExperimentConfig): Network {
  */
 export function worstCaseLoad(config: ExperimentConfig): number {
   const network = networkOf(config);
-  const capacity = linkCapacity(
+  const capacity = linkNarrowestCapacity(
     network.links.SA,
     IDM_TABLE_I.s0,
     IDM_TABLE_I.vehicleLength,
