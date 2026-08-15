@@ -96,6 +96,21 @@ export class LiveRun {
     return this.sim.t;
   }
 
+  /**
+   * How far the wall clock has carried us into the step that has not run yet,
+   * 0 to 1. The renderer draws each vehicle this fraction of the way from where it
+   * was to where it is.
+   *
+   * Without this the picture stutters, and measurably so: at 45x compression on a
+   * 120Hz display the accumulator alternates one step, two steps, one step — so a
+   * car's apparent speed swung by 50% every frame while the physics underneath was
+   * perfectly even. Interpolating is a rendering fix for a rendering problem; it
+   * cannot touch a result, because nothing in the simulation reads it.
+   */
+  get stepAlpha(): number {
+    return Math.min(1, Math.max(0, this.accumulator / this.config.dt));
+  }
+
   get connectorOpen(): boolean {
     return this.sim.connectorOpen;
   }

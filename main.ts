@@ -7,8 +7,8 @@ import { formatDuration } from "./src/experiment/metrics.ts";
 import { LiveRun, TIME_SCALE } from "./src/live.ts";
 import type { LinkId, RouteId } from "./src/sim/network.ts";
 import { DEFAULT_THROAT, linkFreeFlowTime } from "./src/sim/network.ts";
-import { ACTS, STORY, shouldAdvance } from "./src/story.ts";
-import type { ActId } from "./src/story.ts";
+import { STATES, STORY, shouldAdvance } from "./src/story.ts";
+import type { Shows, StateId } from "./src/story.ts";
 import { Chart } from "./src/view/chart.ts";
 import { Scene, ROAD_NAMES, describeLoad } from "./src/view/scene.ts";
 import { currentLayout } from "./src/view/layout.ts";
@@ -32,6 +32,13 @@ const ROUTES: readonly RouteId[] = ["north", "south", "shortcut"];
  * tests can watch a full adjustment in seconds, and so this is iterable by hand. It
  * cannot change a result — only how long you wait for it.
  */
+/**
+ * `?nointerp=1` draws the raw simulation state instead of interpolating between
+ * steps. Kept as a diagnostic so the smoothing can be demonstrated rather than
+ * asserted: it makes the stutter reappear on demand.
+ */
+const interpolates = new URLSearchParams(window.location.search).get("nointerp") === null;
+
 function requestedTimeScale(): number {
   const raw = new URLSearchParams(window.location.search).get("speed");
   const parsed = raw === null ? Number.NaN : Number.parseFloat(raw);
@@ -47,9 +54,13 @@ function need<T extends Element>(selector: string): T {
 const ui = {
   figure: need<HTMLElement>("[data-figure]"),
   step: need<HTMLElement>("[data-step]"),
+  clock: need<HTMLElement>("[data-clock]"),
+  routesPanel: need<HTMLElement>("[data-routes-panel]"),
+  chartPanel: need<HTMLElement>("[data-chart-panel]"),
+  why: need<HTMLElement>("[data-why]"),
+  notes: need<HTMLElement>("[data-notes]"),
   headline: need<HTMLElement>("[data-headline]"),
   body: need<HTMLElement>("[data-body]"),
-  progress: need<HTMLElement>("[data-progress]"),
   metric: need<HTMLElement>("[data-metric-value]"),
   metricLabel: need<HTMLElement>("[data-metric-label]"),
   before: need<HTMLElement>("[data-before]"),
@@ -58,12 +69,9 @@ const ui = {
   shortcutRow: need<HTMLElement>('[data-route-row="shortcut"]'),
   action: need<HTMLButtonElement>("[data-action]"),
   note: need<HTMLElement>("[data-note]"),
-  finding: need<HTMLElement>("[data-finding]"),
-  findingLead: need<HTMLElement>("[data-finding-lead]"),
   findingRows: need<HTMLElement>("[data-finding-rows]"),
   findingKicker: need<HTMLElement>("[data-finding-kicker]"),
   closing: need<HTMLElement>("[data-closing]"),
-  closingName: need<HTMLElement>("[data-closing-name]"),
   controlLine: need<HTMLElement>("[data-control-line]"),
   announce: need<HTMLElement>("[data-announce]"),
   chart: need<HTMLElement>("[data-chart]"),
@@ -75,8 +83,8 @@ const chart = new Chart(ui.chart);
 const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
 let run = new LiveRun(TARGET, requestedTimeScale());
-let act: ActId = "commute";
-let actStartedAt = 0;
+let state: StateId = "baseline";
+let stateStartedAt = 0;
 let baselineSeconds = Number.NaN;
 let baselineByRoute: Partial<Record<RouteId, number>> = {};
 let anchoredLabel = "average commute";
@@ -92,7 +100,7 @@ function applyLayout(): void {
     },
     network,
   );
-  scene.spotlight(STORY[act].spotlight);
+  scene.spotlight(STORY[state].spotlight);
   scene.setConnectorOpen(run.connectorOpen);
 }
 
@@ -145,13 +153,22 @@ function renderReadout(): void {
   const mean = ready ? anchored : run.meanTravelTime();
   ui.metric.textContent = Number.isFinite(mean) ? formatDuration(mean) : "—";
   ui.metricLabel.textContent =
-    ready || act === "commute" ? anchoredLabel : "average commute, recent arrivals";
-  chart.render(run, baselineSeconds);
-  renderRoutes();
+    ready || state === "baseline" || state === "proposal"
+      ? anchoredLabel
+      : "average commute, recent arrivals";
+  if (visible.chart === true) chart.render(run, baselineSeconds);
+  if (visible.routes === true) renderRoutes();
   renderLoads();
-  // The finding quotes the same average as the headline, live. It used to freeze at
-  // the instant the beat opened, so the two disagreed by ten seconds on screen.
-  if (act === "worse") drawFinding(false);
+  if (visible.clock === true) {
+    // Simulated time made visible, in the only unit that needs no metaphor: the
+    // peak itself. Nothing here is invented for the sake of a progression device.
+    const minutes = Math.max(0, Math.round((run.simTime - openedAt) / 60));
+    const next = `${minutes} min into the morning peak`;
+    if (ui.clock.textContent !== next) ui.clock.textContent = next;
+  }
+  // The explanation quotes the same average as the headline, live. It used to
+  // freeze when the beat opened, so the two disagreed by ten seconds on screen.
+  if (visible.why === true) drawWhy(false);
 }
 
 // ----------------------------------------------------------------------- acts
@@ -168,74 +185,88 @@ function reveal(heading: HTMLElement): void {
   heading.focus({ preventScroll: true });
 }
 
-function enter(next: ActId): void {
-  act = next;
-  actStartedAt = run.simTime;
-  const beat = STORY[next];
-  document.body.dataset.act = next;
+let visible: Shows = {};
+let openedAt = 0;
 
-  ui.step.textContent = beat.step;
+function enter(next: StateId): void {
+  state = next;
+  stateStartedAt = run.simTime;
+  const beat = STORY[next];
+  visible = beat.shows;
+  document.body.dataset.state = next;
+
+  ui.step.textContent = `${STATES.indexOf(next) + 1} of ${STATES.length} · ${beat.step}`;
   ui.headline.textContent = beat.headline;
   if (beat.body !== undefined) ui.body.textContent = beat.body;
   ui.body.hidden = beat.body === undefined;
   scene.spotlight(beat.spotlight);
+  scene.showRoadState(visible.roadState === true);
 
-  for (const [index, dot] of [...ui.progress.children].entries()) {
-    dot.classList.toggle("progress__beat--done", index < ACTS.indexOf(next));
-    dot.classList.toggle("progress__beat--now", index === ACTS.indexOf(next));
-  }
+  // Progressive disclosure, from the state's own declaration: nothing is on screen
+  // before it has something to explain.
+  ui.before.hidden = visible.before !== true;
+  ui.clock.hidden = visible.clock !== true;
+  ui.routesPanel.hidden = visible.routes !== true;
+  ui.chartPanel.hidden = visible.chart !== true;
+  ui.why.hidden = visible.why !== true;
+  ui.notes.hidden = visible.notes !== true;
+  ui.closing.hidden = next !== "reveal";
 
   // Hand focus to the headline before hiding the button. Hiding a focused element
-  // drops focus to <body>, which stranded a keyboard visitor for the whole
-  // adjustment: their place was gone and Tab restarted from the top of the page.
-  // The headline is where they should be anyway — it is what just changed.
+  // drops focus to <body>, which stranded a keyboard visitor mid-story: their place
+  // was gone and Tab restarted from the top. The headline is where they should be
+  // anyway — it is what just changed.
   const hadFocus = document.activeElement === ui.action;
   ui.action.hidden = beat.action === null;
   if (beat.action !== null) ui.action.textContent = beat.action;
   ui.note.hidden = beat.action !== null;
   if (hadFocus && beat.action === null) ui.headline.focus({ preventScroll: true });
 
-  if (next === "worse") drawFinding(true);
-  if (next === "closed") ui.finding.hidden = true;
+  if (visible.why === true) drawWhy(true);
   announce(`${beat.step}. ${beat.headline}`);
-  if (next === "worse") reveal(ui.headline);
+  if (next === "result" || next === "reveal") reveal(ui.headline);
 }
 
 /** Live commentary while a beat plays, so a visitor knows what to watch. */
 function narrate(): void {
   const share = Math.round(run.shareOf("shortcut") * 100);
   let next = "";
-  if (act === "trying") {
+  if (state === "opening") {
     next =
-      share < 4
-        ? "The link is open — nobody has tried it yet. Drivers only know the roads they have driven."
-        : `${share}% have switched, and for them it really is quicker.`;
-  } else if (act === "switching") {
-    next = `${share}% now cross both bridges instead of one. Watch the bridges.`;
-  } else if (act === "closed") {
+      share < 3
+        ? "Nobody has tried it yet. Drivers only know the roads they have driven."
+        : `${share}% have tried it — and for them it really is quicker.`;
+  } else if (state === "adaptation") {
+    next = `${share}% now cross both bridges instead of one.`;
+  } else if (state === "closed") {
     next =
       share > 5
-        ? `The link is shut. ${share}% of recent arrivals still crossed it before it closed.`
-        : "The link is shut and everyone is back on the roads they started with.";
+        ? `${share}% of recent arrivals still crossed it before it shut.`
+        : "Everyone is back on the roads they started with.";
   }
-  if (next !== "" && ui.note.textContent !== next) ui.note.textContent = next;
+  if (next !== "" && ui.note.textContent !== next) {
+    ui.note.textContent = next;
+    ui.note.hidden = false;
+  }
 }
 
-function drawFinding(announceIt: boolean): void {
+function drawWhy(announceIt: boolean): void {
   const now = run.meanSinceAnchor();
   const delta = now - baselineSeconds;
-  ui.before.hidden = false;
   ui.beforeValue.textContent = formatDuration(baselineSeconds);
-  ui.finding.hidden = false;
 
-  ui.findingLead.textContent =
-    delta > 4
-      ? `Same drivers, same roads, plus one short road nobody is queueing on — and the average ` +
-        `commute went from ${formatDuration(baselineSeconds)} to ${formatDuration(now)}.`
-      : `This run came out close to level: ${formatDuration(baselineSeconds)} before, ` +
-        `${formatDuration(now)} now. One run is one sample. Over ` +
-        `${EXPERIMENT.target.seeds.count} seeds the same network settles ` +
-        `${EXPERIMENT.target.seeds.meanPercent}% worse, and worse on every seed.`;
+  const share = Math.round(run.shareOf("shortcut") * 100);
+  const chain = [
+    "The link was quicker, on an empty road.",
+    `Drivers tried it, got home sooner, and told each other so — ${share}% use it now.`,
+    "But it only reaches Central across the far bridge. Everyone who takes it uses both.",
+    "Two bridges now carry the traffic one used to. The queues are behind the bridges.",
+  ];
+  for (const [index, line] of chain.entries()) {
+    const cell = document.querySelector<HTMLElement>(`[data-why-${index + 1}]`);
+    if (cell !== null && cell.textContent !== line) cell.textContent = line;
+  }
+  void delta;
 
   // The punchline. It is not that the average rose — it is that the drivers who
   // never changed route are slower too, and that is measured, not asserted.
@@ -272,13 +303,10 @@ function drawFinding(announceIt: boolean): void {
       : `Look at the link itself: it is the emptiest road on the map. It did not add traffic. It ` +
         `changed where traffic chose to go, and both bridges now carry everyone.`;
 
-  // Announced once, on arrival. The numbers keep updating while this beat is on
-  // screen; re-announcing every frame would make the live region unusable.
-  if (announceIt) announce(`${ui.findingLead.textContent} ${ui.findingKicker.textContent}`);
 }
 
 function onAction(): void {
-  if (act === "commute") {
+  if (state === "proposal") {
     baselineSeconds = run.meanSinceAnchor();
     baselineByRoute = {
       north: run.meanSinceAnchorFor("north"),
@@ -290,48 +318,50 @@ function onAction(): void {
     scene.setConnectorOpen(true);
     anchoredLabel = "average commute since you built it";
     run.setAnchor(run.simTime);
-    enter("trying");
+    openedAt = run.simTime;
+    enter("opening");
     return;
   }
-  if (act === "worse") {
+  if (state === "result") {
+    enter("explanation");
+    return;
+  }
+  if (state === "explanation") {
     run.setConnectorOpen(false);
     scene.setConnectorOpen(false);
     anchoredLabel = "average commute since you closed it";
     run.setAnchor(run.simTime);
+    openedAt = run.simTime;
     enter("closed");
     return;
   }
-  if (act === "closed") {
+  if (state === "reveal") {
     run = new LiveRun(TARGET, requestedTimeScale());
     preroll();
     scene.setConnectorOpen(false);
-    ui.finding.hidden = true;
-    ui.closing.hidden = true;
-    ui.before.hidden = true;
     baselineSeconds = Number.NaN;
     baselineByRoute = {};
     anchoredLabel = "average commute";
-    enter("commute");
+    enter("baseline");
   }
 }
 
+/** Where each self-advancing state hands over to. */
+const NEXT: Partial<Record<StateId, StateId>> = {
+  baseline: "proposal",
+  opening: "adaptation",
+  adaptation: "result",
+  closed: "reveal",
+};
+
 function tick(): void {
-  const elapsed = run.simTime - actStartedAt;
-  if (act === "trying" && shouldAdvance("trying", run, elapsed)) {
-    enter("switching");
-    return;
-  }
-  if (act === "switching" && shouldAdvance("switching", run, elapsed)) {
-    enter("worse");
+  const elapsed = run.simTime - stateStartedAt;
+  const next = NEXT[state];
+  if (next !== undefined && shouldAdvance(state, run, elapsed)) {
+    enter(next);
     return;
   }
   narrate();
-  // The name is revealed once the recovery has settled, not the instant the road
-  // shuts: watching it come back down is part of the story, not a footnote.
-  if (act === "closed" && ui.closing.hidden && shouldAdvance("closed", run, elapsed)) {
-    ui.closing.hidden = false;
-    reveal(ui.closingName);
-  }
 }
 
 // ---------------------------------------------------------------------- driver
@@ -355,7 +385,7 @@ function frame(now: number): void {
   // frozen simulation and a slow one look identical from the outside.
   (window as unknown as { simulatedSeconds?: number }).simulatedSeconds = run.simTime;
   tick();
-  scene.render(run, network);
+  scene.render(run, network, interpolates ? run.stepAlpha : 1);
   renderReadout();
   requestAnimationFrame(frame);
 }
@@ -493,5 +523,5 @@ window.addEventListener("resize", () => {
 applyLayout();
 fillModelNote();
 preroll();
-enter("commute");
+enter("baseline");
 requestAnimationFrame(frame);

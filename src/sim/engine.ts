@@ -30,6 +30,14 @@ export type Vehicle = {
   leg: number;
   /** metres from the start of the current link, at the front bumper */
   pos: number;
+  /**
+   * Where this vehicle was when the current step began, so a renderer can draw
+   * between two simulation states instead of snapping to whichever one the frame
+   * happened to land on. Simulation-side only in the sense that nothing reads it
+   * to decide anything: it is never an input to the physics.
+   */
+  prevPos: number;
+  prevLeg: number;
   vel: number;
   readonly v0Factor: number;
   readonly TFactor: number;
@@ -186,6 +194,8 @@ export class Simulation {
         links: network.routes[routeId],
         leg: 0,
         pos: 0,
+        prevPos: 0,
+        prevLeg: 0,
         vel: 0,
         v0Factor: departure.v0Factor,
         TFactor: departure.TFactor,
@@ -236,6 +246,14 @@ export class Simulation {
   }
 
   private advance(dt: number): void {
+    // Remember where everything was before it moves. Rendering interpolates
+    // between this and the new state; the physics never looks at it.
+    for (const list of Object.values(this.byLink)) {
+      for (const vehicle of list) {
+        vehicle.prevPos = vehicle.pos;
+        vehicle.prevLeg = vehicle.leg;
+      }
+    }
     // Two passes: every acceleration is computed from the same state, then
     // applied. A single fused pass would let a vehicle react to a leader that
     // had already moved this tick, which makes the result depend on iteration

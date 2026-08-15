@@ -45,6 +45,7 @@ const ROUTE_LINKS: Record<RouteId, readonly LinkId[]> = {
 /** Ceiling on drawn vehicles. Beyond this the picture is a jam either way. */
 const VEHICLE_POOL = 320;
 
+
 function el<K extends keyof SVGElementTagNameMap>(
   name: K,
   attrs: Record<string, string> = {},
@@ -68,8 +69,18 @@ export class Scene {
   private readonly stateLabels = new Map<LinkId, SVGTSpanElement>();
   private readonly hitAreas = new Map<LinkId, SVGPathElement>();
   private samples = new Map<LinkId, readonly Point[]>();
-  private readonly pool: SVGCircleElement[] = [];
+  /**
+   * One circle per vehicle, keyed by its id rather than by draw order.
+   *
+   * Pooling by draw order meant a given circle represented a different car from one
+   * frame to the next as vehicles entered and left, so its shade jumped for no
+   * reason and nothing on screen had a stable identity. Keyed by id, each car keeps
+   * its own node for its whole trip.
+   */
+  private readonly dots = new Map<number, SVGCircleElement>();
+  private readonly spare: SVGCircleElement[] = [];
   private layout: LayoutKind | null = null;
+  private roadStateShown = false;
 
   constructor(host: HTMLElement) {
     this.svg = el("svg", {
@@ -118,6 +129,10 @@ export class Scene {
     this.hitLayer.replaceChildren();
     this.nodeLayer.replaceChildren();
     this.labelLayer.replaceChildren();
+    for (const dot of this.dots.values()) dot.remove();
+    for (const dot of this.spare) dot.remove();
+    this.dots.clear();
+    this.spare.length = 0;
     this.roads.clear();
     this.labels.clear();
     this.stateLabels.clear();
@@ -311,6 +326,19 @@ export class Scene {
     }
   }
 
+  /**
+   * Whether roads report how they are running, annotated at the road.
+   *
+   * Off by default. Five roads each carrying a live status line is the dashboard
+   * this project is not; the state earns its place only once the explanation needs
+   * it, at which point it appears exactly where the thing it describes is.
+   */
+  showRoadState(on: boolean): void {
+    this.roadStateShown = on;
+    if (on) return;
+    for (const label of this.stateLabels.values()) label.textContent = "";
+  }
+
   setConnectorOpen(open: boolean): void {
     this.svg.classList.toggle("network--connector-open", open);
   }
@@ -324,12 +352,12 @@ export class Scene {
     }
   }
 
-  render(run: LiveRun, network: ReturnType<typeof buildNetwork>): void {
+  render(run: LiveRun, network: ReturnType<typeof buildNetwork>, alpha = 1): void {
     for (const [id, path] of this.roads) {
       const ratio = run.congestionOf(id);
       const state = this.stateLabels.get(id);
       if (state !== undefined) {
-        const words = describeLoad(ratio);
+        const words = this.roadStateShown ? describeLoad(ratio) : "";
         if (state.textContent !== words) state.textContent = words;
       }
       // Width carries load as well as colour, so the state does not depend on
@@ -339,6 +367,7 @@ export class Scene {
       path.classList.toggle("road--crawling", ratio > 1.8);
     }
 
+    const seen = new Set<number>();
     let drawn = 0;
     for (const id of LINK_ORDER) {
       const points = this.samples.get(id);
@@ -347,9 +376,17 @@ export class Scene {
       const limit = network.links[id].speedLimit;
       for (const vehicle of run.vehiclesOn(id)) {
         if (drawn >= VEHICLE_POOL) break;
-        const at = alongSamples(points, vehicle.pos / length);
-        const dot = this.vehicleAt(drawn);
-        dot.style.display = "";
+        // Interpolate within the step, except across a junction: a vehicle that
+        // changed link this step has a previous position on a different road, and
+        // blending the two would slide it across open ground.
+        const at = alongSamples(
+          points,
+          (vehicle.prevLeg === vehicle.leg
+            ? vehicle.prevPos + (vehicle.pos - vehicle.prevPos) * alpha
+            : vehicle.pos) / length,
+        );
+        const dot = this.dotFor(vehicle.id);
+        seen.add(vehicle.id);
         dot.setAttribute("cx", at.x.toFixed(1));
         dot.setAttribute("cy", at.y.toFixed(1));
         // Slower vehicles are drawn darker; the bunching is what shows the queue.
@@ -357,21 +394,24 @@ export class Scene {
         drawn += 1;
       }
     }
-    // Hidden, not parked off-canvas: an off-canvas coordinate still renders as a
-    // stray dot in empty space next to the network.
-    for (let i = drawn; i < this.pool.length; i += 1) {
-      this.pool[i].style.display = "none";
+    // Retire the cars that finished this frame. Hidden and reused, not removed:
+    // an off-canvas coordinate still renders as a stray dot beside the network.
+    for (const [id, dot] of this.dots) {
+      if (seen.has(id)) continue;
+      dot.style.display = "none";
+      this.dots.delete(id);
+      this.spare.push(dot);
     }
   }
 
-  private vehicleAt(index: number): SVGCircleElement {
-    let dot = this.pool[index];
-    if (dot === undefined) {
-      dot = el("circle", { class: "vehicle", r: "4.6", cx: "0", cy: "0" });
-      dot.style.display = "none";
-      this.pool[index] = dot;
-      this.vehicleLayer.append(dot);
-    }
+  private dotFor(id: number): SVGCircleElement {
+    const existing = this.dots.get(id);
+    if (existing !== undefined) return existing;
+    const dot =
+      this.spare.pop() ?? el("circle", { class: "vehicle", r: "4.6", cx: "0", cy: "0" });
+    dot.style.display = "";
+    if (dot.parentNode === null) this.vehicleLayer.append(dot);
+    this.dots.set(id, dot);
     return dot;
   }
 }

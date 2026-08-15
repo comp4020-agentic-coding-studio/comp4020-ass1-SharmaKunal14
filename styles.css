@@ -173,31 +173,6 @@ main {
   text-wrap: pretty;
 }
 
-/* Five beats, filling as the story advances. Never the only signal — the step
-   label says "Three of five" in words and the live region announces it. */
-.progress {
-  display: flex;
-  gap: 6px;
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.progress__beat {
-  width: 26px;
-  height: 3px;
-  background: var(--rule);
-  transition: background 300ms ease;
-}
-
-.progress__beat--done {
-  background: var(--ink-faint);
-}
-
-.progress__beat--now {
-  background: var(--ink);
-}
-
 /* --------------------------------------------------------------------- stage */
 
 /*
@@ -214,8 +189,9 @@ main {
   grid-template-areas:
     "act    act"
     "figure key"
-    "figure detail"
-    "decide decide";
+    "figure decide"
+    "figure trace"
+    "detail detail";
   align-items: start;
 }
 
@@ -227,6 +203,7 @@ main {
       "figure"
       "key"
       "decide"
+      "trace"
       "detail";
   }
 }
@@ -253,9 +230,49 @@ main {
 .detail {
   grid-area: detail;
   min-width: 0;
+
+  /* Capped: run full-bleed under the map it reads as a data table, which is the
+     dashboard look this page is trying not to have. */
+  max-width: 34rem;
   font-family: var(--sans);
   border-top: 1px solid var(--rule);
   padding-top: 0.9rem;
+}
+
+.trace {
+  grid-area: trace;
+  min-width: 0;
+}
+
+/* A panel arriving mid-story should not snap into place; it should turn up. */
+.detail,
+.trace,
+.readout,
+.why,
+.closing {
+  animation: settle 420ms ease both;
+}
+
+@keyframes settle {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.clock {
+  font-family: var(--sans);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin: 0.7rem 0 0;
+  font-variant-numeric: tabular-nums;
 }
 
 .stage__figure {
@@ -900,5 +917,67 @@ svg[data-layout="tall"] .road-label {
 
   .metric__value {
     font-size: clamp(2rem, 1.4rem + 2.4vw, 2.9rem);
+  }
+}
+
+/* ------------------------------------------------------------------- the why */
+
+.why {
+  margin-top: clamp(1.4rem, 4vh, 2.4rem);
+  padding-top: 1.3rem;
+  border-top: 1px solid var(--rule);
+  max-width: 42rem;
+}
+
+.why__chain {
+  list-style: none;
+  margin: 0 0 1.4rem;
+  padding: 0;
+  counter-reset: why;
+}
+
+.why__step {
+  position: relative;
+  counter-increment: why;
+  padding: 0 0 0.9rem 2.1rem;
+  color: var(--ink);
+  text-wrap: pretty;
+}
+
+.why__step::before {
+  content: counter(why);
+  position: absolute;
+  left: 0;
+  top: 0.05em;
+  width: 1.4rem;
+  height: 1.4rem;
+  border: 1px solid var(--rule);
+  border-radius: 50%;
+  font-family: var(--sans);
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--ink-faint);
+  display: grid;
+  place-items: center;
+}
+
+/* The thread down the chain, so it reads as a sequence rather than a list. */
+.why__step:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  left: 0.7rem;
+  top: 1.6rem;
+  bottom: 0.2rem;
+  width: 1px;
+  background: var(--rule);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .detail,
+  .trace,
+  .readout,
+  .why,
+  .closing {
+    animation: none;
   }
 }

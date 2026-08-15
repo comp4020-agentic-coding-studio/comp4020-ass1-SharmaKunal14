@@ -92,6 +92,11 @@ async function open(viewport: { width: number; height: number }): Promise<{
     null,
     { timeout: 20_000 },
   );
+  // The opening beat establishes the commute before offering anything; the
+  // decision arrives with the proposal.
+  await page.waitForFunction(() => document.body.dataset.state === "proposal", null, {
+    timeout: 30_000,
+  });
   return { page, errors };
 }
 
@@ -126,7 +131,7 @@ describe.each([
     expect(await overflow(page)).toBe(false);
     // Also with the reveal open, which adds the longest lines on the page.
     await page.locator("[data-action]").click();
-    await page.waitForFunction(() => document.body.dataset.act === "worse", null, {
+    await page.waitForFunction(() => document.body.dataset.state === "result", null, {
       timeout: 90_000,
     });
     expect(await overflow(page)).toBe(false);
@@ -178,13 +183,13 @@ describe("the core interaction works from the keyboard alone", () => {
 
     await page.keyboard.press("Enter");
     // The story advances on measured state, so each beat is waited for by name.
-    await page.waitForFunction(() => document.body.dataset.act === "trying", null, {
+    await page.waitForFunction(() => document.body.dataset.state === "opening", null, {
       timeout: 10_000,
     });
-    await page.waitForFunction(() => document.body.dataset.act === "switching", null, {
+    await page.waitForFunction(() => document.body.dataset.state === "adaptation", null, {
       timeout: 90_000,
     });
-    await page.waitForFunction(() => document.body.dataset.act === "worse", null, {
+    await page.waitForFunction(() => document.body.dataset.state === "result", null, {
       timeout: 90_000,
     });
 
@@ -198,33 +203,41 @@ describe("the core interaction works from the keyboard alone", () => {
       () => document.activeElement?.getAttribute("data-headline") !== null,
     );
     expect(focusedHeadline).toBe(true);
-    const finding = await page.locator("[data-finding-kicker]").textContent();
-    expect(finding?.length ?? 0).toBeGreaterThan(20);
-    // The punchline has to be on the page, with numbers: the drivers who never
-    // switched are slower too.
-    const rows = await page.locator(".finding__row").count();
-    expect(rows).toBe(2);
 
-    // And Tab from the reveal reaches the next action, rather than restarting.
+    // And Tab from the reveal reaches the action, rather than restarting at the
+    // top of the page.
     await page.keyboard.press("Tab");
-    const next = await page.evaluate(
+    const nextIsAction = await page.evaluate(
       () => document.activeElement?.getAttribute("data-action") !== null,
     );
-    expect(next, "Tab from the reveal did not reach the next action").toBe(true);
+    expect(nextIsAction, "Tab from the reveal did not reach the action").toBe(true);
+
+    // The result gives the outcome room before explaining it; the explanation is a
+    // further, deliberate step.
+    await page.keyboard.press("Enter");
+    await page.waitForFunction(() => document.body.dataset.state === "explanation", null, {
+      timeout: 20_000,
+    });
+    // The punchline has to be there, with numbers: the drivers who never switched
+    // are slower too.
+    const rows = await page.locator(".finding__row").count();
+    expect(rows).toBe(2);
+    const kicker = await page.locator("[data-finding-kicker]").textContent();
+    expect(kicker?.length ?? 0).toBeGreaterThan(20);
 
     await page.locator("[data-action]").focus();
     await page.keyboard.press(" ");
-    await page.waitForFunction(() => document.body.dataset.act === "closed", null, {
+    await page.waitForFunction(() => document.body.dataset.state === "closed", null, {
       timeout: 10_000,
     });
     // The name is revealed only once the recovery has settled, not the instant the
     // road shuts.
-    await page.waitForFunction(
-      () => document.querySelector("[data-closing]")?.hasAttribute("hidden") === false,
-      null,
-      { timeout: 90_000 },
-    );
+    await page.waitForFunction(() => document.body.dataset.state === "reveal", null, {
+      timeout: 90_000,
+    });
     expect(await page.locator("[data-closing]").isVisible()).toBe(true);
+    const named = await page.locator("[data-headline]").textContent();
+    expect(named?.toLowerCase()).toContain("braess");
     expect(errors).toEqual([]);
     await page.close();
   }, 90_000);
@@ -234,12 +247,12 @@ describe("resizing mid-interaction", () => {
   it("keeps the phase, the numbers and the running simulation", async () => {
     const { page, errors } = await open(DESKTOP);
     await page.locator("[data-action]").click();
-    await page.waitForFunction(() => document.body.dataset.act === "trying", null, {
+    await page.waitForFunction(() => document.body.dataset.state === "opening", null, {
       timeout: 10_000,
     });
 
     const before = await page.evaluate(() => ({
-      phase: document.body.dataset.act,
+      phase: document.body.dataset.state,
       simTrips: document.querySelectorAll<SVGElement>(".vehicle").length,
       layout: document.querySelector<SVGSVGElement>("svg.network")?.dataset.layout,
     }));
@@ -249,16 +262,22 @@ describe("resizing mid-interaction", () => {
     await page.waitForTimeout(900);
 
     const after = await page.evaluate(() => ({
-      phase: document.body.dataset.act,
+      phase: document.body.dataset.state,
       layout: document.querySelector<SVGSVGElement>("svg.network")?.dataset.layout,
       metric: document.querySelector("[data-metric-value]")?.textContent ?? "",
       connectorVisible:
         document.querySelector("svg.network")?.classList.contains("network--connector-open") ??
         false,
     }));
-    // Geometry changed; the run did not restart and the decision still holds.
+    // Geometry changed; the story did not restart. It may legitimately have moved
+    // on — it advances on simulated state, and simulated time passes during a
+    // resize — so what must hold is that it did not go backwards to the opening.
+    const order = ["baseline", "proposal", "opening", "adaptation", "result"];
     expect(after.layout).toBe("tall");
-    expect(after.phase).toBe(before.phase);
+    expect(
+      order.indexOf(after.phase ?? ""),
+      `story went backwards on resize: ${before.phase} → ${after.phase}`,
+    ).toBeGreaterThanOrEqual(order.indexOf(before.phase ?? ""));
     expect(after.metric).toMatch(/^\d+:\d{2}$/);
     expect(after.connectorVisible).toBe(true);
     expect(await overflow(page)).toBe(false);

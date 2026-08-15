@@ -11,6 +11,7 @@ import { JSDOM } from "jsdom";
 import { describe, expect, it } from "vitest";
 import { CONTROL, TARGET, networkOf } from "../src/experiment/config.ts";
 import { routeFreeFlowTime } from "../src/sim/network.ts";
+import { STORY } from "../src/story.ts";
 import { compare } from "../src/experiment/run.ts";
 import { EXPERIMENT } from "../src/experiment/result.generated.ts";
 
@@ -59,8 +60,9 @@ describe("the numbers on the page are the numbers we tested", () => {
     const network = networkOf(TARGET);
     const saving =
       routeFreeFlowTime(network, "north") - routeFreeFlowTime(network, "shortcut");
-    const body = doc.querySelector("[data-body]")?.textContent ?? "";
-    expect(body).toMatch(/half a minute/i);
+    // The claim lives in the story model now, not in the initial markup: it is made
+    // at the proposal, which is a later state than the page loads into.
+    expect(STORY.proposal.body ?? "").toMatch(/half a minute/i);
     expect(
       saving,
       `the link's empty-road saving is ${saving.toFixed(0)}s, so "half a minute" is wrong`,
@@ -117,10 +119,16 @@ describe("one idea, one mechanic, nothing else", () => {
     ].join(" ");
     expect(upFront.toLowerCase()).not.toContain("braess");
     expect(upFront.toLowerCase()).not.toContain("paradox");
-    // And it is named in a section that starts hidden.
-    const closing = doc.querySelector("[data-closing]");
-    expect(closing?.hasAttribute("hidden")).toBe(true);
-    expect(closing?.textContent?.toLowerCase()).toContain("braess");
+
+    // The whole served document must not name it either: the markup ships in the
+    // opening state, so anything in it is on screen before the visitor has decided
+    // anything. The name arrives with the final state.
+    expect(html.toLowerCase()).not.toContain("braess");
+    expect(STORY.reveal.headline.toLowerCase()).toContain("braess");
+
+    // And the explanation it belongs with starts hidden.
+    expect(doc.querySelector("[data-closing]")?.hasAttribute("hidden")).toBe(true);
+    expect(doc.querySelector("[data-notes]")?.hasAttribute("hidden")).toBe(true);
   });
 });
 

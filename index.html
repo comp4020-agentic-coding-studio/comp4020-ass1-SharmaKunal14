@@ -17,102 +17,100 @@
       <nav aria-label="Primary">
         <a href="./" class="masthead__home">One More Road</a>
       </nav>
-      <!-- Five beats. Decorative here; the same position is announced as text in
-           the live region, so a screen reader is told where it is too. -->
-      <ol class="progress" data-progress aria-hidden="true">
-        <li class="progress__beat"></li>
-        <li class="progress__beat"></li>
-        <li class="progress__beat"></li>
-        <li class="progress__beat"></li>
-        <li class="progress__beat"></li>
-      </ol>
     </header>
 
     <main>
       <div class="layout">
-      <div class="act">
-        <p class="act__step" data-step>One of five</p>
-        <h1 class="act__headline" data-headline tabindex="-1">Two ways into town. Both of them work.</h1>
-        <p class="act__body" data-body>
-          Every driver crosses one narrow bridge, then takes a long ring road. The dotted link would
-          let them use both bridges and skip both rings — about half a minute quicker, on an empty road.
-        </p>
+        <div class="act">
+          <p class="act__step" data-step>The commute</p>
+          <h1 class="act__headline" data-headline tabindex="-1">
+            Every morning, the same drive into town.
+          </h1>
+          <p class="act__body" data-body>Two ways to get there. Both of them work.</p>
+        </div>
+
+        <section class="stage" id="stage" aria-label="The road network">
+          <div class="stage__figure" data-figure></div>
+          <!-- Sighted readers get this at the roads themselves, on the map. This is
+               the same information for a screen reader, which cannot see a label
+               change — so it is never hidden by progressive disclosure: for that
+               reader, this list is the map. -->
+          <h2 class="sr-only">How each road is running</h2>
+          <ul class="sr-only" data-loads></ul>
+        </section>
+
+        <div class="readout">
+          <p class="metric">
+            <span class="metric__value" data-metric-value>—</span>
+            <span class="metric__label" data-metric-label>average commute</span>
+          </p>
+          <p class="metric metric--before" data-before hidden>
+            <span class="metric__value" data-before-value>—</span>
+            <span class="metric__label">before you built it</span>
+          </p>
+          <p class="clock" data-clock hidden></p>
+        </div>
+
+        <p class="sr-only" aria-live="polite" data-announce></p>
+
+        <div class="decision">
+          <button type="button" class="action" data-action hidden>Build the road</button>
+          <p class="decision__note" data-note hidden></p>
+        </div>
+
+        <div class="detail" data-routes-panel hidden>
+          <h2 class="detail__heading">Which way people go</h2>
+          <ul class="routes" data-routes>
+            <li>
+              <button type="button" class="route" data-route="north">
+                <span class="route__name">Over the north bridge</span>
+                <span class="route__bar" aria-hidden="true"><i data-bar="north"></i></span>
+                <span class="route__share" data-share="north">—</span>
+                <span class="route__time" data-time="north"></span>
+              </button>
+            </li>
+            <li>
+              <button type="button" class="route" data-route="south">
+                <span class="route__name">Over the south bridge</span>
+                <span class="route__bar" aria-hidden="true"><i data-bar="south"></i></span>
+                <span class="route__share" data-share="south">—</span>
+                <span class="route__time" data-time="south"></span>
+              </button>
+            </li>
+            <li data-route-row="shortcut" hidden>
+              <button type="button" class="route route--new" data-route="shortcut">
+                <span class="route__name">Across the new link</span>
+                <span class="route__bar" aria-hidden="true"><i data-bar="shortcut"></i></span>
+                <span class="route__share" data-share="shortcut">—</span>
+                <span class="route__time" data-time="shortcut"></span>
+              </button>
+            </li>
+          </ul>
+          <p class="detail__hint">Point at a route to see which roads it uses.</p>
+
+        </div>
+
+        <div class="trace" data-chart-panel hidden>
+          <div class="chart-holder" data-chart></div>
+        </div>
       </div>
 
-      <section class="stage" id="stage" aria-label="The road network">
-        <div class="stage__figure" data-figure></div>
-      </section>
-
-      <div class="readout">
-        <p class="metric">
-          <span class="metric__value" data-metric-value>—</span>
-          <span class="metric__label" data-metric-label>average commute</span>
-        </p>
-        <p class="metric metric--before" data-before hidden>
-          <span class="metric__value" data-before-value>—</span>
-          <span class="metric__label">before you built it</span>
-        </p>
-      </div>
-
-      <p class="sr-only" aria-live="polite" data-announce></p>
-
-      <div class="decision">
-        <button type="button" class="action" data-action>Build the road</button>
-        <p class="decision__note" data-note hidden></p>
-      </div>
-
-      <div class="detail">
-        <div class="chart-holder" data-chart></div>
-
-        <h2 class="detail__heading">Which way people go</h2>
-        <ul class="routes" data-routes>
-          <li>
-            <button type="button" class="route" data-route="north">
-              <span class="route__name">Over the north bridge</span>
-              <span class="route__bar" aria-hidden="true"><i data-bar="north"></i></span>
-              <span class="route__share" data-share="north">—</span>
-              <span class="route__time" data-time="north"></span>
-            </button>
-          </li>
-          <li>
-            <button type="button" class="route" data-route="south">
-              <span class="route__name">Over the south bridge</span>
-              <span class="route__bar" aria-hidden="true"><i data-bar="south"></i></span>
-              <span class="route__share" data-share="south">—</span>
-              <span class="route__time" data-time="south"></span>
-            </button>
-          </li>
-          <li data-route-row="shortcut" hidden>
-            <button type="button" class="route route--new" data-route="shortcut">
-              <span class="route__name">Across the new link</span>
-              <span class="route__bar" aria-hidden="true"><i data-bar="shortcut"></i></span>
-              <span class="route__share" data-share="shortcut">—</span>
-              <span class="route__time" data-time="shortcut"></span>
-            </button>
-          </li>
-        </ul>
-        <p class="detail__hint">Point at a route to see which roads it uses.</p>
-
-        <!-- Sighted readers get this at the roads themselves, on the map. This is the
-             same information for a screen reader, which cannot see a label change. -->
-        <h2 class="sr-only">How each road is running</h2>
-        <ul class="sr-only" data-loads></ul>
-      </div>
-
-      </div>
-
-      <section class="finding" data-finding hidden>
-        <p class="finding__lead" data-finding-lead></p>
+      <section class="why" data-why hidden>
+        <ol class="why__chain">
+          <li class="why__step"><span data-why-1></span></li>
+          <li class="why__step"><span data-why-2></span></li>
+          <li class="why__step"><span data-why-3></span></li>
+          <li class="why__step"><span data-why-4></span></li>
+        </ol>
         <ul class="finding__rows" data-finding-rows></ul>
         <p class="finding__kicker" data-finding-kicker></p>
       </section>
 
       <section class="closing" data-closing hidden>
-        <h2 class="closing__name" data-closing-name tabindex="-1">Braess's paradox</h2>
         <p class="closing__body">
-          Adding a road to a network can make every journey on it longer — not because the road is
-          slow, but because it changes what each driver decides is best for them. Every one of those
-          decisions is correct. The result they add up to is worse for all of them.
+          Adding a road can make every journey on it longer — not because the road is slow, but
+          because it changes what each driver decides is best for them. Every one of those decisions
+          is correct. What they add up to is worse for all of them.
         </p>
         <p class="closing__body">
           It is not a law that new roads make traffic worse. In this same network, with the same
@@ -121,9 +119,9 @@
         </p>
       </section>
 
-      <section class="notes">
+      <section class="notes" data-notes hidden>
         <details class="notes__disclosure">
-          <summary>How this simulation works</summary>
+          <summary>How does the simulation work?</summary>
           <div class="notes__body" data-model-note></div>
         </details>
       </section>

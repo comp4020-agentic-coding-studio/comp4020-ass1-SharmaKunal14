@@ -418,3 +418,32 @@ Two rules of judgement from the same pass:
 - **Copy is a claim and gets a check.** The opening line said the link was "about
   a minute quicker" when the measured empty-road saving is 31 seconds. A test now
   ties that phrase to the geometry.
+
+## Assignment 1: rendering is not simulation
+
+- **Interpolate between fixed steps; never render the raw state.** With a fixed
+  `dt` the accumulator runs a whole number of steps per frame, so at 45× on a
+  120Hz display it alternated one step, two steps, one step — and a car's apparent
+  speed swung by 50% every frame while the physics underneath was perfectly even.
+  Measured per car, frame-to-frame motion variation was CV 0.343; interpolating by
+  `accumulator / dt` took it to 0.132. Snap rather than interpolate across a
+  junction, where the previous position is on a different road. `?nointerp=1`
+  brings the stutter back on demand, so the fix can be demonstrated rather than
+  asserted.
+- **The renderer may never be an input.** `prevPos`/`prevLeg` are written by the
+  engine and read only by the view. If a rendering concern ever needs the physics
+  to change, it is the wrong fix — a jerky picture is a rendering bug until proven
+  otherwise, and it was one here.
+- **Identify drawn objects by simulation id, not by draw order.** Pooling circles
+  by draw order meant a given circle stood for a different car each frame as
+  vehicles came and went, so its shade jumped for no reason and nothing on screen
+  had a stable identity.
+- **Every state declares what may be on screen.** The page was showing the
+  network, the traffic, four metrics, a chart, a route table, the controls and the
+  model note at once, so a visitor met the whole apparatus before they had a reason
+  to care about any of it. A panel now appears at the moment it explains something
+  and not before, and that list lives in `src/story.ts` next to the beat, not
+  scattered through the controller.
+- **A visually hidden equivalent is not subject to progressive disclosure.** The
+  road-state list is the map for a screen-reader user, so it stays present the whole
+  way through even while the visual panels come and go.
