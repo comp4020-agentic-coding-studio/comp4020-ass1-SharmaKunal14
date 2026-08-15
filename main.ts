@@ -40,10 +40,12 @@ const reducesMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matc
 const ui = {
   chapterNumber: need<HTMLElement>("[data-chapter-number]"),
   chapterItems: Array.from(document.querySelectorAll<HTMLElement>("[data-chapter]")),
+  story: need<HTMLElement>(".story"),
   figure: need<HTMLElement>("[data-figure]"),
   eyebrow: need<HTMLElement>("[data-eyebrow]"),
   headline: need<HTMLElement>("[data-headline]"),
   body: need<HTMLElement>("[data-body]"),
+  measure: need<HTMLElement>(".measure"),
   liveMeasure: need<HTMLElement>("[data-live-measure]"),
   metric: need<HTMLElement>("[data-metric-value]"),
   metricLabel: need<HTMLElement>("[data-metric-label]"),
@@ -55,6 +57,7 @@ const ui = {
   caption: need<HTMLElement>("[data-caption]"),
   choices: need<HTMLElement>("[data-choices]"),
   action: need<HTMLButtonElement>("[data-action]"),
+  control: need<HTMLElement>(".control"),
   status: need<HTMLElement>("[data-status]"),
   announce: need<HTMLElement>("[data-announce]"),
   loads: need<HTMLUListElement>("[data-loads]"),
@@ -83,12 +86,14 @@ let animationNextState: StateId | null = null;
 let animationBudget = 0;
 let isAdvancing = false;
 let peakOpenedAt = 0;
+let hasEntered = false;
+let panelAnimations: Animation[] = [];
 
 const routesVisited = new Set<"north" | "south">();
-const endpointsSelected = new Set<"A" | "B">();
 const bridgesInspected = new Set<BridgeId>();
 let selectedRoute: "north" | "south" | null = null;
 let selectedBridge: BridgeId | null = null;
+let shortcutTraced = false;
 let quietPrediction: QuietPrediction | null = null;
 let personalRoute: RouteId | null = null;
 let comparisonChoice: ComparisonChoice | null = null;
@@ -104,10 +109,10 @@ function freshTargetRun(): LiveRun {
 
 function resetInvestigation(): void {
   routesVisited.clear();
-  endpointsSelected.clear();
   bridgesInspected.clear();
   selectedRoute = null;
   selectedBridge = null;
+  shortcutTraced = false;
   quietPrediction = null;
   personalRoute = null;
   comparisonChoice = null;
@@ -131,6 +136,7 @@ function applyLayout(): void {
   );
   scene.setConnectorOpen(connectorLooksOpen());
   scene.spotlight(currentSpotlight());
+  scene.traceRoute(currentTrace());
   scene.setNarrative(state, narrativeShare());
 }
 
@@ -171,6 +177,7 @@ function enter(next: StateId, focusHeading = false): void {
   ui.body.textContent = beat.body;
   ui.action.textContent = beat.action;
   ui.afterword.hidden = next !== "reveal";
+  ui.measure.hidden = false;
 
   const showsComparison = next === "quiet_result" || next === "verdict" || next === "reveal";
   ui.comparison.hidden = !showsComparison;
@@ -181,7 +188,11 @@ function enter(next: StateId, focusHeading = false): void {
   renderStateCopy();
   scene.setConnectorOpen(connectorLooksOpen());
   scene.spotlight(currentSpotlight());
+  scene.traceRoute(currentTrace());
   scene.setNarrative(next, narrativeShare());
+
+  if (hasEntered) animatePanels();
+  hasEntered = true;
 
   if (next === "quiet_result") {
     announce(
@@ -200,6 +211,43 @@ function enter(next: StateId, focusHeading = false): void {
   }
 
   if (focusHeading) ui.headline.focus({ preventScroll: true });
+}
+
+/**
+ * Chapter state is committed before this decorative motion begins. Cancelling
+ * it can never delay a result, move keyboard focus, or alter simulation time.
+ */
+function animatePanels(delayedEvidence = false): void {
+  for (const animation of panelAnimations) animation.cancel();
+  panelAnimations = [];
+  if (reducesMotion) return;
+
+  const panels = [ui.story, ui.measure, ui.control];
+  for (const [index, panel] of panels.entries()) {
+    if (panel.hidden || typeof panel.animate !== "function") continue;
+    const delay = delayedEvidence && index > 0 ? 300 : index * 35;
+    const animation = panel.animate(
+      [
+        { opacity: 0.12, transform: "translateY(10px)" },
+        { opacity: 1, transform: "translateY(0)" },
+      ],
+      {
+        duration: 340,
+        delay,
+        easing: "cubic-bezier(0.22, 1, 0.36, 1)",
+        fill: "both",
+      },
+    );
+    animation.addEventListener(
+      "finish",
+      () => {
+        animation.cancel();
+        panelAnimations = panelAnimations.filter((candidate) => candidate !== animation);
+      },
+      { once: true },
+    );
+    panelAnimations.push(animation);
+  }
 }
 
 function renderChapterProgress(): void {
@@ -299,24 +347,6 @@ function renderControls(): void {
       ),
     );
     ui.action.disabled = routesVisited.size < 2;
-  } else if (state === "proposal") {
-    ui.choices.append(
-      choiceButton(
-        "A",
-        "Riverside",
-        "first endpoint",
-        endpointsSelected.has("A"),
-        endpointsSelected.has("A"),
-      ),
-      choiceButton(
-        "B",
-        "Millbrook",
-        "second endpoint",
-        endpointsSelected.has("B"),
-        endpointsSelected.has("B"),
-      ),
-    );
-    ui.action.disabled = endpointsSelected.size < 2;
   } else if (state === "quiet") {
     ui.choices.append(
       radioGroup<QuietPrediction>(
@@ -436,18 +466,25 @@ function renderStateCopy(): void {
   }
 
   if (state === "proposal") {
-    const complete = endpointsSelected.size === 2;
-    ui.metric.textContent = complete ? "4:34" : "—";
-    ui.metricLabel.textContent = complete ? "new route · roads empty" : "choose two endpoints";
-    ui.metricContext.textContent = complete
-      ? "Thirty-one seconds quicker than either original route when roads are empty."
-      : "A useful connector must join the two inner junctions.";
-    ui.status.textContent = complete
-      ? "The proposal is compelling. Now test whether that benefit survives traffic."
-      : `${endpointsSelected.size} of 2 endpoints selected.`;
-    ui.caption.textContent = complete
-      ? "Your dashed Riverside–Millbrook link creates a third route through the middle."
-      : "Select Riverside and Millbrook to complete the proposal.";
+    document.body.dataset.shortcutTraced = String(shortcutTraced);
+    ui.measure.hidden = !shortcutTraced;
+    ui.headline.textContent = shortcutTraced
+      ? "It looks like the obvious choice."
+      : STORY.proposal.headline;
+    ui.body.textContent = shortcutTraced
+      ? "The new path uses both bridges, yet it is shortest while the roads are empty."
+      : STORY.proposal.body;
+    ui.action.textContent = shortcutTraced ? "Test with light traffic" : STORY.proposal.action;
+    ui.metric.textContent = "5:05 → 4:34";
+    ui.metricLabel.textContent = "empty-road trip · old route → shortcut";
+    ui.metricContext.textContent =
+      "Same origin and destination. The shortcut is 31 seconds quicker before congestion.";
+    ui.status.textContent = shortcutTraced
+      ? "That speed is why drivers will try it. Now add traffic."
+      : "Draw the missing link to complete the middle route.";
+    ui.caption.textContent = shortcutTraced
+      ? "Highlighted path: Eastgate → Riverside → new link → Millbrook → Central."
+      : "The shortcut will connect Riverside directly to Millbrook.";
     return;
   }
 
@@ -560,20 +597,28 @@ function renderWaveCopy(): void {
   const shortcut = run.choicesSinceAnchorFor("shortcut");
   const share = Math.round(run.choiceShareSinceAnchor("shortcut") * 100);
   ui.metric.textContent = `${share}%`;
-  ui.metricLabel.textContent = "post-opening route choices";
-  ui.metricContext.textContent = `${shortcut} of ${total} departures · one seeded illustrative run`;
+  ui.metricLabel.textContent = reducesMotion
+    ? "post-opening shortcut choices"
+    : "shortcut choices · gold cars";
+  ui.metricContext.textContent = `${shortcut} of ${total} choices in this live run.`;
 
   if (state === "wave_one") {
-    ui.status.textContent = "The short empty-road time makes the middle route an attractive first guess.";
-    ui.caption.textContent = "This percentage counts route decisions as they happen—not only trips that finish first.";
+    ui.status.textContent = reducesMotion
+      ? "The short empty-road time makes the middle route an attractive first guess."
+      : "Gold cars chose the shortcut. Follow where they go next.";
+    ui.caption.textContent =
+      "This percentage counts route decisions as they happen—not only trips that finish first.";
   } else if (state === "wave_two") {
-    ui.status.textContent = "Shortcut traffic is added to both bridge approaches, not removed from the network.";
-    ui.caption.textContent = "Road width and rust colour show slower traversal; the dots are individual cars.";
+    ui.status.textContent = reducesMotion
+      ? "Shortcut traffic is added to both bridge approaches, not removed from the network."
+      : "The same gold journeys are now loading both old bridges.";
+    ui.caption.textContent =
+      "Road width and rust colour show slower traversal; the dots are individual cars.";
   } else if (state === "wave_three") {
-    ui.status.textContent = "Choices keep adapting. A complete paired cohort is needed for the final average.";
+    ui.status.textContent = "Choices keep adapting. The verdict needs a complete paired cohort.";
     ui.caption.textContent = "The live share can move; the later 38% is the measured paired-run outcome.";
   } else {
-    ui.status.textContent = "Both bridge approaches are slowing while the connector remains near free-flow.";
+    ui.status.textContent = "Both bridge approaches are slowing; the connector is not.";
     ui.caption.textContent = "Time is compressed; the physics still advances in fixed 0.25-second steps.";
   }
 }
@@ -655,12 +700,20 @@ function currentSpotlight(): readonly LinkId[] {
     return [];
   }
   if (state === "proposal") {
-    if (endpointsSelected.size === 2) return ["AB"];
-    if (endpointsSelected.has("A")) return ["SA"];
-    if (endpointsSelected.has("B")) return ["BT"];
+    if (shortcutTraced) return ["SA", "AB", "BT"];
+    return [];
   }
   if (state === "diagnose" && selectedBridge !== null) return [selectedBridge];
   return STORY[state].spotlight;
+}
+
+function currentTrace(): readonly LinkId[] {
+  if (state === "map") {
+    if (selectedRoute === "north") return ["SA", "AT"];
+    if (selectedRoute === "south") return ["SB", "BT"];
+  }
+  if (state === "proposal" && shortcutTraced) return ["SA", "AB", "BT"];
+  return [];
 }
 
 function connectorLooksOpen(): boolean {
@@ -732,23 +785,11 @@ function onChoice(event: Event): void {
     selectedRoute = choice;
     routesVisited.add(choice);
     scene.spotlight(currentSpotlight());
+    scene.traceRoute(currentTrace());
     renderControls();
     renderStateCopy();
     restoreChoiceFocus(choice, keyboardActivation);
     announce(`${choice === "north" ? "North" : "South"} route traced. Empty-road time: 5 minutes 5 seconds.`);
-    return;
-  }
-
-  if (state === "proposal" && (choice === "A" || choice === "B")) {
-    if (endpointsSelected.has(choice)) endpointsSelected.delete(choice);
-    else endpointsSelected.add(choice);
-    scene.spotlight(currentSpotlight());
-    renderControls();
-    renderStateCopy();
-    restoreChoiceFocus(choice, keyboardActivation);
-    if (endpointsSelected.size === 2) {
-      announce("Proposal complete. The new empty-road route is 31 seconds shorter.");
-    }
     return;
   }
 
@@ -798,7 +839,17 @@ function onAction(event: MouseEvent): void {
   const keyboardActivation = event.detail === 0;
 
   if (state === "map") enter("proposal", keyboardActivation);
-  else if (state === "proposal") enter("quiet", keyboardActivation);
+  else if (state === "proposal" && !shortcutTraced) {
+    shortcutTraced = true;
+    scene.spotlight(currentSpotlight());
+    scene.traceRoute(currentTrace());
+    renderControls();
+    renderStateCopy();
+    animatePanels(true);
+    announce(
+      "Shortcut drawn. Empty-road time falls from 5 minutes 5 seconds to 4 minutes 34 seconds.",
+    );
+  } else if (state === "proposal") enter("quiet", keyboardActivation);
   else if (state === "quiet") enter("quiet_result", keyboardActivation);
   else if (state === "quiet_result") enter("peak", keyboardActivation);
   else if (state === "peak") startPeakWaves();

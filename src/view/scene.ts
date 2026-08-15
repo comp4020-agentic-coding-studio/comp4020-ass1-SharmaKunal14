@@ -2,7 +2,7 @@
 // any. Everything here is allowed to know about pixels; nothing here is allowed
 // to decide anything the experiment depends on.
 
-import type { LinkId } from "../sim/network.ts";
+import type { LinkId, RouteId } from "../sim/network.ts";
 import { buildNetwork } from "../sim/network.ts";
 import type { LiveRun } from "../live.ts";
 import type { StateId } from "../story.ts";
@@ -41,9 +41,11 @@ function labelFor(id: LinkId, network: ReturnType<typeof buildNetwork>): string 
 const LINK_ORDER: readonly LinkId[] = ["SB", "AT", "SA", "BT", "AB"];
 /** Ceiling on drawn vehicles. Beyond this the picture is a jam either way. */
 const VEHICLE_POOL = 320;
+const VEHICLE_RADIUS = 4.6;
+const SHORTCUT_VEHICLE_RADIUS = 5.8;
 
 type NarrativeMode = StateId;
-
+type RenderRun = Pick<LiveRun, "congestionOf" | "vehiclesOn">;
 
 function el<K extends keyof SVGElementTagNameMap>(
   name: K,
@@ -57,6 +59,7 @@ function el<K extends keyof SVGElementTagNameMap>(
 export class Scene {
   private readonly svg: SVGSVGElement;
   private readonly roadLayer = el("g", { class: "roads" });
+  private readonly traceLayer = el("g", { class: "route-traces", "aria-hidden": "true" });
   private readonly throatLayer = el("g", { class: "throats" });
   private readonly vehicleLayer = el("g", { class: "vehicles", "aria-hidden": "true" });
   private readonly nodeLayer = el("g", { class: "nodes" });
@@ -93,6 +96,7 @@ export class Scene {
     });
     this.svg.append(
       this.roadLayer,
+      this.traceLayer,
       this.throatLayer,
       this.vehicleLayer,
       this.nodeLayer,
@@ -121,6 +125,7 @@ export class Scene {
 
     const segments = segmentsFor(kind);
     this.roadLayer.replaceChildren();
+    this.traceLayer.replaceChildren();
     this.throatLayer.replaceChildren();
     this.nodeLayer.replaceChildren();
     this.labelLayer.replaceChildren();
@@ -279,6 +284,27 @@ export class Scene {
   }
 
   /**
+   * Draw one temporary journey over the fixed road geometry. This is a purely
+   * presentational cue: it never changes which links exist or how vehicles route.
+   */
+  traceRoute(links: readonly LinkId[]): void {
+    this.traceLayer.replaceChildren();
+    for (const [index, id] of links.entries()) {
+      const road = this.roads.get(id);
+      const d = road?.getAttribute("d");
+      if (d === undefined || d === null) continue;
+      const trace = el("path", {
+        class: `route-trace route-trace--${id.toLowerCase()}`,
+        d,
+        pathLength: "1",
+        "data-trace-link": id,
+      });
+      trace.style.setProperty("--trace-delay", `${index * 140}ms`);
+      this.traceLayer.append(trace);
+    }
+  }
+
+  /**
    * Pull any label that overhangs the viewBox back inside and turn its anchor to
    * suit.
    *
@@ -335,7 +361,7 @@ export class Scene {
     }
   }
 
-  render(run: LiveRun, network: ReturnType<typeof buildNetwork>, alpha = 1): void {
+  render(run: RenderRun, network: ReturnType<typeof buildNetwork>, alpha = 1): void {
     for (const [id, path] of this.roads) {
       const ratio = run.congestionOf(id);
       // Width carries load as well as colour, so the state does not depend on
@@ -363,7 +389,7 @@ export class Scene {
             ? vehicle.prevPos + (vehicle.pos - vehicle.prevPos) * alpha
             : vehicle.pos) / length,
         );
-        const dot = this.dotFor(vehicle.id);
+        const dot = this.dotFor(vehicle.id, vehicle.routeId);
         seen.add(vehicle.id);
         dot.setAttribute("cx", at.x.toFixed(1));
         dot.setAttribute("cy", at.y.toFixed(1));
@@ -382,11 +408,21 @@ export class Scene {
     }
   }
 
-  private dotFor(id: number): SVGCircleElement {
+  private dotFor(id: number, route: RouteId): SVGCircleElement {
     const existing = this.dots.get(id);
-    if (existing !== undefined) return existing;
     const dot =
-      this.spare.pop() ?? el("circle", { class: "vehicle", r: "4.6", cx: "0", cy: "0" });
+      existing ??
+      this.spare.pop() ??
+      el("circle", { class: "vehicle", r: String(VEHICLE_RADIUS), cx: "0", cy: "0" });
+
+    // A route belongs to the vehicle, not the road it currently occupies. A
+    // shortcut driver crosses SA, AB and BT, so styling AB alone makes that car
+    // disappear again on two thirds of its journey. Refresh this metadata even
+    // for an existing node: closing the connector can reroute a waiting driver,
+    // and a pooled circle may next represent a driver on any route.
+    const onShortcut = route === "shortcut";
+    dot.classList.toggle("vehicle--shortcut", onShortcut);
+    dot.setAttribute("r", String(onShortcut ? SHORTCUT_VEHICLE_RADIUS : VEHICLE_RADIUS));
     dot.style.display = "";
     if (dot.parentNode === null) this.vehicleLayer.append(dot);
     this.dots.set(id, dot);

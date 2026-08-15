@@ -15,6 +15,8 @@ import { STATES, STORY } from "../src/story.ts";
 const html = readFileSync(resolve("dist/index.html"), "utf8");
 const doc = new JSDOM(html).window.document;
 const mainSource = readFileSync(resolve("main.ts"), "utf8");
+const sceneSource = readFileSync(resolve("src/view/scene.ts"), "utf8");
+const cssSource = readFileSync(resolve("styles.css"), "utf8");
 
 function words(text: string): number {
   return text.trim().split(/\s+/).filter(Boolean).length;
@@ -93,14 +95,15 @@ describe("the page quotes controlled evidence", () => {
     const network = networkOf(TARGET);
     const north = routeFreeFlowTime(network, "north");
     const south = routeFreeFlowTime(network, "south");
-    const saving =
-      north - routeFreeFlowTime(network, "shortcut");
+    const shortcut = routeFreeFlowTime(network, "shortcut");
+    const saving = north - shortcut;
 
     expect(north).toBeCloseTo(south, 8);
     expect(Math.round(north)).toBe(305);
+    expect(Math.round(shortcut)).toBe(274);
     expect(Math.round(saving)).toBe(31);
     expect(STORY.map.headline.toLowerCase()).toContain("same empty-road time");
-    expect(mainSource).toContain("Thirty-one seconds quicker");
+    expect(mainSource).toMatch(/shortcut is 31 seconds quicker/i);
   });
 
   it("serves the authoritative peak comparison before JavaScript runs", () => {
@@ -158,7 +161,7 @@ describe("one investigation carried through six chapters", () => {
     expect(items.map((item) => item.dataset.chapter)).toEqual(["1", "2", "3", "4", "5", "6"]);
     expect(items.map((item) => item.textContent?.trim())).toEqual([
       "Read the map",
-      "Design a link",
+      "Try the shortcut",
       "Try quiet roads",
       "Stress the network",
       "Watch drivers learn",
@@ -179,6 +182,39 @@ describe("one investigation carried through six chapters", () => {
     expect(choices).not.toBeNull();
     expect(mainSource).toContain('input.type = "radio"');
     expect(mainSource).toContain('button.setAttribute("aria-pressed"');
+  });
+
+  it("makes the proposal a route trace rather than two mandatory endpoint cards", () => {
+    expect(STORY.proposal.eyebrow).toMatch(/tempting shortcut/i);
+    expect(STORY.proposal.headline).toMatch(/build one shortcut/i);
+    expect(STORY.proposal.body).toMatch(/Riverside and Millbrook/i);
+    expect(STORY.proposal.action).toBe("Draw the shortcut");
+
+    expect(mainSource).toContain("let shortcutTraced = false");
+    expect(mainSource).toContain('state === "proposal" && !shortcutTraced');
+    expect(mainSource).toContain("scene.traceRoute(currentTrace())");
+    expect(mainSource).not.toContain("endpointsSelected");
+    expect(mainSource).not.toMatch(/choiceButton\(\s*["']A["']/);
+    expect(mainSource).not.toMatch(/choiceButton\(\s*["']B["']/);
+  });
+
+  it("draws the selected journey and distinguishes shortcut cars without colour alone", () => {
+    expect(sceneSource).toContain('class: "route-traces"');
+    expect(sceneSource).toContain("traceRoute(links: readonly LinkId[])");
+    expect(sceneSource).toContain('"data-trace-link": id');
+    expect(cssSource).toMatch(/\.route-trace\s*\{/);
+    expect(cssSource).toContain("@keyframes route-draw");
+
+    expect(sceneSource).toContain('const onShortcut = route === "shortcut"');
+    expect(sceneSource).toContain('dot.classList.toggle("vehicle--shortcut", onShortcut)');
+    expect(sceneSource).toContain("SHORTCUT_VEHICLE_RADIUS");
+    expect(sceneSource).toContain(
+      'dot.setAttribute("r", String(onShortcut ? SHORTCUT_VEHICLE_RADIUS : VEHICLE_RADIUS))',
+    );
+
+    const shortcutVehicleRule = cssSource.match(/\.vehicle--shortcut\s*\{([^}]*)\}/)?.[1] ?? "";
+    expect(shortcutVehicleRule).toContain("fill: var(--shortcut-car)");
+    expect(shortcutVehicleRule).toContain("stroke: var(--ink)");
   });
 
   it("keeps the interaction surface bounded and dashboard-free", () => {
@@ -355,7 +391,7 @@ describe("required process evidence", () => {
 });
 
 describe("colour contrast", () => {
-  const css = readFileSync(resolve("styles.css"), "utf8");
+  const css = cssSource;
 
   function tokens(): Record<string, string> {
     const root = css.slice(css.indexOf(":root {"), css.indexOf("}\n", css.indexOf(":root {")));

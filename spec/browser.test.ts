@@ -194,6 +194,57 @@ async function expectComparison(
   );
 }
 
+async function activeAnimationCount(page: Page, selector: string): Promise<number> {
+  return page.evaluate((target) => {
+    const active = new Set(["pending", "running"]);
+    return [...document.querySelectorAll<HTMLElement>(target)].reduce(
+      (count, element) =>
+        count + element.getAnimations().filter((animation) => active.has(animation.playState)).length,
+      0,
+    );
+  }, selector);
+}
+
+async function expectDistinctRouteVehicles(page: Page): Promise<void> {
+  const observed = await page.evaluate(() => {
+    const visible = [...document.querySelectorAll<SVGCircleElement>(".vehicle")].filter(
+      (vehicle) => getComputedStyle(vehicle).display !== "none",
+    );
+    const shortcut = visible.find((vehicle) => vehicle.classList.contains("vehicle--shortcut"));
+    const ordinary = visible.find((vehicle) => !vehicle.classList.contains("vehicle--shortcut"));
+
+    const appearance = (vehicle: SVGCircleElement | undefined) => {
+      if (vehicle === undefined) return null;
+      const style = getComputedStyle(vehicle);
+      return {
+        fill: style.fill,
+        stroke: style.stroke,
+        radius: Number(vehicle.getAttribute("r")),
+      };
+    };
+
+    return {
+      shortcutCount: visible.filter((vehicle) =>
+        vehicle.classList.contains("vehicle--shortcut"),
+      ).length,
+      ordinaryCount: visible.filter(
+        (vehicle) => !vehicle.classList.contains("vehicle--shortcut"),
+      ).length,
+      shortcut: appearance(shortcut),
+      ordinary: appearance(ordinary),
+    };
+  });
+
+  expect(observed.shortcutCount).toBeGreaterThan(0);
+  expect(observed.ordinaryCount).toBeGreaterThan(0);
+  if (observed.shortcut === null || observed.ordinary === null) {
+    throw new Error("wave one did not render both shortcut and ordinary vehicles");
+  }
+  expect(observed.shortcut.radius).toBeGreaterThan(observed.ordinary.radius);
+  expect(observed.shortcut.fill).not.toBe(observed.ordinary.fill);
+  expect(observed.shortcut.stroke).not.toBe(observed.ordinary.stroke);
+}
+
 async function choose(page: Page, value: string): Promise<void> {
   await page.locator(`[data-choice="${value}"]`).click();
 }
@@ -253,8 +304,8 @@ async function reachPeak(page: Page): Promise<void> {
   await choose(page, "south");
   await page.locator("[data-action]").click();
   await waitForState(page, "proposal");
-  await choose(page, "A");
-  await choose(page, "B");
+  await page.locator("[data-action]").click();
+  expect(await text(page, "[data-action]")).toBe("Test with light traffic");
   await page.locator("[data-action]").click();
   await waitForState(page, "quiet");
   await selectRadio(page, "quiet-prediction", "help");
@@ -281,13 +332,23 @@ async function completeCase(page: Page, layout: "wide" | "tall"): Promise<void> 
 
   await action.click();
   await waitForState(page, "proposal");
-  expect(await action.isDisabled()).toBe(true);
-  await choose(page, "A");
-  expect(await action.isDisabled()).toBe(true);
-  await choose(page, "B");
   expect(await action.isEnabled()).toBe(true);
-  expect(await text(page, "[data-metric-value]")).toBe("4:34");
-  expect(await text(page, "[data-metric-context]")).toContain("Thirty-one seconds quicker");
+  expect(await text(page, "[data-action]")).toBe("Draw the shortcut");
+  expect(await page.locator('[data-choice="A"], [data-choice="B"]').count()).toBe(0);
+  expect(await page.locator("[data-trace-link]").count()).toBe(0);
+  expect(await activeAnimationCount(page, ".story, .measure, .control")).toBeGreaterThan(0);
+
+  await action.click();
+  expect(await page.locator("body").getAttribute("data-shortcut-traced")).toBe("true");
+  expect(await text(page, "[data-action]")).toBe("Test with light traffic");
+  expect(await text(page, "[data-metric-value]")).toBe("5:05 → 4:34");
+  expect(await text(page, "[data-metric-context]")).toContain("31 seconds quicker");
+  expect(
+    await page.locator("[data-trace-link]").evaluateAll((traces) =>
+      traces.map((trace) => trace.getAttribute("data-trace-link")),
+    ),
+  ).toEqual(["SA", "AB", "BT"]);
+  expect(await activeAnimationCount(page, ".route-trace")).toBeGreaterThan(0);
   await expectNoOverflow(page);
 
   // A deliberately wrong quiet-road prediction proves feedback is evidence-led,
@@ -321,13 +382,14 @@ async function completeCase(page: Page, layout: "wide" | "tall"): Promise<void> 
   await waitForState(page, "wave_one");
   expect(await text(page, "[data-metric-value]")).toBe("51%");
   expect(await text(page, "[data-metric-context]")).toBe(
-    "46 of 90 departures · one seeded illustrative run",
+    "46 of 90 choices in this live run.",
   );
   expect(
     await page.locator("svg.network").evaluate((svg) =>
       svg.classList.contains("network--connector-open"),
     ),
   ).toBe(true);
+  await expectDistinctRouteVehicles(page);
   await expectNoOverflow(page);
 
   await action.click();
@@ -488,10 +550,18 @@ describe("keyboard-only chapter flow", () => {
     await waitForState(page, "proposal");
     expect(await page.evaluate(() => document.activeElement?.matches("[data-headline]") ?? false)).toBe(true);
 
-    await keyboardChoose(page, '[data-choice="A"]', "Enter");
-    await keyboardChoose(page, '[data-choice="B"]', "Space");
     await keyboardChoose(page, "[data-action]", "Enter");
+    expect(await text(page, "[data-action]")).toBe("Test with light traffic");
+    expect(
+      await page.locator("[data-trace-link]").evaluateAll((traces) =>
+        traces.map((trace) => trace.getAttribute("data-trace-link")),
+      ),
+    ).toEqual(["SA", "AB", "BT"]);
+    await keyboardChoose(page, "[data-action]", "Space");
     await waitForState(page, "quiet");
+    expect(await page.evaluate(() => document.activeElement?.matches("[data-headline]") ?? false)).toBe(true);
+    await page.waitForTimeout(450);
+    expect(await page.evaluate(() => document.activeElement?.matches("[data-headline]") ?? false)).toBe(true);
     await keyboardChoose(page, 'input[data-radio="quiet-prediction"][value="help"]', "Space");
     await keyboardChoose(page, "[data-action]", "Enter");
     await waitForState(page, "quiet_result");
@@ -574,7 +644,7 @@ describe("resize during a traffic wave", () => {
     await expectNoOverflow(page);
 
     await waitForState(page, "wave_one");
-    expect(await text(page, "[data-metric-context]")).toContain("46 of 90 departures");
+    expect(await text(page, "[data-metric-context]")).toContain("46 of 90 choices");
     expect(await page.locator("svg.network").getAttribute("data-layout")).toBe("tall");
     await expectNoOverflow(page);
     expectHealthy(observed);
@@ -596,7 +666,24 @@ describe("reduced motion", () => {
     expect(before.vehicles).toBeGreaterThan(20);
     expect(before.visibleVehicles).toBe(0);
 
-    await reachPeak(page);
+    await choose(page, "north");
+    await choose(page, "south");
+    await page.locator("[data-action]").click();
+    await waitForState(page, "proposal");
+    await page.locator("[data-action]").click();
+    expect(
+      await page.locator("[data-trace-link]").evaluateAll((traces) =>
+        traces.map((trace) => trace.getAttribute("data-trace-link")),
+      ),
+    ).toEqual(["SA", "AB", "BT"]);
+    expect(await activeAnimationCount(page, ".story, .measure, .control, .route-trace")).toBe(0);
+    await page.locator("[data-action]").click();
+    await waitForState(page, "quiet");
+    await selectRadio(page, "quiet-prediction", "help");
+    await page.locator("[data-action]").click();
+    await waitForState(page, "quiet_result");
+    await page.locator("[data-action]").click();
+    await waitForState(page, "peak");
     await selectRadio(page, "personal-route", "shortcut");
     const beforeWave = await page.evaluate(
       () => (window as unknown as { simulatedSeconds?: number }).simulatedSeconds ?? 0,
@@ -611,7 +698,7 @@ describe("reduced motion", () => {
     }));
     expect(after.time).toBeGreaterThanOrEqual(beforeWave + 400);
     expect(after.visibleVehicles).toBe(0);
-    expect(await text(page, "[data-metric-context]")).toContain("46 of 90 departures");
+    expect(await text(page, "[data-metric-context]")).toContain("46 of 90 choices");
 
     await page.locator("[data-action]").click();
     await waitForState(page, "wave_two", 10_000);

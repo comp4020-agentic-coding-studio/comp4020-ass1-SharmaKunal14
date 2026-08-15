@@ -11,6 +11,7 @@
   --road-slow: #9e593b;
   --road-crawl: #8b3929;
   --connector: #0f7482;
+  --shortcut-car: #f0a51a;
   --focus: #086c81;
   --serif: "Iowan Old Style", "Palatino Linotype", palatino, georgia, serif;
   --sans: inter, avenir, "Avenir Next", ui-sans-serif, system-ui, -apple-system, sans-serif;
@@ -167,19 +168,25 @@ main {
   margin-inline: auto;
   padding: clamp(2.2rem, 5vh, 4.5rem) 0 clamp(2rem, 5vh, 4rem);
   display: grid;
-  grid-template-columns: minmax(8rem, 10rem) minmax(18rem, 23rem) minmax(0, 1fr);
+  grid-template-columns: minmax(19rem, 24rem) minmax(0, 1fr);
   grid-template-areas:
-    "chapters story stage"
-    "chapters measure stage"
-    "chapters control stage";
+    "story stage"
+    "measure stage"
+    "control stage";
   gap: 1.6rem clamp(1.5rem, 3vw, 3.5rem);
   align-items: start;
 }
 
 .chapters {
-  grid-area: chapters;
-  padding-top: 0.2rem;
-  font-family: var(--sans);
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
 }
 
 .chapters__label,
@@ -256,6 +263,7 @@ main {
 .story {
   grid-area: story;
   min-width: 0;
+  will-change: opacity, transform;
 }
 
 .story__eyebrow,
@@ -293,6 +301,7 @@ main {
   min-width: 0;
   padding-top: 1.3rem;
   border-top: 1px solid var(--rule);
+  will-change: opacity, transform;
 }
 
 .measure__value {
@@ -301,6 +310,11 @@ main {
   font-variant-numeric: tabular-nums lining-nums;
   letter-spacing: -0.065em;
   line-height: 0.86;
+}
+
+body[data-state="proposal"] .measure__value {
+  font-size: clamp(2.55rem, 3.5vw, 4.25rem);
+  white-space: nowrap;
 }
 
 .measure__label,
@@ -369,6 +383,7 @@ main {
 .control {
   grid-area: control;
   align-self: end;
+  will-change: opacity, transform;
 }
 
 .choices {
@@ -571,15 +586,18 @@ main {
   min-width: 0;
 }
 
+/* The changing sentence beside the action is the visible narration. The figure
+   keeps its accessible name without adding a second line of competing prose. */
 .stage__caption {
-  max-width: 76ch;
-  margin: 0.75rem 0 0;
-  padding-top: 0.65rem;
-  border-top: 1px solid var(--rule);
-  color: var(--ink-faint);
-  font-family: var(--sans);
-  font-size: 0.75rem;
-  line-height: 1.4;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
 }
 
 .network {
@@ -613,6 +631,34 @@ main {
   stroke-width: 3px;
   stroke-dasharray: 7 10;
   opacity: 0.58;
+}
+
+.route-trace {
+  fill: none;
+  stroke: var(--connector);
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  stroke-linecap: round;
+  stroke-width: 13px;
+  opacity: 0;
+  pointer-events: none;
+  animation: route-draw 520ms cubic-bezier(0.22, 1, 0.36, 1) var(--trace-delay) both;
+}
+
+@keyframes route-draw {
+  0% {
+    stroke-dashoffset: 1;
+    opacity: 0;
+  }
+
+  18% {
+    opacity: 0.28;
+  }
+
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 0.28;
+  }
 }
 
 .network--connector-open .road--connector {
@@ -673,9 +719,20 @@ main {
   fill: var(--connector);
 }
 
+body:not([data-state="map"]) .throat__label {
+  opacity: 0;
+}
+
 .vehicle {
   fill: color-mix(in oklab, var(--connector) calc(var(--speed, 1) * 52%), var(--ink));
   opacity: 0.94;
+}
+
+.vehicle--shortcut {
+  fill: var(--shortcut-car);
+  stroke: var(--ink);
+  stroke-width: 1.35px;
+  opacity: 1;
 }
 
 .network-note {
@@ -714,6 +771,21 @@ main {
 .network[data-narrative="verdict"] .road-label:not(.road-label--ab) {
   opacity: 0.08;
 }
+
+body[data-state="map"] .road--connector,
+body[data-state="map"] .road-label--ab,
+body[data-state="proposal"][data-shortcut-traced="false"] .road--connector,
+body[data-state="proposal"][data-shortcut-traced="false"] .road-label--ab {
+  opacity: 0;
+}
+
+/* stylelint-disable no-descending-specificity -- narrative state deliberately
+   suppresses secondary labels after the generic spotlight treatment. */
+body[data-state="proposal"] .road-label:not(.road-label--ab),
+body:not([data-state="map"], [data-state="proposal"]) .road-label {
+  opacity: 0;
+}
+/* stylelint-enable no-descending-specificity */
 
 /* These chapters discuss geometry or frozen paired evidence. Live traffic begins
    only when the visitor explicitly releases the peak waves. */
@@ -858,30 +930,11 @@ body[data-state="compare"] .road:not(.road--connector) {
     padding: 0.9rem 0 1.5rem;
     grid-template-columns: minmax(0, 1fr);
     grid-template-areas:
-      "chapters"
       "story"
       "measure"
       "stage"
       "control";
     gap: 0.7rem;
-  }
-
-  .chapters {
-    display: flex;
-    min-height: 1.4rem;
-    padding: 0 0 0.45rem;
-    border-bottom: 1px solid var(--rule);
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  .chapters__label,
-  .chapters__list {
-    display: none;
-  }
-
-  .chapters__count {
-    display: block;
   }
 
   .story__eyebrow {
@@ -919,6 +972,10 @@ body[data-state="compare"] .road:not(.road--connector) {
     font-size: 3.2rem;
   }
 
+  body[data-state="proposal"] .measure__value {
+    font-size: 2.25rem;
+  }
+
   .measure__label,
   .comparison__label {
     margin-top: 0.35rem;
@@ -951,13 +1008,6 @@ body[data-state="compare"] .road:not(.road--connector) {
 
   .stage__figure {
     aspect-ratio: 1 / 1;
-  }
-
-  .stage__caption {
-    margin-top: 0.25rem;
-    padding-top: 0.4rem;
-    font-size: 0.65rem;
-    line-height: 1.25;
   }
 
   .control {
@@ -1063,6 +1113,12 @@ body[data-state="compare"] .road:not(.road--connector) {
 
   .vehicle {
     display: none;
+  }
+
+  .route-trace {
+    stroke-dashoffset: 0;
+    opacity: 0.28;
+    animation: none;
   }
 
   .action:hover {
