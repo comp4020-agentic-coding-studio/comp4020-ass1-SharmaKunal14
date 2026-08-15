@@ -61,6 +61,10 @@ a {
   outline-offset: 4px;
 }
 
+body[data-input="pointer"] :focus-visible {
+  outline: none;
+}
+
 .sr-only {
   position: absolute;
   width: 1px;
@@ -163,13 +167,90 @@ main {
   margin-inline: auto;
   padding: clamp(2.2rem, 5vh, 4.5rem) 0 clamp(2rem, 5vh, 4rem);
   display: grid;
-  grid-template-columns: minmax(18rem, 23rem) minmax(0, 1fr);
+  grid-template-columns: minmax(8rem, 10rem) minmax(18rem, 23rem) minmax(0, 1fr);
   grid-template-areas:
-    "story stage"
-    "measure stage"
-    "control stage";
-  gap: 1.6rem clamp(2.5rem, 5vw, 5.8rem);
+    "chapters story stage"
+    "chapters measure stage"
+    "chapters control stage";
+  gap: 1.6rem clamp(1.5rem, 3vw, 3.5rem);
   align-items: start;
+}
+
+.chapters {
+  grid-area: chapters;
+  padding-top: 0.2rem;
+  font-family: var(--sans);
+}
+
+.chapters__label,
+.chapters__count {
+  margin: 0;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.chapters__label {
+  color: var(--ink);
+}
+
+.chapters__count {
+  display: none;
+  color: var(--connector);
+}
+
+.chapters__list {
+  margin: 1rem 0 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: chapter;
+}
+
+.chapters__list li {
+  position: relative;
+  min-height: 2.8rem;
+  padding: 0.2rem 0 0.9rem 1.65rem;
+  color: var(--ink-faint);
+  font-size: 0.68rem;
+  line-height: 1.25;
+  counter-increment: chapter;
+}
+
+.chapters__list li::before {
+  content: counter(chapter, decimal-leading-zero);
+  position: absolute;
+  top: 0.15rem;
+  left: 0;
+  color: var(--ink-faint);
+  font-size: 0.61rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+}
+
+.chapters__list li::after {
+  content: "";
+  position: absolute;
+  top: 1.25rem;
+  bottom: 0.1rem;
+  left: 0.31rem;
+  width: 1px;
+  background: var(--rule);
+}
+
+.chapters__list li:last-child::after {
+  display: none;
+}
+
+.chapters__list li[aria-current],
+.chapters__list li[aria-current]::before {
+  color: var(--connector);
+  font-weight: 850;
+}
+
+.chapters__list li.is-complete,
+.chapters__list li.is-complete::before {
+  color: var(--ink);
 }
 
 .story {
@@ -281,9 +362,148 @@ main {
   text-transform: uppercase;
 }
 
+.comparison[data-direction="better"] .comparison__delta {
+  color: var(--connector);
+}
+
 .control {
   grid-area: control;
   align-self: end;
+}
+
+.choices {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+  margin-bottom: 0.7rem;
+}
+
+.choices:empty {
+  display: none;
+}
+
+.choice {
+  min-height: 3.35rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--rule);
+  border-radius: 0;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  font-family: var(--sans);
+  text-align: left;
+}
+
+.choice:hover {
+  border-color: var(--ink);
+}
+
+.choice[aria-pressed="true"] {
+  border-color: var(--connector);
+  background: color-mix(in srgb, var(--connector) 9%, transparent);
+  box-shadow: inset 3px 0 0 var(--connector);
+}
+
+.choice[data-complete="true"] .choice__title::after {
+  content: " ✓";
+  color: var(--connector);
+}
+
+.choice__title,
+.choice__detail {
+  display: block;
+}
+
+.choice__title {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.choice__detail {
+  margin-top: 0.2rem;
+  color: var(--ink-faint);
+  font-size: 0.68rem;
+}
+
+.choice-group {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  grid-column: 1 / -1;
+}
+
+.choice-group__legend {
+  margin-bottom: 0.45rem;
+  color: var(--ink-faint);
+  font-family: var(--sans);
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.choice-group__options {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.option {
+  position: relative;
+  min-height: 3.1rem;
+  padding: 0.55rem 0.7rem 0.55rem 2.4rem;
+  border: 1px solid var(--rule);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.option:hover {
+  border-color: var(--ink);
+}
+
+.option:has(input:checked) {
+  border-color: var(--connector);
+  background: color-mix(in srgb, var(--connector) 9%, transparent);
+  box-shadow: inset 3px 0 0 var(--connector);
+}
+
+.option input {
+  position: absolute;
+  left: 0.78rem;
+  width: 1rem;
+  height: 1rem;
+  margin: 0;
+  accent-color: var(--connector);
+}
+
+.option input:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 4px;
+}
+
+.option__copy,
+.option__title,
+.option__detail {
+  display: block;
+}
+
+.option__title {
+  font-family: var(--sans);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.option__detail {
+  margin-top: 0.12rem;
+  color: var(--ink-faint);
+  font-family: var(--sans);
+  font-size: 0.67rem;
+  line-height: 1.3;
 }
 
 .action {
@@ -310,6 +530,14 @@ main {
   background: transparent;
   color: var(--ink);
   transform: translateY(-2px);
+}
+
+.action:disabled {
+  border-color: var(--rule);
+  background: transparent;
+  color: var(--ink-faint);
+  cursor: not-allowed;
+  transform: none;
 }
 
 .action:active {
@@ -467,6 +695,14 @@ main {
   opacity: 1;
 }
 
+.network[data-narrative="wave_one"] .network-note--shortcut,
+.network[data-narrative="wave_two"] .network-note,
+.network[data-narrative="wave_three"] .network-note--shortcut,
+.network[data-narrative="wave_four"] .network-note,
+.network[data-narrative="diagnose"] .network-note {
+  opacity: 1;
+}
+
 .network--spotlight .road:not(.road--spot) {
   opacity: 0.52;
 }
@@ -477,6 +713,27 @@ main {
 
 .network[data-narrative="verdict"] .road-label:not(.road-label--ab) {
   opacity: 0.08;
+}
+
+/* These chapters discuss geometry or frozen paired evidence. Live traffic begins
+   only when the visitor explicitly releases the peak waves. */
+body[data-state="map"] .vehicle,
+body[data-state="proposal"] .vehicle,
+body[data-state="quiet"] .vehicle,
+body[data-state="quiet_result"] .vehicle,
+body[data-state="peak"] .vehicle,
+body[data-state="compare"] .vehicle {
+  display: none;
+}
+
+body[data-state="map"] .road:not(.road--connector),
+body[data-state="proposal"] .road:not(.road--connector),
+body[data-state="quiet"] .road:not(.road--connector),
+body[data-state="quiet_result"] .road:not(.road--connector),
+body[data-state="peak"] .road:not(.road--connector),
+body[data-state="compare"] .road:not(.road--connector) {
+  stroke: var(--road);
+  stroke-width: 7px;
 }
 
 /* --------------------------------------------------------------- afterword */
@@ -601,11 +858,30 @@ main {
     padding: 0.9rem 0 1.5rem;
     grid-template-columns: minmax(0, 1fr);
     grid-template-areas:
+      "chapters"
       "story"
       "measure"
       "stage"
       "control";
     gap: 0.7rem;
+  }
+
+  .chapters {
+    display: flex;
+    min-height: 1.4rem;
+    padding: 0 0 0.45rem;
+    border-bottom: 1px solid var(--rule);
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .chapters__label,
+  .chapters__list {
+    display: none;
+  }
+
+  .chapters__count {
+    display: block;
   }
 
   .story__eyebrow {
@@ -689,6 +965,11 @@ main {
     grid-template-columns: auto minmax(0, 1fr);
     gap: 0.7rem;
     align-items: center;
+  }
+
+  .choices {
+    grid-column: 1 / -1;
+    margin-bottom: 0;
   }
 
   .action {

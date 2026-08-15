@@ -5,6 +5,7 @@
 import type { LinkId } from "../sim/network.ts";
 import { buildNetwork } from "../sim/network.ts";
 import type { LiveRun } from "../live.ts";
+import type { StateId } from "../story.ts";
 import type { LayoutKind, Point } from "./layout.ts";
 import { NODES, VIEWBOX, alongSamples, pathData, sampleSegment, segmentsFor } from "./layout.ts";
 
@@ -41,7 +42,7 @@ const LINK_ORDER: readonly LinkId[] = ["SB", "AT", "SA", "BT", "AB"];
 /** Ceiling on drawn vehicles. Beyond this the picture is a jam either way. */
 const VEHICLE_POOL = 320;
 
-type NarrativeMode = "decide" | "watch" | "verdict" | "recover" | "reveal";
+type NarrativeMode = StateId;
 
 
 function el<K extends keyof SVGElementTagNameMap>(
@@ -326,7 +327,11 @@ export class Scene {
   setNarrative(mode: NarrativeMode, shortcutShare: number): void {
     this.svg.dataset.narrative = mode;
     if (this.shortcutNote !== null) {
-      this.shortcutNote.textContent = `${Math.round(shortcutShare * 100)}% choose this link`;
+      const percentage = `${Math.round(shortcutShare * 100)}%`;
+      const paired = mode === "verdict" || mode === "diagnose" || mode === "reveal";
+      this.shortcutNote.textContent = paired
+        ? `paired cohort · ${percentage}`
+        : `live choices · ${percentage}`;
     }
   }
 

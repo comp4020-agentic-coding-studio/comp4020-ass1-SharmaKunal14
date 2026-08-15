@@ -6,13 +6,13 @@
     <meta name="theme-color" content="#f2efe6" />
     <meta
       name="description"
-      content="A live traffic experiment about the road that looks helpful—and makes the average trip longer."
+      content="A six-chapter investigation into how one new road changes a shared traffic network."
     />
     <title>One More Road</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22><rect width=%2232%22 height=%2232%22 rx=%224%22 fill=%22%23192520%22/><path d=%22M4 23 13 14l6 6 9-11%22 fill=%22none%22 stroke=%22%23f2efe6%22 stroke-width=%223%22/><path d=%22m13 14 6 6%22 stroke=%22%2314788b%22 stroke-width=%224%22/></svg>" />
     <link rel="stylesheet" href="./styles.css" />
   </head>
-  <body data-state="decide">
+  <body data-state="map">
     <header class="masthead">
       <nav aria-label="Page">
         <a class="skip-link" href="#experience">Skip to the experiment</a>
@@ -21,18 +21,33 @@
           One More Road
         </p>
       </nav>
-      <p class="masthead__note">A live traffic experiment</p>
+      <p class="masthead__note">A six-chapter traffic case</p>
     </header>
 
     <main>
       <section class="experience" id="experience" aria-labelledby="story-heading" tabindex="-1">
+        <nav class="chapters" aria-label="Investigation progress">
+          <p class="chapters__label">Case file</p>
+          <p class="chapters__count">
+            Chapter <span data-chapter-number>1</span> of 6
+          </p>
+          <ol class="chapters__list">
+            <li data-chapter="1" aria-current="step">Read the map</li>
+            <li data-chapter="2">Design a link</li>
+            <li data-chapter="3">Try quiet roads</li>
+            <li data-chapter="4">Stress the network</li>
+            <li data-chapter="5">Watch drivers learn</li>
+            <li data-chapter="6">Explain the result</li>
+          </ol>
+        </nav>
+
         <div class="story">
-          <p class="story__eyebrow" data-eyebrow>Eastgate → Central · morning peak</p>
+          <p class="story__eyebrow" data-eyebrow>Chapter 1 of 6 · Read the network</p>
           <h1 class="story__headline" id="story-heading" data-headline tabindex="-1">
-            Traffic is slow. Would one more road help?
+            Two routes. Same empty-road time.
           </h1>
           <p class="story__body" data-body>
-            With empty roads, the proposed link makes the quickest route 31 seconds shorter.
+            Trace both original routes from Eastgate to Central before changing the map.
           </p>
         </div>
 
@@ -71,9 +86,12 @@
         </figure>
 
         <div class="control">
-          <button class="action" type="button" data-action>Build the road</button>
+          <div class="choices" data-choices role="group" aria-label="Chapter choices"></div>
+          <button class="action" type="button" data-action disabled>
+            Continue to the proposal
+          </button>
           <p class="control__status" data-status>
-            One decision. The traffic model handles the rest.
+            Inspect the north and south routes to continue.
           </p>
         </div>
 
@@ -113,11 +131,16 @@
               quicker-looking routes are more likely, never mandatory.
             </p>
             <p>
+              <strong>Animation time is compressed.</strong> The presentation advances many fixed
+              0.25-second steps between frames, pauses at exact checkpoints and never changes the
+              physics, seed or evidence.
+            </p>
+            <p>
               <strong>The verdict is a paired counterfactual.</strong> The road-closed and road-open
-              experiments reuse the same generated drivers, departure schedule, demand and random
-              seed. The only treatment difference is whether the connector is available. The
-              animated sequence is one warm-start illustration; its rolling number is not used as
-              the scientific result.
+              experiments reuse the same generated departure schedule, demand and random seed. The
+              only treatment difference is whether the connector is available. The animated waves
+              are one warm-start illustration; their checkpoint choice shares are not used as the
+              scientific result.
             </p>
             <p>
               <strong>The chosen seeded result is modest:</strong>

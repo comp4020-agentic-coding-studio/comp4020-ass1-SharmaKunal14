@@ -7,12 +7,14 @@ import { JSDOM } from "jsdom";
 import { describe, expect, it } from "vitest";
 import { CONTROL, TARGET, networkOf } from "../src/experiment/config.ts";
 import { EXPERIMENT } from "../src/experiment/result.generated.ts";
+import { formatDuration } from "../src/experiment/metrics.ts";
 import { compare } from "../src/experiment/run.ts";
 import { routeFreeFlowTime } from "../src/sim/network.ts";
 import { STATES, STORY } from "../src/story.ts";
 
 const html = readFileSync(resolve("dist/index.html"), "utf8");
 const doc = new JSDOM(html).window.document;
+const mainSource = readFileSync(resolve("main.ts"), "utf8");
 
 function words(text: string): number {
   return text.trim().split(/\s+/).filter(Boolean).length;
@@ -30,12 +32,33 @@ describe("the page quotes controlled evidence", () => {
     expect(Math.round(target.open.meanTravelTime * 10) / 10, stale).toBe(
       EXPERIMENT.target.openSeconds,
     );
-    expect(Math.round(control.deltaPercent * 10) / 10, stale).toBe(
-      EXPERIMENT.control.deltaPercent,
+    expect(Math.round(control.closed.meanTravelTime * 10) / 10, stale).toBe(
+      EXPERIMENT.control.closedSeconds,
+    );
+    expect(Math.round(control.open.meanTravelTime * 10) / 10, stale).toBe(
+      EXPERIMENT.control.openSeconds,
     );
   });
 
   it("demonstrates a conditional paradox, not a universal rule", () => {
+    expect(EXPERIMENT.target).toMatchObject({
+      demandPerHour: 860,
+      closedSeconds: 331.3,
+      openSeconds: 343.8,
+      deltaSeconds: 12.5,
+      deltaPercent: 3.8,
+      cohortSize: 280,
+    });
+    expect(EXPERIMENT.control).toMatchObject({
+      demandPerHour: 300,
+      closedSeconds: 318.6,
+      openSeconds: 310.7,
+      deltaSeconds: -7.9,
+      deltaPercent: -2.5,
+      cohortSize: 96,
+      routeCountsOpen: { north: 29, south: 26, shortcut: 41 },
+      sharesOpen: { north: 30, south: 27, shortcut: 43 },
+    });
     expect(EXPERIMENT.target.deltaSeconds).toBeGreaterThan(0);
     expect(EXPERIMENT.control.deltaSeconds).toBeLessThan(0);
     expect(EXPERIMENT.target.horizonInvariant).toBe(true);
@@ -55,40 +78,127 @@ describe("the page quotes controlled evidence", () => {
       EXPERIMENT.target.sharesOpen.shortcut).toBe(100);
   });
 
-  it("keeps the opening claim tied to empty-road geometry", () => {
+  it("derives the two bridge-load explanations from the measured route counts", () => {
+    const closed = EXPERIMENT.target.routeCountsClosed;
+    const open = EXPERIMENT.target.routeCountsOpen;
+
+    expect(closed.north).toBe(131);
+    expect(open.north + open.shortcut).toBe(198);
+    expect(closed.south).toBe(149);
+    expect(open.south + open.shortcut).toBe(188);
+    expect(open.shortcut).toBe(106);
+  });
+
+  it("keeps the route lesson tied to empty-road geometry", () => {
     const network = networkOf(TARGET);
+    const north = routeFreeFlowTime(network, "north");
+    const south = routeFreeFlowTime(network, "south");
     const saving =
-      routeFreeFlowTime(network, "north") - routeFreeFlowTime(network, "shortcut");
+      north - routeFreeFlowTime(network, "shortcut");
+
+    expect(north).toBeCloseTo(south, 8);
+    expect(Math.round(north)).toBe(305);
     expect(Math.round(saving)).toBe(31);
-    expect(STORY.decide.body).toContain("31 seconds");
+    expect(STORY.map.headline.toLowerCase()).toContain("same empty-road time");
+    expect(mainSource).toContain("Thirty-one seconds quicker");
+  });
+
+  it("serves the authoritative peak comparison before JavaScript runs", () => {
+    expect(doc.querySelector("[data-closed-value]")?.textContent?.trim()).toBe(
+      formatDuration(EXPERIMENT.target.closedSeconds),
+    );
+    expect(doc.querySelector("[data-open-value]")?.textContent?.trim()).toBe(
+      formatDuration(EXPERIMENT.target.openSeconds),
+    );
+    expect(doc.querySelector("[data-delta-value]")?.textContent?.trim()).toBe("+13 seconds");
   });
 });
 
-describe("one idea and one mechanic", () => {
-  it("uses five compact states around one road toggle", () => {
-    expect(STATES).toEqual(["decide", "watch", "verdict", "recover", "reveal"]);
-    expect(STORY.decide.action).toMatch(/build/i);
-    expect(STORY.verdict.action).toMatch(/close/i);
-    expect(STORY.watch.action).toBeNull();
-    expect(STORY.recover.action).toBeNull();
+describe("one investigation carried through six chapters", () => {
+  it("uses fifteen ordered, user-paced states", () => {
+    expect(STATES).toEqual([
+      "map",
+      "proposal",
+      "quiet",
+      "quiet_result",
+      "peak",
+      "wave_one",
+      "wave_two",
+      "wave_three",
+      "wave_four",
+      "compare",
+      "verdict",
+      "diagnose",
+      "recovery",
+      "synthesis",
+      "reveal",
+    ]);
+    expect(STATES.map((state) => STORY[state].chapter)).toEqual([
+      1, 2, 3, 3, 4, 5, 5, 5, 5, 5, 5, 6, 6, 6, 6,
+    ]);
+    expect(new Set(STATES.map((state) => STORY[state].chapter))).toEqual(
+      new Set([1, 2, 3, 4, 5, 6]),
+    );
+
+    for (const state of STATES) {
+      expect(STORY[state].headline.trim(), `${state} headline`).not.toBe("");
+      expect(STORY[state].body.trim(), `${state} body`).not.toBe("");
+      expect(STORY[state].action.trim(), `${state} action`).not.toBe("");
+    }
+    expect(mainSource).not.toContain("shouldAdvance");
   });
 
-  it("ships one action and no dashboard controls", () => {
+  it("provides a six-step chapter rail with a single current step", () => {
+    const rail = doc.querySelector("nav.chapters");
+    const items = [...doc.querySelectorAll<HTMLElement>("[data-chapter]")];
+
+    expect(rail?.getAttribute("aria-label")).toBe("Investigation progress");
+    expect(rail?.querySelector("ol")).not.toBeNull();
+    expect(items).toHaveLength(6);
+    expect(items.map((item) => item.dataset.chapter)).toEqual(["1", "2", "3", "4", "5", "6"]);
+    expect(items.map((item) => item.textContent?.trim())).toEqual([
+      "Read the map",
+      "Design a link",
+      "Try quiet roads",
+      "Stress the network",
+      "Watch drivers learn",
+      "Explain the result",
+    ]);
+    expect(items.filter((item) => item.getAttribute("aria-current") === "step")).toHaveLength(1);
+    expect(items[0].getAttribute("aria-current")).toBe("step");
+    expect(doc.querySelector("[data-chapter-number]")?.textContent?.trim()).toBe("1");
+  });
+
+  it("gates progression on chapter choices instead of automatic story timers", () => {
+    const action = doc.querySelector<HTMLButtonElement>("[data-action]");
+    const choices = doc.querySelector("[data-choices]");
+
+    expect(doc.body.dataset.state).toBe("map");
+    expect(action?.disabled).toBe(true);
+    expect(action?.textContent?.trim()).toBe(STORY.map.action);
+    expect(choices).not.toBeNull();
+    expect(mainSource).toContain('input.type = "radio"');
+    expect(mainSource).toContain('button.setAttribute("aria-pressed"');
+  });
+
+  it("keeps the interaction surface bounded and dashboard-free", () => {
     expect(doc.querySelectorAll("[data-action]")).toHaveLength(1);
     expect(doc.querySelectorAll("button")).toHaveLength(1);
-    expect(doc.querySelectorAll("input, select, textarea")).toHaveLength(0);
-    expect(doc.querySelectorAll("[data-route], .chart, progress")).toHaveLength(0);
+    expect(doc.querySelectorAll("input[type=range], select, textarea")).toHaveLength(0);
+    expect(doc.querySelectorAll(".dashboard, .chart, canvas, progress, [role=slider]")).toHaveLength(0);
+    expect(mainSource).not.toMatch(/\.type\s*=\s*["']range["']/);
   });
 
-  it("asks for a decision before asking for an essay", () => {
-    const headline = words(doc.querySelector("h1")?.textContent ?? "");
-    const body = words(doc.querySelector("[data-body]")?.textContent ?? "");
-    expect(headline).toBeLessThanOrEqual(12);
-    expect(body).toBeLessThanOrEqual(20);
-    expect(headline + body).toBeLessThanOrEqual(30);
+  it("keeps every chapter beat concise enough to remain an interactive story", () => {
+    for (const state of STATES) {
+      const beat = STORY[state];
+      expect(words(beat.headline), `${state} headline`).toBeLessThanOrEqual(12);
+      expect(words(beat.body), `${state} body`).toBeLessThanOrEqual(26);
+      expect(words(beat.action), `${state} action`).toBeLessThanOrEqual(7);
+    }
   });
 
-  it("does not name the phenomenon in the visible opening", () => {
+  it("withholds the phenomenon until the final reveal", () => {
     const opening = [
       doc.title,
       doc.querySelector('meta[name="description"]')?.getAttribute("content") ?? "",
@@ -97,8 +207,20 @@ describe("one idea and one mechanic", () => {
     ].join(" ").toLowerCase();
     expect(opening).not.toContain("braess");
     expect(opening).not.toContain("paradox");
+    for (const state of STATES.slice(0, -1)) {
+      const copy = `${STORY[state].eyebrow} ${STORY[state].headline} ${STORY[state].body}`.toLowerCase();
+      expect(copy, `${state} reveals the name early`).not.toContain("braess");
+      expect(copy, `${state} reveals the name early`).not.toContain("paradox");
+    }
     expect(STORY.reveal.headline.toLowerCase()).toContain("braess");
     expect(doc.querySelector("[data-afterword]")?.hasAttribute("hidden")).toBe(true);
+  });
+
+  it("uses the two evidence-backed demand scenarios and no invented third case", () => {
+    expect(STORY.quiet.body).toContain(String(EXPERIMENT.control.demandPerHour));
+    expect(STORY.peak.body).toContain(String(EXPERIMENT.target.demandPerHour));
+    expect(STORY.quiet_result.body).toMatch(/saves eight seconds/i);
+    expect(STORY.verdict.body).toMatch(/only the road changed/i);
   });
 });
 
@@ -122,7 +244,7 @@ describe("the disclosure matches the implementation", () => {
   it("separates the animated illustration from the paired verdict", () => {
     for (const phrase of [
       "paired counterfactual",
-      "same generated drivers",
+      "same generated departure schedule",
       "only treatment difference",
       "warm-start illustration",
       "not used as the scientific result",
@@ -156,11 +278,29 @@ describe("static GitHub Pages delivery", () => {
 });
 
 describe("accessible markup", () => {
-  it("uses a real button and one dedicated live region", () => {
-    const action = doc.querySelector("[data-action]");
+  it("uses a labelled choice group, a real action button, and one dedicated live region", () => {
+    const choices = doc.querySelector("[data-choices]");
+    const action = doc.querySelector<HTMLButtonElement>("[data-action]");
+
+    expect(choices?.getAttribute("role")).toBe("group");
+    expect(choices?.getAttribute("aria-label")).toBe("Chapter choices");
     expect(action?.tagName).toBe("BUTTON");
     expect(action?.getAttribute("type")).toBe("button");
+    expect(action?.textContent?.trim()).not.toBe("");
     expect(doc.querySelector("[data-announce]")?.getAttribute("aria-live")).toBe("polite");
+    expect(doc.querySelectorAll('[aria-live="polite"]')).toHaveLength(1);
+  });
+
+  it("gives the generated choice controls semantic names and state", () => {
+    for (const fragment of [
+      'button.type = "button"',
+      'button.setAttribute("aria-pressed"',
+      'document.createElement("fieldset")',
+      'document.createElement("legend")',
+      'input.type = "radio"',
+    ]) {
+      expect(mainSource, `missing generated-control contract: ${fragment}`).toContain(fragment);
+    }
   });
 
   it("provides a reliable skip target", () => {

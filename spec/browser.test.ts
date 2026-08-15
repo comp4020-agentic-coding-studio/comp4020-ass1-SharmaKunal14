@@ -1,6 +1,6 @@
-// Checks that need a real browser because jsdom does no layout. These run against
-// the built site in dist/, served over HTTP, so they exercise the artefact that is
-// actually deployed at both marking viewports.
+// Real-browser checks for the built artefact. The story is intentionally tested
+// through its public controls rather than by mutating window state: each gate is
+// part of the explanation the marker receives.
 
 import { createServer } from "node:http";
 import type { Server } from "node:http";
@@ -23,7 +23,22 @@ const TYPES: Record<string, string> = {
   ".json": "application/json",
 };
 
-type StateId = "decide" | "watch" | "verdict" | "recover" | "reveal";
+type StateId =
+  | "map"
+  | "proposal"
+  | "quiet"
+  | "quiet_result"
+  | "peak"
+  | "wave_one"
+  | "wave_two"
+  | "wave_three"
+  | "wave_four"
+  | "compare"
+  | "verdict"
+  | "diagnose"
+  | "recovery"
+  | "synthesis"
+  | "reveal";
 
 type ObservedPage = {
   readonly page: Page;
@@ -117,24 +132,21 @@ async function open(
       failedSameOrigin.push(`${response.url()} (${response.status()})`);
     }
   });
-  const responseLatencyMs = options.responseLatencyMs;
-  if (responseLatencyMs !== undefined) {
+
+  if (options.responseLatencyMs !== undefined) {
     await page.route("**/*", async (route) => {
-      await new Promise((resolveDelay) => setTimeout(resolveDelay, responseLatencyMs));
+      await new Promise((done) => setTimeout(done, options.responseLatencyMs));
       await route.continue();
     });
   }
 
-  // This changes wall-clock compression only. The simulation still advances in
-  // its fixed timestep with the same seed and schedule.
   await page.goto(`${origin}?speed=${options.speed ?? TEST_SPEED}`, { waitUntil: "load" });
-  await waitForState(page, "decide");
+  await waitForState(page, "map");
   await page.waitForFunction(
-    () => document.querySelector("[data-metric-value]")?.textContent !== "—",
+    () => document.querySelector("[data-metric-value]")?.textContent?.trim() === "5:05",
     null,
     { timeout: 20_000 },
   );
-
   return { page, errors, failedSameOrigin, externalRequests };
 }
 
@@ -150,36 +162,48 @@ function overflow(page: Page): Promise<boolean> {
   return page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
 }
 
-function durationSeconds(value: string): number {
-  const match = /^(\d+):(\d{2})$/.exec(value.trim());
-  if (match === null) throw new Error(`not a duration: ${value}`);
-  return Number(match[1]) * 60 + Number(match[2]);
-}
-
 function expectHealthy(observed: ObservedPage): void {
   expect(observed.errors).toEqual([]);
   expect(observed.failedSameOrigin).toEqual([]);
   expect(observed.externalRequests).toEqual([]);
 }
 
-async function expectVerdict(page: Page): Promise<void> {
-  expect(await page.locator("[data-comparison]").isVisible()).toBe(true);
-  const closedText = (await page.locator("[data-closed-value]").textContent())?.trim() ?? "";
-  const openText = (await page.locator("[data-open-value]").textContent())?.trim() ?? "";
-  const deltaText = (await page.locator("[data-delta-value]").textContent())?.trim() ?? "";
-  const closed = durationSeconds(closedText);
-  const opened = durationSeconds(openText);
+async function text(page: Page, selector: string): Promise<string> {
+  return ((await page.locator(selector).textContent()) ?? "").replace(/\s+/g, " ").trim();
+}
 
-  expect(opened, `${openText} should be slower than ${closedText}`).toBeGreaterThan(closed);
-  expect(opened - closed).toBe(13);
-  expect(deltaText).toBe("+13 seconds");
-  const status = (await page.locator("[data-status]").textContent()) ?? "";
-  expect(status).toContain("106 of 280");
-  expect(status).toContain("38%");
+async function expectNoOverflow(page: Page): Promise<void> {
+  expect(await overflow(page), `horizontal overflow in ${await page.locator("body").getAttribute("data-state")}`).toBe(false);
+}
+
+async function expectComparison(
+  page: Page,
+  expected: {
+    readonly closed: string;
+    readonly open: string;
+    readonly delta: string;
+    readonly direction: "better" | "worse";
+  },
+): Promise<void> {
+  expect(await page.locator("[data-comparison]").isVisible()).toBe(true);
+  expect(await text(page, "[data-closed-value]")).toBe(expected.closed);
+  expect(await text(page, "[data-open-value]")).toBe(expected.open);
+  expect(await text(page, "[data-delta-value]")).toBe(expected.delta);
+  expect(await page.locator("[data-comparison]").getAttribute("data-direction")).toBe(
+    expected.direction,
+  );
+}
+
+async function choose(page: Page, value: string): Promise<void> {
+  await page.locator(`[data-choice="${value}"]`).click();
+}
+
+async function selectRadio(page: Page, group: string, value: string): Promise<void> {
+  await page.locator(`input[data-radio="${group}"][value="${value}"]`).check();
 }
 
 async function expectInitialScene(page: Page, layout: "wide" | "tall"): Promise<void> {
-  const state = await page.evaluate(() => {
+  const observed = await page.evaluate(() => {
     const svg = document.querySelector<SVGSVGElement>("svg.network");
     const box = svg?.viewBox.baseVal;
     const visibleVehicles = [...document.querySelectorAll<SVGCircleElement>(".vehicle")].filter(
@@ -194,206 +218,372 @@ async function expectInitialScene(page: Page, layout: "wide" | "tall"): Promise<
             return x < -1 || y < -1 || x > box.width + 1 || y > box.height + 1;
           }).length;
     return {
-      story: document.body.dataset.state,
-      metric: document.querySelector("[data-metric-value]")?.textContent ?? "",
+      state: document.body.dataset.state,
+      metric: document.querySelector("[data-metric-value]")?.textContent?.trim(),
       roads: document.querySelectorAll(".road").length,
+      choices: document.querySelectorAll("[data-choice]").length,
       vehicles: visibleVehicles.length,
       strays,
       layout: svg?.dataset.layout,
-      action: document.querySelector("[data-action]")?.textContent ?? "",
+      action: document.querySelector("[data-action]")?.textContent?.trim(),
+      actionDisabled:
+        document.querySelector<HTMLButtonElement>("[data-action]")?.disabled ?? false,
     };
   });
 
-  expect(state.story).toBe("decide");
-  expect(state.metric).toMatch(/^\d+:\d{2}$/);
-  expect(state.roads).toBe(5);
-  expect(state.vehicles).toBeGreaterThan(20);
-  expect(state.strays).toBe(0);
-  expect(state.layout).toBe(layout);
-  expect(state.action.toLowerCase()).toContain("build");
-  expect(await overflow(page)).toBe(false);
+  expect(observed).toMatchObject({
+    state: "map",
+    metric: "5:05",
+    roads: 5,
+    choices: 2,
+    strays: 0,
+    layout,
+    action: "Continue to the proposal",
+    actionDisabled: true,
+  });
+  // Chapters 1–4 are a reference drawing. Live cars appear only when the user
+  // explicitly releases the peak traffic, so the opening should be still.
+  expect(observed.vehicles).toBe(0);
+  await expectNoOverflow(page);
+}
+
+/** Complete chapters 1–3 and stop at the peak-demand route choice. */
+async function reachPeak(page: Page): Promise<void> {
+  await choose(page, "north");
+  await choose(page, "south");
+  await page.locator("[data-action]").click();
+  await waitForState(page, "proposal");
+  await choose(page, "A");
+  await choose(page, "B");
+  await page.locator("[data-action]").click();
+  await waitForState(page, "quiet");
+  await selectRadio(page, "quiet-prediction", "help");
+  await page.locator("[data-action]").click();
+  await waitForState(page, "quiet_result");
+  await page.locator("[data-action]").click();
+  await waitForState(page, "peak");
+}
+
+async function completeCase(page: Page, layout: "wide" | "tall"): Promise<void> {
+  await expectInitialScene(page, layout);
+  const action = page.locator("[data-action]");
+
+  // Chapter 1 is gated on inspecting both original routes.
+  expect(await action.isDisabled()).toBe(true);
+  await choose(page, "north");
+  expect(await page.locator('[data-choice="north"]').getAttribute("aria-pressed")).toBe("true");
+  expect(await action.isDisabled()).toBe(true);
+  expect(await text(page, "[data-status]")).toContain("1 of 2 viewed");
+  await choose(page, "south");
+  expect(await action.isEnabled()).toBe(true);
+  expect(await text(page, "[data-status]")).toContain("same 305 seconds");
+  await expectNoOverflow(page);
+
+  await action.click();
+  await waitForState(page, "proposal");
+  expect(await action.isDisabled()).toBe(true);
+  await choose(page, "A");
+  expect(await action.isDisabled()).toBe(true);
+  await choose(page, "B");
+  expect(await action.isEnabled()).toBe(true);
+  expect(await text(page, "[data-metric-value]")).toBe("4:34");
+  expect(await text(page, "[data-metric-context]")).toContain("Thirty-one seconds quicker");
+  await expectNoOverflow(page);
+
+  // A deliberately wrong quiet-road prediction proves feedback is evidence-led,
+  // not a congratulatory branch chosen to match the visitor.
+  await action.click();
+  await waitForState(page, "quiet");
+  expect(await action.isDisabled()).toBe(true);
+  await selectRadio(page, "quiet-prediction", "hurt");
+  expect(await action.isEnabled()).toBe(true);
+  await action.click();
+  await waitForState(page, "quiet_result");
+  await expectComparison(page, {
+    closed: "5:19",
+    open: "5:11",
+    delta: "−8 seconds",
+    direction: "better",
+  });
+  expect(await text(page, "[data-status]")).toContain("overturns your prediction");
+  expect(await text(page, "[data-metric-context]")).toContain("41 of 96");
+  expect(await text(page, "[data-metric-context]")).toContain("43%");
+  await expectNoOverflow(page);
+
+  await action.click();
+  await waitForState(page, "peak");
+  expect(await action.isDisabled()).toBe(true);
+  await selectRadio(page, "personal-route", "shortcut");
+  expect(await action.isEnabled()).toBe(true);
+  expect(await text(page, "[data-status]")).toContain("model will make its own seeded choices");
+
+  await action.click();
+  await waitForState(page, "wave_one");
+  expect(await text(page, "[data-metric-value]")).toBe("51%");
+  expect(await text(page, "[data-metric-context]")).toBe(
+    "46 of 90 departures · one seeded illustrative run",
+  );
+  expect(
+    await page.locator("svg.network").evaluate((svg) =>
+      svg.classList.contains("network--connector-open"),
+    ),
+  ).toBe(true);
+  await expectNoOverflow(page);
+
+  await action.click();
+  await waitForState(page, "wave_two");
+  expect(await text(page, "[data-headline]")).toContain("Both short roads");
+  await expectNoOverflow(page);
+  await action.click();
+  await waitForState(page, "wave_three");
+  expect(await text(page, "[data-caption]")).toContain("later 38%");
+  await expectNoOverflow(page);
+
+  await action.click();
+  await waitForState(page, "wave_four");
+  expect(await text(page, '[data-load="SA"]')).toMatch(/slowing|slower|queueing/);
+  expect(await text(page, '[data-load="BT"]')).toMatch(/slowing|slower|queueing/);
+  await expectNoOverflow(page);
+
+  // The comparison cannot run until the visitor selects the only fair design.
+  await action.click();
+  await waitForState(page, "compare");
+  expect(await action.isDisabled()).toBe(true);
+  await selectRadio(page, "comparison-design", "different-morning");
+  expect(await action.isDisabled()).toBe(true);
+  expect(await text(page, "[data-status]")).toContain("different departures");
+  await selectRadio(page, "comparison-design", "different-demand");
+  expect(await action.isDisabled()).toBe(true);
+  expect(await text(page, "[data-status]")).toContain("second change in demand");
+  await selectRadio(page, "comparison-design", "road-only");
+  expect(await action.isEnabled()).toBe(true);
+  expect(await text(page, "[data-status]")).toContain(
+    "same demand, departure schedule and random seed; only the road changes",
+  );
+
+  await action.click();
+  await waitForState(page, "verdict");
+  await expectComparison(page, {
+    closed: "5:31",
+    open: "5:44",
+    delta: "+13 seconds",
+    direction: "worse",
+  });
+  expect(await text(page, "[data-metric-context]")).toContain("106 of 280");
+  expect(await text(page, "[data-metric-context]")).toContain("38%");
+  expect(await text(page, "[data-status]")).toContain("38% is an outcome, not an input");
+  await expectNoOverflow(page);
+
+  // Both bottlenecks must be inspected, and their counts reconstruct why the
+  // 106 shortcut trips load both old bridge approaches.
+  await action.click();
+  await waitForState(page, "diagnose");
+  expect(await action.isDisabled()).toBe(true);
+  await choose(page, "SA");
+  expect(await text(page, "[data-metric-value]")).toBe("131 → 198");
+  expect(await text(page, "[data-status]")).toContain("all 106 shortcut trips");
+  expect(await action.isDisabled()).toBe(true);
+  await choose(page, "BT");
+  expect(await text(page, "[data-metric-value]")).toBe("149 → 188");
+  expect(await text(page, "[data-status]")).toContain("all 106 shortcut trips");
+  expect(await action.isEnabled()).toBe(true);
+
+  await action.click();
+  await waitForState(page, "recovery");
+  expect(await text(page, "[data-metric-value]")).toBe("0");
+  expect(await text(page, "[data-metric-label]")).toContain("post-closure departures yet");
+  expect(
+    await page.locator("svg.network").evaluate((svg) =>
+      svg.classList.contains("network--connector-open"),
+    ),
+  ).toBe(false);
+
+  await action.click();
+  await waitForState(page, "synthesis");
+  expect(await text(page, "[data-metric-value]")).toBe("0%");
+  expect(await text(page, "[data-metric-label]")).toBe("new choices using the closed link");
+  expect(await text(page, "[data-metric-context]")).toMatch(/^0 of \d+ post-closure departures\.$/);
+  await expectNoOverflow(page);
+
+  await action.click();
+  await waitForState(page, "reveal");
+  expect((await text(page, "[data-headline]")).toLowerCase()).toContain("braess");
+  expect(await page.locator("[data-afterword]").isVisible()).toBe(true);
+  await expectComparison(page, {
+    closed: "5:31",
+    open: "5:44",
+    delta: "+13 seconds",
+    direction: "worse",
+  });
+  await expectNoOverflow(page);
+
+  // Replay must clear all gates rather than carrying completed selections over.
+  await action.click();
+  await waitForState(page, "map");
+  expect(await action.isDisabled()).toBe(true);
+  expect(await page.locator('[data-choice][data-complete="true"]').count()).toBe(0);
 }
 
 describe.each([
-  ["desktop 1920x1080", DESKTOP, "wide"],
-  ["phone 390x844", PHONE, "tall"],
-] as const)("%s", (_name, viewport, layout) => {
-  it("completes decide → watch → verdict → recover → reveal", async () => {
+  ["desktop 1920×1080", DESKTOP, "wide"],
+  ["phone 390×844", PHONE, "tall"],
+] as const)("complete chapter flow · %s", (_name, viewport, layout) => {
+  it("gates, measures, diagnoses, closes and reveals the case", async () => {
     const observed = await open(viewport);
-    const { page } = observed;
-    await expectInitialScene(page, layout);
-
-    await page.locator("[data-action]").click();
-    await waitForState(page, "watch", 10_000);
-    expect(await page.locator("[data-action]").isHidden()).toBe(true);
-    expect(
-      await page.locator("svg.network").evaluate((svg) =>
-        svg.classList.contains("network--connector-open"),
-      ),
-    ).toBe(true);
-    expect(await overflow(page)).toBe(false);
-
-    await waitForState(page, "verdict");
-    await expectVerdict(page);
-    expect((await page.locator("[data-action]").textContent())?.toLowerCase()).toContain("close");
-    expect(await overflow(page)).toBe(false);
-
-    await page.locator("[data-action]").click();
-    await waitForState(page, "recover", 10_000);
-    expect(
-      await page.locator("svg.network").evaluate((svg) =>
-        svg.classList.contains("network--connector-open"),
-      ),
-    ).toBe(false);
-
-    await waitForState(page, "reveal");
-    expect((await page.locator("[data-headline]").textContent())?.toLowerCase()).toContain(
-      "braess",
-    );
-    expect(await page.locator("[data-afterword]").isVisible()).toBe(true);
-    expect((await page.locator("[data-action]").textContent())?.toLowerCase()).toContain("again");
-    expect(await overflow(page)).toBe(false);
+    await completeCase(observed.page, layout);
     expectHealthy(observed);
-    await page.close();
-  }, 60_000);
+    await observed.page.close();
+  }, 90_000);
 });
 
-describe("phone first viewport", () => {
-  it("shows the complete initial CTA without scrolling", async () => {
+describe("phone opening", () => {
+  it("shows the first meaningful controls without horizontal overflow", async () => {
     const observed = await open(PHONE);
-    const { page } = observed;
-    const button = page.locator("[data-action]");
-    expect(await button.isVisible()).toBe(true);
-    const box = await button.boundingBox();
-    if (box === null) throw new Error("Build button has no layout box");
-
-    expect(box.x).toBeGreaterThanOrEqual(0);
-    expect(box.y).toBeGreaterThanOrEqual(0);
-    expect(box.x + box.width).toBeLessThanOrEqual(PHONE.width + 0.5);
-    expect(box.y + box.height).toBeLessThanOrEqual(PHONE.height + 0.5);
-    expect(await page.evaluate(() => window.scrollY)).toBe(0);
+    for (const selector of ['[data-choice="north"]', '[data-choice="south"]']) {
+      const box = await observed.page.locator(selector).boundingBox();
+      if (box === null) throw new Error(`${selector} has no layout box`);
+      expect(box.x).toBeGreaterThanOrEqual(0);
+      expect(box.y).toBeGreaterThanOrEqual(0);
+      expect(box.x + box.width).toBeLessThanOrEqual(PHONE.width + 0.5);
+      expect(box.y + box.height).toBeLessThanOrEqual(PHONE.height + 0.5);
+    }
+    expect(await observed.page.evaluate(() => window.scrollY)).toBe(0);
+    await expectNoOverflow(observed.page);
     expectHealthy(observed);
-    await page.close();
+    await observed.page.close();
   });
 });
 
-describe("keyboard-only flow", () => {
-  it("builds with Enter, closes with Space, and preserves a useful focus path", async () => {
+async function tabTo(page: Page, selector: string, limit = 60): Promise<void> {
+  for (let index = 0; index < limit; index += 1) {
+    const matches = await page.evaluate(
+      (target) => document.activeElement?.matches(target) ?? false,
+      selector,
+    );
+    if (matches) return;
+    await page.keyboard.press("Tab");
+  }
+  throw new Error(`Tab did not reach ${selector}`);
+}
+
+async function keyboardChoose(page: Page, selector: string, key: "Enter" | "Space"): Promise<void> {
+  await tabTo(page, selector);
+  await page.keyboard.press(key);
+}
+
+describe("keyboard-only chapter flow", () => {
+  it("operates buttons, radio groups and every narrative transition", async () => {
     const observed = await open(DESKTOP);
     const { page } = observed;
 
-    let reachedAction = false;
-    for (let index = 0; index < 10 && !reachedAction; index += 1) {
-      await page.keyboard.press("Tab");
-      reachedAction = await page.evaluate(
-        () => document.activeElement?.getAttribute("data-action") !== null,
-      );
-    }
-    expect(reachedAction, "Tab never reached the primary action").toBe(true);
-
+    await keyboardChoose(page, '[data-choice="north"]', "Enter");
     const focus = await page.evaluate(() => {
-      const active = document.activeElement;
-      if (active === null) return { style: "", width: "0px" };
-      const computed = getComputedStyle(active);
-      return { style: computed.outlineStyle, width: computed.outlineWidth };
+      const style = getComputedStyle(document.activeElement ?? document.body);
+      return { outline: style.outlineStyle, width: Number.parseFloat(style.outlineWidth) };
     });
-    expect(focus.style).not.toBe("none");
-    expect(Number.parseFloat(focus.width)).toBeGreaterThan(0);
+    expect(focus.outline).not.toBe("none");
+    expect(focus.width).toBeGreaterThan(0);
+    await keyboardChoose(page, '[data-choice="south"]', "Space");
+    await keyboardChoose(page, "[data-action]", "Enter");
+    await waitForState(page, "proposal");
+    expect(await page.evaluate(() => document.activeElement?.matches("[data-headline]") ?? false)).toBe(true);
 
-    await page.keyboard.press("Enter");
-    await waitForState(page, "watch", 10_000);
+    await keyboardChoose(page, '[data-choice="A"]', "Enter");
+    await keyboardChoose(page, '[data-choice="B"]', "Space");
+    await keyboardChoose(page, "[data-action]", "Enter");
+    await waitForState(page, "quiet");
+    await keyboardChoose(page, 'input[data-radio="quiet-prediction"][value="help"]', "Space");
+    await keyboardChoose(page, "[data-action]", "Enter");
+    await waitForState(page, "quiet_result");
+    await keyboardChoose(page, "[data-action]", "Space");
+    await waitForState(page, "peak");
+    // Native radio groups expose one Tab stop; arrow keys move within the group.
+    await tabTo(page, 'input[data-radio="personal-route"][value="north"]');
+    await page.keyboard.press("ArrowDown");
     expect(
-      await page.evaluate(
-        () => document.activeElement?.getAttribute("data-headline") !== null,
-      ),
+      await page.locator('input[data-radio="personal-route"][value="shortcut"]').isChecked(),
     ).toBe(true);
+    await keyboardChoose(page, "[data-action]", "Enter");
+    await waitForState(page, "wave_one");
 
+    await keyboardChoose(page, "[data-action]", "Space");
+    await waitForState(page, "wave_two");
+    await keyboardChoose(page, "[data-action]", "Enter");
+    await waitForState(page, "wave_three");
+    await keyboardChoose(page, "[data-action]", "Space");
+    await waitForState(page, "wave_four");
+    await keyboardChoose(page, "[data-action]", "Enter");
+    await waitForState(page, "compare");
+    await keyboardChoose(page, 'input[data-radio="comparison-design"][value="road-only"]', "Space");
+    await keyboardChoose(page, "[data-action]", "Enter");
     await waitForState(page, "verdict");
-    expect(
-      await page.evaluate(
-        () => document.activeElement?.getAttribute("data-headline") !== null,
-      ),
-    ).toBe(true);
-    await page.keyboard.press("Tab");
-    expect(
-      await page.evaluate(() => document.activeElement?.getAttribute("data-action") !== null),
-    ).toBe(true);
-
-    await page.keyboard.press("Space");
-    await waitForState(page, "recover", 10_000);
-    expect(
-      await page.evaluate(
-        () => document.activeElement?.getAttribute("data-headline") !== null,
-      ),
-    ).toBe(true);
-
+    await keyboardChoose(page, "[data-action]", "Space");
+    await waitForState(page, "diagnose");
+    await keyboardChoose(page, '[data-choice="SA"]', "Enter");
+    await keyboardChoose(page, '[data-choice="BT"]', "Space");
+    await keyboardChoose(page, "[data-action]", "Enter");
+    await waitForState(page, "recovery");
+    await keyboardChoose(page, "[data-action]", "Space");
+    await waitForState(page, "synthesis");
+    await keyboardChoose(page, "[data-action]", "Enter");
     await waitForState(page, "reveal");
-    await page.keyboard.press("Tab");
-    expect(
-      await page.evaluate(() => document.activeElement?.getAttribute("data-action") !== null),
-    ).toBe(true);
-    await page.keyboard.press("Enter");
-    await waitForState(page, "decide", 10_000);
-    expect(
-      await page.evaluate(
-        () => document.activeElement?.getAttribute("data-headline") !== null,
-      ),
-    ).toBe(true);
 
+    expect((await text(page, "[data-headline]")).toLowerCase()).toContain("braess");
+    await expectNoOverflow(page);
     expectHealthy(observed);
     await page.close();
-  }, 60_000);
+  }, 90_000);
 });
 
-describe("resizing during the live run", () => {
-  it("keeps watch state, connector state, and monotonically advancing simulation time", async () => {
-    // Slower presentation compression keeps the page in `watch` while the browser
-    // is resized; the underlying timestep and deterministic run are unchanged.
+describe("resize during a traffic wave", () => {
+  it("preserves the choice, connector and simulation while switching layouts", async () => {
+    // Explicit 100× compression leaves roughly four wall-clock seconds to resize
+    // while the first fixed-step wave is still running.
     const observed = await open(DESKTOP, { speed: 100 });
     const { page } = observed;
-    await page.locator("[data-action]").click();
-    await waitForState(page, "watch", 10_000);
+    await reachPeak(page);
+    await selectRadio(page, "personal-route", "shortcut");
 
     const before = await page.evaluate(() => ({
       state: document.body.dataset.state,
       time: (window as unknown as { simulatedSeconds?: number }).simulatedSeconds ?? 0,
       layout: document.querySelector<SVGSVGElement>("svg.network")?.dataset.layout,
     }));
-    expect(before.state).toBe("watch");
-    expect(before.layout).toBe("wide");
+    expect(before).toMatchObject({ state: "peak", layout: "wide" });
 
+    await page.locator("[data-action]").click();
+    await page.waitForFunction(
+      () => document.querySelector("[data-action]")?.textContent?.includes("Running traffic wave"),
+    );
     await page.setViewportSize(PHONE);
     await page.waitForFunction(
       () => document.querySelector<SVGSVGElement>("svg.network")?.dataset.layout === "tall",
-      null,
-      { timeout: 10_000 },
     );
-    const after = await page.evaluate(() => ({
+    const during = await page.evaluate(() => ({
       state: document.body.dataset.state,
       time: (window as unknown as { simulatedSeconds?: number }).simulatedSeconds ?? 0,
       connectorOpen:
         document.querySelector("svg.network")?.classList.contains("network--connector-open") ??
         false,
+      disabled: document.querySelector<HTMLButtonElement>("[data-action]")?.disabled,
     }));
+    expect(during.state).toBe("peak");
+    expect(during.time).toBeGreaterThanOrEqual(before.time);
+    expect(during.connectorOpen).toBe(true);
+    expect(during.disabled).toBe(true);
+    await expectNoOverflow(page);
 
-    expect(after.state).toBe("watch");
-    expect(after.time).toBeGreaterThanOrEqual(before.time);
-    expect(after.connectorOpen).toBe(true);
-    expect(await overflow(page)).toBe(false);
-
-    await page.waitForTimeout(300);
-    const later = await page.evaluate(
-      () => (window as unknown as { simulatedSeconds?: number }).simulatedSeconds ?? 0,
-    );
-    expect(later, "simulation stopped after the resize").toBeGreaterThan(after.time);
-    expect(await page.evaluate(() => document.body.dataset.state)).toBe("watch");
+    await waitForState(page, "wave_one");
+    expect(await text(page, "[data-metric-context]")).toContain("46 of 90 departures");
+    expect(await page.locator("svg.network").getAttribute("data-layout")).toBe("tall");
+    await expectNoOverflow(page);
     expectHealthy(observed);
     await page.close();
-  }, 60_000);
+  }, 90_000);
 });
 
 describe("reduced motion", () => {
-  it("hides moving vehicles while the simulation and text explanation continue", async () => {
+  it("uses the same user-paced checkpoints without showing moving vehicles", async () => {
     const observed = await open(DESKTOP, { reducedMotion: "reduce" });
     const { page } = observed;
     const before = await page.evaluate(() => ({
@@ -402,69 +592,65 @@ describe("reduced motion", () => {
       visibleVehicles: [...document.querySelectorAll<SVGElement>(".vehicle")].filter(
         (vehicle) => getComputedStyle(vehicle).display !== "none",
       ).length,
-      loadWords: [...document.querySelectorAll("[data-loads] li")].map(
-        (item) => item.textContent ?? "",
-      ),
     }));
     expect(before.vehicles).toBeGreaterThan(20);
     expect(before.visibleVehicles).toBe(0);
-    expect(before.loadWords.filter(Boolean).length).toBeGreaterThanOrEqual(4);
 
+    await reachPeak(page);
+    await selectRadio(page, "personal-route", "shortcut");
+    const beforeWave = await page.evaluate(
+      () => (window as unknown as { simulatedSeconds?: number }).simulatedSeconds ?? 0,
+    );
     await page.locator("[data-action]").click();
-    await waitForState(page, "watch", 10_000);
-    await page.waitForTimeout(300);
+    await waitForState(page, "wave_one", 10_000);
     const after = await page.evaluate(() => ({
       time: (window as unknown as { simulatedSeconds?: number }).simulatedSeconds ?? 0,
       visibleVehicles: [...document.querySelectorAll<SVGElement>(".vehicle")].filter(
         (vehicle) => getComputedStyle(vehicle).display !== "none",
       ).length,
-      status: document.querySelector("[data-status]")?.textContent?.trim() ?? "",
     }));
-    expect(after.time).toBeGreaterThan(before.time);
+    expect(after.time).toBeGreaterThanOrEqual(beforeWave + 400);
     expect(after.visibleVehicles).toBe(0);
-    expect(after.status.length).toBeGreaterThan(20);
+    expect(await text(page, "[data-metric-context]")).toContain("46 of 90 departures");
+
+    await page.locator("[data-action]").click();
+    await waitForState(page, "wave_two", 10_000);
+    expect(await page.locator("[data-action]").isEnabled()).toBe(true);
+    await expectNoOverflow(page);
     expectHealthy(observed);
     await page.close();
   }, 60_000);
 });
 
 describe("scientific disclosure", () => {
-  it("names the model, synthetic scope, fixed timestep, pairing, and control case", async () => {
+  it("names the model, synthetic scope, pairing and low-demand control", async () => {
     const observed = await open(DESKTOP);
-    const { page } = observed;
-    const note = ((await page.locator(".model-note__body").textContent()) ?? "").replace(
-      /\s+/g,
-      " ",
-    );
-    const afterword = ((await page.locator("[data-afterword]").textContent()) ?? "").replace(
-      /\s+/g,
-      " ",
-    );
-    const lower = `${note} ${afterword}`.toLowerCase();
+    const note = (await text(observed.page, ".model-note__body")).toLowerCase();
+    const afterword = (await text(observed.page, "[data-afterword]")).toLowerCase();
+    const disclosure = `${note} ${afterword}`;
     for (const required of [
       "synthetic network",
       "intelligent driver model",
       "fixed 0.25-second timestep",
-      "same generated drivers",
+      "same generated departure schedule",
       "random seed",
       "lighter traffic",
     ]) {
-      expect(lower, `disclosure no longer mentions "${required}"`).toContain(required);
+      expect(disclosure, `disclosure no longer mentions "${required}"`).toContain(required);
     }
-    expect(await page.locator('.model-note a[href^="https://doi.org/"]').count()).toBe(1);
+    expect(await observed.page.locator('.model-note a[href^="https://doi.org/"]').count()).toBe(1);
     expectHealthy(observed);
-    await page.close();
+    await observed.page.close();
   });
 });
 
-describe("slow-connection and deployment surface", () => {
-  it("still reaches a usable phone decision when every response is delayed", async () => {
-    // A response delay is not a full bandwidth emulator, but it catches reliance
-    // on instant asset arrival. The page has no remote dependencies to amplify it.
+describe("slow connection and deployment surface", () => {
+  it("still reaches a usable first phone interaction when responses are delayed", async () => {
     const observed = await open(PHONE, { responseLatencyMs: 350 });
-    expect(await observed.page.locator("[data-action]").isVisible()).toBe(true);
-    expect(await observed.page.locator("[data-action]").isEnabled()).toBe(true);
-    expect(await overflow(observed.page)).toBe(false);
+    expect(await observed.page.locator('[data-choice="north"]').isVisible()).toBe(true);
+    expect(await observed.page.locator('[data-choice="north"]').isEnabled()).toBe(true);
+    expect(await observed.page.locator("[data-action]").isDisabled()).toBe(true);
+    await expectNoOverflow(observed.page);
     expectHealthy(observed);
     await observed.page.close();
   });
@@ -480,7 +666,7 @@ describe("slow-connection and deployment surface", () => {
     expect(bytes, `${(bytes / 1024).toFixed(1)} kB of JS+CSS`).toBeLessThan(150 * 1024);
   });
 
-  it("loads without external requests, same-origin failures, or runtime errors", async () => {
+  it("loads without external requests, failed assets or runtime errors", async () => {
     const observed = await open(DESKTOP);
     await observed.page.waitForTimeout(500);
     expectHealthy(observed);

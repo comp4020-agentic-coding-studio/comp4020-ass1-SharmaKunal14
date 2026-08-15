@@ -1,90 +1,173 @@
-// The visible narrative is intentionally smaller than the simulation beneath it.
-// One state asks for the decision, one lets the traffic respond, one explains the
-// verified result, and closing the same road completes the experiment.
-
-import type { LiveRun } from "./live.ts";
 import type { LinkId } from "./sim/network.ts";
 
-export type StateId = "decide" | "watch" | "verdict" | "recover" | "reveal";
+/**
+ * The investigation is user paced. A state changes only after a visitor inspects,
+ * predicts, or runs one part of the same traffic experiment. Animation never
+ * decides when the scientific result is disclosed.
+ */
+export type StateId =
+  | "map"
+  | "proposal"
+  | "quiet"
+  | "quiet_result"
+  | "peak"
+  | "wave_one"
+  | "wave_two"
+  | "wave_three"
+  | "wave_four"
+  | "compare"
+  | "verdict"
+  | "diagnose"
+  | "recovery"
+  | "synthesis"
+  | "reveal";
 
-export const STATES: readonly StateId[] = ["decide", "watch", "verdict", "recover", "reveal"];
+export const STATES: readonly StateId[] = [
+  "map",
+  "proposal",
+  "quiet",
+  "quiet_result",
+  "peak",
+  "wave_one",
+  "wave_two",
+  "wave_three",
+  "wave_four",
+  "compare",
+  "verdict",
+  "diagnose",
+  "recovery",
+  "synthesis",
+  "reveal",
+];
 
 export type Beat = {
+  readonly chapter: 1 | 2 | 3 | 4 | 5 | 6;
   readonly eyebrow: string;
   readonly headline: string;
   readonly body: string;
-  readonly action: string | null;
+  readonly action: string;
   readonly spotlight: readonly LinkId[];
 };
 
 export const STORY: Readonly<Record<StateId, Beat>> = Object.freeze({
-  decide: {
-    eyebrow: "Eastgate → Central · morning peak",
-    headline: "Traffic is slow. Would one more road help?",
-    body: "With empty roads, the proposed link makes the quickest route 31 seconds shorter.",
-    action: "Build the road",
+  map: {
+    chapter: 1,
+    eyebrow: "Chapter 1 of 6 · Read the network",
+    headline: "Two routes. Same empty-road time.",
+    body: "Trace both original routes from Eastgate to Central before changing the map.",
+    action: "Continue to the proposal",
+    spotlight: [],
+  },
+  proposal: {
+    chapter: 2,
+    eyebrow: "Chapter 2 of 6 · Design the link",
+    headline: "Connect the two inner junctions.",
+    body: "Choose both endpoints. This creates a third route through the middle.",
+    action: "Take it to a quiet road",
+    spotlight: [],
+  },
+  quiet: {
+    chapter: 3,
+    eyebrow: "Chapter 3 of 6 · Sanity-check the idea",
+    headline: "Would the link help when roads are quiet?",
+    body: "At 300 cars an hour, predict the result before running the controlled test.",
+    action: "Compare the verified quiet runs",
     spotlight: ["AB"],
   },
-  watch: {
-    eyebrow: "The road is open · one live run",
-    headline: "Watch what drivers do.",
-    body: "The live number can wander. Watch the route choices and the two narrow bridges.",
-    action: null,
+  quiet_result: {
+    chapter: 3,
+    eyebrow: "Quiet-road result · 300 cars an hour",
+    headline: "Here, one more road really does help.",
+    body: "The same link saves eight seconds when the network has room to absorb the shift.",
+    action: "Raise demand to morning peak",
     spotlight: ["AB"],
   },
-  verdict: {
-    eyebrow: "Controlled result",
-    headline: "You built a road. The average trip got longer.",
-    body:
-      "The shortcut stayed quick. It changed where traffic went: every shortcut trip crossed " +
-      "both bottlenecks.",
-    action: "Close the road",
+  peak: {
+    chapter: 4,
+    eyebrow: "Chapter 4 of 6 · Stress the network",
+    headline: "Now make the same choice at rush hour.",
+    body: "Demand rises to 860 cars an hour. Which route would you try after the link opens?",
+    action: "Build it and release traffic",
+    spotlight: ["AB"],
+  },
+  wave_one: {
+    chapter: 5,
+    eyebrow: "Chapter 5 of 6 · First traffic wave",
+    headline: "The shortcut wins attention.",
+    body: "Drivers consult shared running route-time estimates. A quicker-looking route is more likely, never mandatory.",
+    action: "Release the next wave",
+    spotlight: ["AB"],
+  },
+  wave_two: {
+    chapter: 5,
+    eyebrow: "Shared learning · second wave",
+    headline: "Both short roads absorb the shift.",
+    body: "Every shortcut journey now crosses Riverside Road, the link, and Millbrook Road.",
+    action: "Let drivers keep learning",
     spotlight: ["SA", "AB", "BT"],
   },
-  recover: {
-    eyebrow: "Road closed · one live run",
-    headline: "Now take the road away again.",
-    body: "New drivers return to the two original routes and the queues begin to clear.",
-    action: null,
+  wave_three: {
+    chapter: 5,
+    eyebrow: "Shared learning · third wave",
+    headline: "The route split changes again.",
+    body: "Completed trips update the shared estimates. This live run illustrates adaptation; it is not the verdict.",
+    action: "Release one final peak wave",
+    spotlight: ["SA", "AB", "BT"],
+  },
+  wave_four: {
+    chapter: 5,
+    eyebrow: "Shared learning · fourth wave",
+    headline: "Both bridge approaches are now slowing.",
+    body: "The connector stays near free-flow while shortcut journeys add traffic to both old bottlenecks.",
+    action: "Build a fair comparison",
+    spotlight: ["SA", "AB", "BT"],
+  },
+  compare: {
+    chapter: 5,
+    eyebrow: "Controlled comparison",
+    headline: "What should change between the two runs?",
+    body: "Choose the design that isolates the effect of opening the road.",
+    action: "Run the paired comparison",
+    spotlight: [],
+  },
+  verdict: {
+    chapter: 5,
+    eyebrow: "Paired result · 860 cars an hour",
+    headline: "The average trip got longer.",
+    body: "The same generated schedule was run twice. Only the road changed.",
+    action: "Trace the consequence",
+    spotlight: ["SA", "AB", "BT"],
+  },
+  diagnose: {
+    chapter: 6,
+    eyebrow: "Chapter 6 of 6 · Explain the result",
+    headline: "Where did the extra traffic go?",
+    body: "Inspect both old bridges. The new link is useful; its position changes what they must carry.",
+    action: "Close the link",
+    spotlight: ["SA", "BT"],
+  },
+  recovery: {
+    chapter: 6,
+    eyebrow: "A final check · road closed",
+    headline: "Closing a road does not teleport cars.",
+    body: "Cars already on the link finish their trip. New departures must choose one of the original routes.",
+    action: "Release one final wave",
+    spotlight: ["SA", "BT"],
+  },
+  synthesis: {
+    chapter: 6,
+    eyebrow: "The original choice set returns",
+    headline: "New shortcut choices fall to zero.",
+    body: "The extra option—not an arbitrary delay rule—caused the route shift you observed.",
+    action: "Name the phenomenon",
     spotlight: ["SA", "BT"],
   },
   reveal: {
-    eyebrow: "The name for what you saw",
+    chapter: 6,
+    eyebrow: "The name for what you found",
     headline: "Braess’s paradox.",
-    body:
-      "Under some network conditions, a new connection changes individually sensible route " +
-      "choices and raises the average trip time.",
-    action: "Run it again",
+    body: "Under some network conditions, individually sensible route choices can raise the group’s average travel time.",
+    action: "Run the case again",
     spotlight: [],
   },
 });
-
-const WATCH_MINIMUM_SECONDS = 700;
-const WATCH_MAXIMUM_SECONDS = 1800;
-const RECOVERY_MINIMUM_SECONDS = 700;
-
-/**
- * Automatic transitions wait for things visible in the live run. They never call
- * the rolling display an equilibrium: the scientific verdict comes from the paired
- * headless experiment, while these conditions only decide when the illustration
- * has shown enough route switching and queueing to make that verdict intelligible.
- */
-export function shouldAdvance(state: StateId, run: LiveRun, elapsed: number): boolean {
-  if (state === "watch") {
-    const enoughTrips = run.anchoredTrips >= 32;
-    const shortcutVisible = run.shareOf("shortcut") >= 0.2;
-    const bottleneckVisible = Math.min(run.congestionOf("SA"), run.congestionOf("BT")) >= 1.08;
-    if (elapsed >= WATCH_MAXIMUM_SECONDS) return enoughTrips && shortcutVisible;
-    return elapsed >= WATCH_MINIMUM_SECONDS && enoughTrips && shortcutVisible && bottleneckVisible;
-  }
-
-  if (state === "recover") {
-    return (
-      elapsed >= RECOVERY_MINIMUM_SECONDS &&
-      run.anchoredTrips >= 24 &&
-      run.shareOf("shortcut") < 0.08
-    );
-  }
-
-  return false;
-}
