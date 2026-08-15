@@ -47,17 +47,17 @@ protocols to agree at equilibrium
 collapsed Build/Close interface: one click started an opaque sequence instead of a
 chaptered investigation. I kept one network and added actions:
 trace both ways, draw the shortcut, predict the quiet result, watch choices, design a
-fair comparison and inspect both bridges. Screenshots exposed two more failures.
-Endpoint clicks made nothing connect, while “traffic wave,”
-“paired cohort” and unexplained percentages made visitors decode the implementation.
-I removed the fake clicks, drew the route onscreen, made shortcut cars larger and gold,
-and renamed each pause for what it does: let the same morning continue without changing
-rules. The page now shows its arithmetic — **46/90 ≈ 51%** during the illustration,
+fair comparison and inspect both bridges. Screenshots exposed three more failures.
+Endpoint clicks made nothing connect; jargon and unexplained percentages hid the model;
+the quiet result appeared without showing its calculation. I drew the route onscreen,
+made shortcut cars larger and gold, renamed pauses for what they do, and split the quiet
+test into saved starts, totals, division and subtraction. The page now shows arithmetic —
+**46/90 ≈ 51%** during the illustration,
 **106/280 ≈ 38%** in the complete replay, and **92 + 106 = 198** at Riverside — and
 labels **5:05 → 4:34** honestly as a length-and-speed estimate rather than timed trips.
-Browser tests traverse all fifteen states at both marking sizes, by keyboard, through
+Browser tests traverse all seventeen states at both marking sizes, by keyboard, through
 resize, reduced motion and delayed responses
-([`5977880...8079525`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-SharmaKunal14/compare/5977880...8079525)).
+([`5977880...0e85d1a`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-SharmaKunal14/compare/5977880...0e85d1a)).
 
 Rules are in `CLAUDE.md`, prior commitments in `PLAN.md`, and the unedited working
 record is in `notes/log.md`.
