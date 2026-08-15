@@ -89,7 +89,7 @@ describe("the before/after comparison is fair", () => {
     expect(result.closed.config).toBe(TARGET);
   });
 
-  it("gives both halves an identical driver population and departure schedule", () => {
+  it("gives both halves identical scheduled departures and route-choice draws", () => {
     // The schedule is a function of the config alone. If connector state ever
     // reaches it, the two halves stop being the same experiment.
     const schedule = buildSchedule(TARGET);
@@ -98,7 +98,7 @@ describe("the before/after comparison is fair", () => {
       expect(driver.routeDraw).toBeGreaterThanOrEqual(0);
       expect(driver.routeDraw).toBeLessThan(1);
     }
-    // Same drivers, same order, same pre-drawn route choices in both runs.
+    // Same departure records, order and seeded draws in both cold-start runs.
     const closed = simulationFor(TARGET, false, schedule);
     const open = simulationFor(TARGET, true, schedule);
     for (let i = 0; i < 400; i += 1) {
@@ -204,17 +204,16 @@ describe("a quoted result is an equilibrium, not a snapshot of a growing queue",
 });
 
 describe("building the road on a running network", () => {
-  // The protocol the page performs: settle with the connector closed, then open it
-  // on the running network. It matters that this is measured separately, because it
-  // does not give the same answer as starting with the connector already there —
-  // day-to-day route learning is path dependent, and a population with habits to
-  // unlearn takes a long detour to the same equilibrium.
+  // This sequential protocol measures an earlier closed-network departure cohort
+  // and a later open-network cohort. The later window inherits physical state and
+  // shared route estimates, so its short-horizon adaptation result is kept
+  // separate from the paired cold-start equilibrium comparison.
   it("makes the commute worse in the target configuration", () => {
     const run = intervene(TARGET);
     expect(run.usable, `unusable: ${run.after.steadyState.reason}`).toBe(true);
     expect(run.conservationViolations).toEqual([]);
     expect(run.deltaSeconds).toBeGreaterThan(0);
-    // Drivers found it on their own; nobody was routed onto it.
+    // The stochastic chooser selected it without an externally assigned share.
     expect(run.after.shares.shortcut).toBeGreaterThan(0.15);
     expect(run.before.shares.shortcut).toBe(0);
   });
@@ -237,27 +236,26 @@ describe("building the road on a running network", () => {
     }
   });
 
-  it("decays towards the same equilibrium the cold start finds", () => {
+  it("moves towards the paired cold-start equilibrium estimate", () => {
     // This is the check that stopped the page overstating its result. The
     // warm-start effect is about three times the equilibrium at first, so the page
     // has to say which number is which — and the two protocols have to agree once
     // the adjustment is over, or one of them is wrong.
     const transient = intervene(TARGET).deltaPercent;
-    const settled = measureDecay(TARGET).longPercent;
+    const longHorizon = measureDecay(TARGET).longPercent;
     const coldStart = compare(TARGET).deltaPercent;
-    expect(transient).toBeGreaterThan(settled);
+    expect(transient).toBeGreaterThan(longHorizon);
     expect(
-      Math.abs(settled - coldStart),
-      `warm start settles at ${settled.toFixed(1)}% but cold start says ` +
-        `${coldStart.toFixed(1)}% — the two protocols disagree about the equilibrium`,
+      Math.abs(longHorizon - coldStart),
+      `longer sequential window gives ${longHorizon.toFixed(1)}% but paired cold starts give ` +
+        `${coldStart.toFixed(1)}% — the adaptation has not approached the equilibrium estimate`,
     ).toBeLessThan(2.5);
   });
 
-  it("leaves even the drivers who never switched worse off", () => {
-    // The actual sting of Braess, and the claim the page makes hardest. It is not
-    // enough that the average rose: the people who kept their old route have to be
-    // slower too, or "everyone got home later" is false. Checked on every seed,
-    // because a claim that holds on average is not the claim being made.
+  it("raises the mean travel time of both original route groups", () => {
+    // This compares route-group means in disjoint before/after departure cohorts;
+    // it does not identify individual stayers and cannot establish that every
+    // driver was slower. The sign is checked on each sampled seed.
     for (let i = 0; i < 5; i += 1) {
       const run = intervene({ ...TARGET, seed: TARGET.seed + i * 7919 });
       for (const route of ["north", "south"] as const) {
@@ -265,8 +263,8 @@ describe("building the road on a running network", () => {
         const after = run.after.routeMeans[route];
         expect(
           after,
-          `seed ${i}: drivers still on the ${route} route went ${before.toFixed(0)}s → ` +
-            `${after.toFixed(0)}s, so "everyone got home later" would be false`,
+          `seed ${i}: ${route} route-group mean went ${before.toFixed(0)}s → ` +
+            `${after.toFixed(0)}s`,
         ).toBeGreaterThan(before);
       }
     }

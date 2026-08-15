@@ -3,135 +3,151 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>One More Road</title>
+    <meta name="theme-color" content="#f2efe6" />
     <meta
       name="description"
-      content="Two roads into town, and both of them work. A new link would make the trip shorter. Build it and watch what happens."
+      content="A live traffic experiment about the road that looks helpful—and makes the average trip longer."
     />
+    <title>One More Road</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22><rect width=%2232%22 height=%2232%22 rx=%224%22 fill=%22%23192520%22/><path d=%22M4 23 13 14l6 6 9-11%22 fill=%22none%22 stroke=%22%23f2efe6%22 stroke-width=%223%22/><path d=%22m13 14 6 6%22 stroke=%22%2314788b%22 stroke-width=%224%22/></svg>" />
     <link rel="stylesheet" href="./styles.css" />
   </head>
-  <body data-act="commute">
-    <a class="skip-link" href="#stage">Skip to the road network</a>
-
+  <body data-state="decide">
     <header class="masthead">
-      <nav aria-label="Primary">
-        <a href="./" class="masthead__home">One More Road</a>
+      <nav aria-label="Page">
+        <a class="skip-link" href="#experience">Skip to the experiment</a>
+        <p class="wordmark">
+          <span aria-hidden="true" class="wordmark__mark"></span>
+          One More Road
+        </p>
       </nav>
+      <p class="masthead__note">A live traffic experiment</p>
     </header>
 
     <main>
-      <div class="layout">
-        <div class="act">
-          <p class="act__step" data-step>The commute</p>
-          <h1 class="act__headline" data-headline tabindex="-1">
-            Every morning, the same drive into town.
+      <section class="experience" id="experience" aria-labelledby="story-heading" tabindex="-1">
+        <div class="story">
+          <p class="story__eyebrow" data-eyebrow>Eastgate → Central · morning peak</p>
+          <h1 class="story__headline" id="story-heading" data-headline tabindex="-1">
+            Traffic is slow. Would one more road help?
           </h1>
-          <p class="act__body" data-body>Two ways to get there. Both of them work.</p>
+          <p class="story__body" data-body>
+            With empty roads, the proposed link makes the quickest route 31 seconds shorter.
+          </p>
         </div>
 
-        <section class="stage" id="stage" aria-label="The road network">
+        <div class="measure" aria-live="off">
+          <div class="measure__live" data-live-measure>
+            <p class="measure__value" data-metric-value>5:31</p>
+            <p class="measure__label" data-metric-label>average trip · road closed</p>
+          </div>
+
+          <div class="comparison" data-comparison hidden>
+            <div class="comparison__side">
+              <span class="comparison__value" data-closed-value>5:31</span>
+              <span class="comparison__label">without</span>
+            </div>
+            <span class="comparison__arrow" aria-hidden="true">→</span>
+            <div class="comparison__side comparison__side--after">
+              <span class="comparison__value" data-open-value>5:44</span>
+              <span class="comparison__label">with the road</span>
+            </div>
+            <p class="comparison__delta" data-delta-value>+13 seconds</p>
+          </div>
+
+          <p class="measure__context" data-metric-context>
+            The current network has two balanced routes.
+          </p>
+        </div>
+
+        <figure class="stage" aria-labelledby="stage-caption">
           <div class="stage__figure" data-figure></div>
-          <!-- Sighted readers get this at the roads themselves, on the map. This is
-               the same information for a screen reader, which cannot see a label
-               change — so it is never hidden by progressive disclosure: for that
-               reader, this list is the map. -->
-          <h2 class="sr-only">How each road is running</h2>
+          <figcaption class="stage__caption" id="stage-caption" data-caption>
+            Each dot is a simulated car. The dashed line is the proposal.
+          </figcaption>
+
+          <h2 class="sr-only">Current road conditions</h2>
           <ul class="sr-only" data-loads></ul>
-        </section>
+        </figure>
 
-        <div class="readout">
-          <p class="metric">
-            <span class="metric__value" data-metric-value>—</span>
-            <span class="metric__label" data-metric-label>average commute</span>
+        <div class="control">
+          <button class="action" type="button" data-action>Build the road</button>
+          <p class="control__status" data-status>
+            One decision. The traffic model handles the rest.
           </p>
-          <p class="metric metric--before" data-before hidden>
-            <span class="metric__value" data-before-value>—</span>
-            <span class="metric__label">before you built it</span>
-          </p>
-          <p class="clock" data-clock hidden></p>
         </div>
 
-        <p class="sr-only" aria-live="polite" data-announce></p>
-
-        <div class="decision">
-          <button type="button" class="action" data-action hidden>Build the road</button>
-          <p class="decision__note" data-note hidden></p>
-        </div>
-
-        <div class="detail" data-routes-panel hidden>
-          <h2 class="detail__heading">Which way people go</h2>
-          <ul class="routes" data-routes>
-            <li>
-              <button type="button" class="route" data-route="north">
-                <span class="route__name">Over the north bridge</span>
-                <span class="route__bar" aria-hidden="true"><i data-bar="north"></i></span>
-                <span class="route__share" data-share="north">—</span>
-                <span class="route__time" data-time="north"></span>
-              </button>
-            </li>
-            <li>
-              <button type="button" class="route" data-route="south">
-                <span class="route__name">Over the south bridge</span>
-                <span class="route__bar" aria-hidden="true"><i data-bar="south"></i></span>
-                <span class="route__share" data-share="south">—</span>
-                <span class="route__time" data-time="south"></span>
-              </button>
-            </li>
-            <li data-route-row="shortcut" hidden>
-              <button type="button" class="route route--new" data-route="shortcut">
-                <span class="route__name">Across the new link</span>
-                <span class="route__bar" aria-hidden="true"><i data-bar="shortcut"></i></span>
-                <span class="route__share" data-share="shortcut">—</span>
-                <span class="route__time" data-time="shortcut"></span>
-              </button>
-            </li>
-          </ul>
-          <p class="detail__hint">Point at a route to see which roads it uses.</p>
-
-        </div>
-
-        <div class="trace" data-chart-panel hidden>
-          <div class="chart-holder" data-chart></div>
-        </div>
-      </div>
-
-      <section class="why" data-why hidden>
-        <ol class="why__chain">
-          <li class="why__step"><span data-why-1></span></li>
-          <li class="why__step"><span data-why-2></span></li>
-          <li class="why__step"><span data-why-3></span></li>
-          <li class="why__step"><span data-why-4></span></li>
-        </ol>
-        <ul class="finding__rows" data-finding-rows></ul>
-        <p class="finding__kicker" data-finding-kicker></p>
+        <p class="sr-only" aria-live="polite" aria-atomic="true" data-announce></p>
       </section>
 
-      <section class="closing" data-closing hidden>
-        <p class="closing__body">
-          Adding a road can make every journey on it longer — not because the road is slow, but
-          because it changes what each driver decides is best for them. Every one of those decisions
-          is correct. What they add up to is worse for all of them.
-        </p>
-        <p class="closing__body">
-          It is not a law that new roads make traffic worse. In this same network, with the same
-          simulation, light traffic makes the link a real improvement<span data-control-line></span>.
-          Whether it helps depends on how close the roads already are to their limits.
-        </p>
-      </section>
+      <section class="afterword" data-afterword hidden aria-labelledby="afterword-heading">
+        <div class="afterword__copy">
+          <p class="afterword__eyebrow">What you just saw</p>
+          <h2 id="afterword-heading">A useful road changed the route choices.</h2>
+          <p>
+            The connection itself stayed quick. The harm came from where it sent traffic: every
+            shortcut journey crossed both narrow bridges, so the two old bottlenecks carried more
+            of the morning peak.
+          </p>
+          <p>
+            This is conditional, not a rule against roads. With lighter traffic, the same link in
+            the same model saves about <span data-control-seconds>8</span> seconds.
+          </p>
+        </div>
 
-      <section class="notes" data-notes hidden>
-        <details class="notes__disclosure">
-          <summary>How does the simulation work?</summary>
-          <div class="notes__body" data-model-note></div>
+        <details class="model-note">
+          <summary>Model &amp; evidence</summary>
+          <div class="model-note__body">
+            <p>
+              <strong>This is a synthetic network.</strong> It demonstrates a mechanism; it does
+              not represent Canberra or any real place.
+            </p>
+            <p>
+              <strong>Traffic is simulated car by car.</strong> Vehicles follow the Intelligent
+              Driver Model at a fixed 0.25-second timestep. Queues emerge behind two modelled bridge
+              bottlenecks; no formula adds delay when the connector opens.
+            </p>
+            <p>
+              <strong>Route choice is shared learning.</strong> Completed trips update one running
+              estimate for each route. Each new driver then makes a seeded, probabilistic choice;
+              quicker-looking routes are more likely, never mandatory.
+            </p>
+            <p>
+              <strong>The verdict is a paired counterfactual.</strong> The road-closed and road-open
+              experiments reuse the same generated drivers, departure schedule, demand and random
+              seed. The only treatment difference is whether the connector is available. The
+              animated sequence is one warm-start illustration; its rolling number is not used as
+              the scientific result.
+            </p>
+            <p>
+              <strong>The chosen seeded result is modest:</strong>
+              <span data-evidence-closed>5:31</span> to <span data-evidence-open>5:44</span>, or
+              <span data-evidence-percent>3.8%</span> longer. In its open-road cohort,
+              <span data-evidence-count>106</span> of <span data-evidence-cohort>280</span> trips
+              used the connector (<span data-evidence-share>38%</span>). The result passed the
+              longer-horizon check.
+            </p>
+            <p>
+              <strong>There is no 4% threshold for a paradox.</strong> Direction and experimental
+              control matter more than a large effect. Across <span data-seed-usable>8</span> usable
+              runs from <span data-seed-attempts>10</span> seed attempts, the mean increase was
+              <span data-seed-mean>4.2%</span>; two unsettled attempts were treated as inconclusive
+              and excluded from that average.
+            </p>
+            <p>
+              <strong>Source.</strong> M. Treiber, A. Hennecke &amp; D. Helbing,
+              <a href="https://doi.org/10.1103/PhysRevE.62.1805">
+                “Congested traffic states in empirical observations and microscopic simulations”
+              </a>, <em>Physical Review E</em> 62 (2000).
+            </p>
+          </div>
         </details>
       </section>
     </main>
 
     <footer class="footer">
-      <p>
-        A synthetic network, not a real place. Built for COMP4020 Agentic Coding Studio at the
-        Australian National University.
-      </p>
+      <p>Synthetic network · no claim about a real city</p>
+      <p>COMP4020 Agentic Coding Studio · ANU</p>
     </footer>
 
     <script type="module" src="./main.ts"></script>

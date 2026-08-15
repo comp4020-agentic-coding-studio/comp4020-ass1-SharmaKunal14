@@ -11,6 +11,7 @@ import { CONTROL, TARGET, horizonOf, networkOf, worstCaseLoad } from "../src/exp
 import type { ExperimentConfig } from "../src/experiment/config.ts";
 import { compare } from "../src/experiment/run.ts";
 import type { Comparison } from "../src/experiment/run.ts";
+import { summariseSeedOutcomes } from "../src/experiment/evidence.ts";
 import { meanOf, stdDevOf } from "../src/experiment/metrics.ts";
 import { linkCapacity, linkFreeFlowTime, routeFreeFlowTime } from "../src/sim/network.ts";
 import { IDM_TABLE_I } from "../src/sim/idm.ts";
@@ -24,14 +25,16 @@ function describe(config: ExperimentConfig): void {
   const cap = (id: "SA" | "SB") =>
     linkCapacity(network.links[id], IDM_TABLE_I.s0, IDM_TABLE_I.vehicleLength) * 3600;
   console.log(`network  street ${linkFreeFlowTime(network.links.SA).toFixed(0)}s free-flow, `
-    + `capacity ${cap("SA").toFixed(0)} veh/h · `
-    + `parkway ${linkFreeFlowTime(network.links.AT).toFixed(0)}s, ${cap("SB").toFixed(0)} veh/h · `
+    + `unpinched capacity ${cap("SA").toFixed(0)} veh/h · `
+    + `parkway ${linkFreeFlowTime(network.links.AT).toFixed(0)}s, unpinched capacity `
+    + `${cap("SB").toFixed(0)} veh/h · `
     + `connector ${linkFreeFlowTime(network.links.AB).toFixed(0)}s`);
   console.log(`routes   north ${routeFreeFlowTime(network, "north").toFixed(0)}s · `
     + `south ${routeFreeFlowTime(network, "south").toFixed(0)}s · `
     + `shortcut ${routeFreeFlowTime(network, "shortcut").toFixed(0)}s  (all free-flow)`);
-  console.log(`demand   ${config.demandPerHour} veh/h → worst-case link load `
-    + `${(worstCaseLoad(config) * 100).toFixed(0)}% of capacity · horizon ${horizonOf(config)}s`);
+  console.log(`demand   ${config.demandPerHour} veh/h → hypothetical all-demand-on-one-street load `
+    + `${(worstCaseLoad(config) * 100).toFixed(0)}% of narrowest capacity · `
+    + `horizon ${horizonOf(config)}s`);
 }
 
 function report(name: string, c: Comparison): void {
@@ -63,17 +66,20 @@ report("CONTROL", compare(CONTROL));
 if (seedCount > 0) {
   console.log(`\n── across ${seedCount} seeds ──`);
   for (const base of [TARGET, CONTROL]) {
-    const deltas: number[] = [];
-    let usable = 0;
+    const outcomes: { deltaPercent: number; usable: boolean }[] = [];
     for (let i = 0; i < seedCount; i += 1) {
       const c = compare({ ...base, seed: base.seed + i * 7919 });
-      deltas.push(c.deltaPercent);
-      if (c.usable) usable += 1;
+      outcomes.push({ deltaPercent: c.deltaPercent, usable: c.usable });
       console.log(`  ${base.label} seed+${i}  ${c.deltaPercent >= 0 ? "+" : ""}`
         + `${c.deltaPercent.toFixed(1)}%  usable=${c.usable}`);
     }
-    console.log(`  ${base.label}: mean ${meanOf(deltas).toFixed(1)}% `
-      + `sd ${stdDevOf(deltas).toFixed(1)}%  usable ${usable}/${seedCount}`);
+    const summary = summariseSeedOutcomes(outcomes);
+    console.log(
+      `  ${base.label}: usable mean ${summary.meanPercent.toFixed(1)}% `
+        + `sd ${summary.sdPercent.toFixed(1)}%  usable ${summary.usable}/${summary.attempted}  `
+        + `excluded ${summary.excluded}  usable sign held=${summary.signHeld}  `
+        + `attempted sign held=${summary.attemptedSignHeld}`,
+    );
   }
 }
 
@@ -528,9 +534,9 @@ if (args.has("--pair")) {
 }
 
 if (args.has("--intervene")) {
-  // The experiment as the page performs it: settle closed, then open the connector
-  // on the running network. Compared against the two-run version, which starts the
-  // open case cold and converges somewhere else.
+  // A sequential adaptation protocol: measure one closed-network departure
+  // cohort, open the connector, then measure a later cohort. Compare it with the
+  // paired cold-start protocol, which supplies the equilibrium estimate.
   const { intervene, measureDecay } = await import("../src/experiment/run.ts");
   console.log(`\n── warm start (settle, then build) vs cold start (two separate runs) ──`);
   for (const base of [TARGET, CONTROL]) {
@@ -549,7 +555,7 @@ if (args.has("--intervene")) {
       `    cold  ${cold.closed.meanTravelTime.toFixed(1)}s → ${cold.open.meanTravelTime.toFixed(1)}s  `
       + `${cold.deltaPercent >= 0 ? "+" : ""}${cold.deltaPercent.toFixed(1)}%  usable ${cold.usable}`,
     );
-    console.log(`    settles: ${holds.ok ? "OK" : "FAIL"} — ${holds.reason}`);
+    console.log(`    transient decay gate: ${holds.ok ? "stable" : "changing"} — ${holds.reason}`);
     const deltas: number[] = [];
     let settled = 0;
     for (let i = 0; i < 8; i += 1) {
@@ -562,16 +568,16 @@ if (args.has("--intervene")) {
       `    8 seeds: mean ${meanOf(deltas) >= 0 ? "+" : ""}${meanOf(deltas).toFixed(1)}%  `
       + `sd ${stdDevOf(deltas).toFixed(1)}%  `
       + `min ${Math.min(...deltas).toFixed(1)}%  max ${Math.max(...deltas).toFixed(1)}%  `
-      + `settled ${settled}/8  sign held ${signs.size === 1}`,
+      + `usable ${settled}/8  attempted sign held ${signs.size === 1}`,
     );
   }
 }
 
 if (args.has("--damping")) {
   // The live readout oscillated after the verdict (shortcut share swinging
-  // 52% → 27% → 37%), which is real day-to-day route-choice oscillation, not just
-  // measurement noise. Honest, but it makes the page look unreliable. Does more
-  // damping calm it without losing the effect?
+  // 52% → 27% → 37%), which comes from feedback through the shared route-belief
+  // table rather than private driver learning. Does more damping calm it without
+  // losing the effect?
   const { intervene, measureDecay } = await import("../src/experiment/run.ts");
   console.log(`\n── learning damping vs effect and stability ──`);
   console.log(`  alpha  theta   target Δ   settles   control Δ   8-seed sd  sign held`);
@@ -600,28 +606,29 @@ if (args.has("--damping")) {
 }
 
 if (args.has("--punchline")) {
-  // Braess's actual sting is not that the average rose — it is that the drivers who
-  // never changed route are worse off too. The page cannot claim that until it is
-  // checked, so: measure each route's own mean before and after.
+  // Compare mean trip times for the two original route groups before and after.
+  // These are disjoint departure cohorts, so this cannot identify individual
+  // stayers or prove that every driver became worse off.
   const { intervene } = await import("../src/experiment/run.ts");
-  console.log(`\n── is everyone worse off, including the drivers who never switched? ──`);
+  console.log(`\n── do both original route-group means rise? ──`);
   for (const base of [TARGET, CONTROL]) {
     console.log(`\n  ${base.label} (${base.demandPerHour} veh/h)`);
-    let allWorse = 0;
+    let bothWorse = 0;
     for (let i = 0; i < 6; i += 1) {
       const run = intervene({ ...base, seed: base.seed + i * 7919 });
       const north = run.after.routeMeans.north - run.before.routeMeans.north;
       const south = run.after.routeMeans.south - run.before.routeMeans.south;
-      const stayers = Math.min(north, south);
-      if (north > 0 && south > 0) allWorse += 1;
+      const minimumRouteGroupChange = Math.min(north, south);
+      if (north > 0 && south > 0) bothWorse += 1;
       console.log(
         `    seed+${i}  overall ${run.deltaPercent >= 0 ? "+" : ""}${run.deltaPercent.toFixed(1)}%`
         + `   north ${north >= 0 ? "+" : ""}${north.toFixed(0)}s`
         + `   south ${south >= 0 ? "+" : ""}${south.toFixed(0)}s`
         + `   shortcut ${run.after.routeMeans.shortcut.toFixed(0)}s`
-        + `   worst-off stayer ${stayers >= 0 ? "+" : ""}${stayers.toFixed(0)}s`,
+        + `   minimum original-route group change `
+        + `${minimumRouteGroupChange >= 0 ? "+" : ""}${minimumRouteGroupChange.toFixed(0)}s`,
       );
     }
-    console.log(`    both old routes worse on ${allWorse}/6 seeds`);
+    console.log(`    both original route means rose on ${bothWorse}/6 attempted seeds`);
   }
 }

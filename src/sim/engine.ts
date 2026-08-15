@@ -10,7 +10,7 @@ import { headwayAt, ROUTES_CLOSED, ROUTES_OPEN, speedLimitAt } from "./network.t
 import { chooseRoute, initialBeliefs, updateBelief } from "./routing.ts";
 import type { Beliefs } from "./routing.ts";
 
-/** One driver, generated before the run from the seed and never changed after. */
+/** One driver, generated from the seed before its scheduled release and never changed after. */
 export type ScheduledDeparture = {
   readonly id: number;
   /** seconds — when this driver wants to leave */

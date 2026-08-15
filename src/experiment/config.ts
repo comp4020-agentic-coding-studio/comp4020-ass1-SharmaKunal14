@@ -144,39 +144,76 @@ export function worstCaseLoad(config: ExperimentConfig): number {
 }
 
 /**
- * The driver population and its departure schedule, generated once from the
- * seed. Crucially this does not depend on whether the connector is open, so
- * both configurations get a literally identical population — including each
- * driver's route-choice draw, so the same driver decides from the same random
- * number either way.
+ * A finite driver population and departure schedule for a headless protocol,
+ * generated once from the seed. Crucially this does not depend on whether the
+ * connector is open, so both configurations get a literally identical
+ * population — including each driver's route-choice draw, so the same driver
+ * decides from the same random number either way.
  */
-export function buildSchedule(config: ExperimentConfig): readonly ScheduledDeparture[] {
+export type DepartureScheduleStream = {
+  /** A stable array reference. Extending the stream appends to this array. */
+  readonly departures: readonly ScheduledDeparture[];
+  /** Generate the deterministic schedule prefix ending before `horizon`. */
+  extendUntil(horizon: number): void;
+};
+
+/**
+ * A seeded schedule that can grow without changing any prefix already produced.
+ *
+ * Headless experiments freeze a finite prefix with `buildSchedule`. The live page
+ * keeps this stream and extends it ahead of simulated time, so leaving the page at
+ * a decision for several minutes cannot silently exhaust demand and empty the map.
+ */
+export function createScheduleStream(config: ExperimentConfig): DepartureScheduleStream {
   const rand = mulberry32(config.seed);
   const rate = config.demandPerHour / 3600;
-  // Long enough for whichever protocol runs longest, so both read the same
-  // driver population from the same seed. Unreleased departures cost nothing.
-  const horizon = Math.max(horizonOf(config), interventionHorizonOf(config));
-  const schedule: ScheduledDeparture[] = [];
-
-  let t = 0;
-  let id = 0;
-  while (t < horizon) {
-    t += exponential(rand, rate);
-    if (t >= horizon) break;
-    schedule.push({
-      id,
-      departTime: t,
-      v0Factor: clippedNormal(
-        rand,
-        1,
-        config.driver.v0Sd,
-        config.driver.v0Min,
-        config.driver.v0Max,
-      ),
-      TFactor: clippedNormal(rand, 1, config.driver.TSd, config.driver.TMin, config.driver.TMax),
-      routeDraw: rand(),
-    });
-    id += 1;
+  if (!(rate > 0) || !Number.isFinite(rate)) {
+    throw new RangeError("demandPerHour must produce a finite positive departure rate");
   }
-  return Object.freeze(schedule);
+
+  const departures: ScheduledDeparture[] = [];
+  let nextDepartTime = exponential(rand, rate);
+  let nextId = 0;
+
+  return {
+    departures,
+    extendUntil(horizon: number): void {
+      if (!Number.isFinite(horizon) || horizon < 0) {
+        throw new RangeError("schedule horizon must be a finite non-negative number");
+      }
+
+      while (nextDepartTime < horizon) {
+        departures.push({
+          id: nextId,
+          departTime: nextDepartTime,
+          v0Factor: clippedNormal(
+            rand,
+            1,
+            config.driver.v0Sd,
+            config.driver.v0Min,
+            config.driver.v0Max,
+          ),
+          TFactor: clippedNormal(
+            rand,
+            1,
+            config.driver.TSd,
+            config.driver.TMin,
+            config.driver.TMax,
+          ),
+          routeDraw: rand(),
+        });
+        nextId += 1;
+        nextDepartTime += exponential(rand, rate);
+      }
+    },
+  };
+}
+
+export function buildSchedule(
+  config: ExperimentConfig,
+  horizon = Math.max(horizonOf(config), interventionHorizonOf(config)),
+): readonly ScheduledDeparture[] {
+  const stream = createScheduleStream(config);
+  stream.extendUntil(horizon);
+  return Object.freeze([...stream.departures]);
 }

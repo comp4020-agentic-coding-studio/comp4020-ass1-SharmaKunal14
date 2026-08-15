@@ -11,7 +11,12 @@ import { Simulation } from "./sim/engine.ts";
 import type { LinkId, RouteId } from "./sim/network.ts";
 
 import type { ExperimentConfig } from "./experiment/config.ts";
-import { buildSchedule, networkOf } from "./experiment/config.ts";
+import type { DepartureScheduleStream } from "./experiment/config.ts";
+import {
+  createScheduleStream,
+  interventionHorizonOf,
+  networkOf,
+} from "./experiment/config.ts";
 import { meanOf } from "./experiment/metrics.ts";
 import { EXPERIMENT } from "./experiment/result.generated.ts";
 
@@ -33,6 +38,9 @@ export const WINDOW_TRIPS = 60;
 /** Longest single frame we will simulate, so a backgrounded tab cannot stall. */
 const MAX_FRAME_SECONDS = 0.25;
 
+/** Demand generated ahead of the live clock; replenished before it can run out. */
+const LIVE_SCHEDULE_LOOKAHEAD = 3600;
+
 export type Marker = { readonly simTime: number; readonly kind: "opened" | "closed" };
 
 export type Sample = {
@@ -52,6 +60,7 @@ function settled(series: readonly number[], tolerance: number): boolean {
 export class LiveRun {
   readonly config: ExperimentConfig;
   readonly timeScale: number;
+  private readonly schedule: DepartureScheduleStream;
   private readonly sim: Simulation;
   private accumulator = 0;
   private arrivalCursor = 0;
@@ -80,9 +89,11 @@ export class LiveRun {
   constructor(config: ExperimentConfig, timeScale: number = TIME_SCALE) {
     this.config = config;
     this.timeScale = Math.min(MAX_TIME_SCALE, Math.max(MIN_TIME_SCALE, timeScale));
+    this.schedule = createScheduleStream(config);
+    this.schedule.extendUntil(interventionHorizonOf(config));
     this.sim = new Simulation({
       network: networkOf(config),
-      schedule: buildSchedule(config),
+      schedule: this.schedule.departures,
       dt: config.dt,
       theta: config.theta,
       alpha: config.alpha,
@@ -154,6 +165,9 @@ export class LiveRun {
   }
 
   private runFor(simSeconds: number): void {
+    this.schedule.extendUntil(
+      this.sim.t + this.accumulator + simSeconds + LIVE_SCHEDULE_LOOKAHEAD,
+    );
     this.accumulator += simSeconds;
     let steps = Math.floor(this.accumulator / this.config.dt);
     this.accumulator -= steps * this.config.dt;
@@ -169,13 +183,9 @@ export class LiveRun {
    * Start a fresh running average from this moment: "the average commute since you
    * built it".
    *
-   * The headline number used to be a rolling average of the last N arrivals, and
-   * that was a mistake. Route learning genuinely oscillates — day-to-day route
-   * choice does — so a short rolling window swings, and a visitor could easily
-   * catch it at a moment that read level with the baseline while the page claimed
-   * it had got worse. A running average over everyone who has departed since the
-   * decision cannot swing back: it converges, and it is exactly the quantity a
-   * resident would notice. The oscillation is still shown, honestly, in the chart.
+   * This illustrative number includes completed trips whose departures occurred
+   * after the decision. It is less volatile than the short rolling window, but it
+   * is not a complete departure cohort and is never used as experimental evidence.
    */
   setAnchor(simTime: number): void {
     this.anchor = simTime;
@@ -188,13 +198,7 @@ export class LiveRun {
     };
   }
 
-  /**
-   * Mean time for one route since the last anchor.
-   *
-   * This is what lets the page make the claim that matters: at the new equilibrium
-   * the drivers who never changed route are slower too. Without it, "everyone got
-   * home later" is an assertion about an average rather than about everyone.
-   */
+  /** Mean of completed post-anchor trips that arrived on one route. */
   meanSinceAnchorFor(route: RouteId): number {
     const bucket = this.anchorByRoute[route];
     return bucket.count === 0 ? Number.NaN : bucket.sum / bucket.count;
@@ -204,7 +208,7 @@ export class LiveRun {
     return this.anchorByRoute[route].count;
   }
 
-  /** Mean door-to-door time of everyone who departed since the last anchor. */
+  /** Mean door-to-door time of completed post-anchor departures. */
   meanSinceAnchor(): number {
     return this.anchorCount === 0 ? Number.NaN : this.anchorSum / this.anchorCount;
   }

@@ -20,6 +20,8 @@ export type RunResult = {
   /** cohort members who never arrived — must be zero for a result to count */
   readonly unfinished: number;
   readonly steadyState: SteadyState;
+  /** Exact route counts in the measured departure cohort. */
+  readonly routeCounts: Record<RouteId, number>;
   readonly shares: Record<RouteId, number>;
   readonly worstCaseLoad: number;
   /** every step is checked; anything here is a vehicle lost or duplicated */
@@ -70,7 +72,8 @@ export function runExperiment(
     (d) => d.departTime >= config.warmup && d.departTime < config.warmup + config.window,
   ).length;
   const steadyState = steadyStateOf(cohort, config);
-  const shares = sharesOfCohort(cohort);
+  const routeCounts = routeCountsOfCohort(cohort);
+  const shares = routeShares(routeCounts);
 
   const unfinished = departedInWindow - cohort.length;
   return {
@@ -80,6 +83,7 @@ export function runExperiment(
     cohortSize: cohort.length,
     unfinished,
     steadyState,
+    routeCounts,
     shares,
     worstCaseLoad: worstCaseLoad(config),
     conservationViolations: violations,
@@ -90,10 +94,10 @@ export function runExperiment(
   };
 }
 
-function sharesOfCohort(cohort: readonly Arrival[]): Record<RouteId, number> {
+function routeCountsOfCohort(cohort: readonly Arrival[]): Record<RouteId, number> {
   const counts: Record<RouteId, number> = { north: 0, south: 0, shortcut: 0 };
   for (const arrival of cohort) counts[arrival.routeId] += 1;
-  return routeShares(counts);
+  return counts;
 }
 
 export type Phase = {
@@ -103,9 +107,9 @@ export type Phase = {
   readonly steadyState: SteadyState;
   readonly shares: Record<RouteId, number>;
   /**
-   * Mean door-to-door time of the drivers who took each route, NaN where nobody
-   * did. This is the heart of the paradox and the thing the page has to be able to
-   * say: at the new equilibrium the drivers who never changed route are slower too.
+   * Mean door-to-door time for completed trips grouped by route in this phase;
+   * NaN where a route has no trips. Before and after contain different departure
+   * cohorts, so these values do not track individuals who stayed on a route.
    */
   readonly routeMeans: Record<RouteId, number>;
 };
@@ -122,25 +126,18 @@ export type Intervention = {
 };
 
 /**
- * The experiment as the page actually performs it: let the network settle with the
- * connector closed, measure, then *open the connector on the running network* and
- * measure again once it has settled.
+ * A sequential intervention: let the network settle with the connector closed,
+ * measure one departure cohort, then open the connector on the running network
+ * and measure a later cohort after an adaptation interval.
  *
- * This replaced two independent runs (closed-from-scratch vs open-from-scratch),
- * and the reason is a discrepancy that showed up on the page: the live run kept
- * reporting the connector about 9% worse where the two-run comparison said 3.5%.
- * Both were converged. They converge to *different* equilibria, because
- * day-to-day route learning is path dependent — a population that has settled
- * into using two roads and is then offered a third does not end up where a
- * population that never knew anything else ends up.
+ * This protocol can differ from independent closed/open cold starts because the
+ * after phase inherits the shared belief table and physical network state from
+ * the closed phase. Its short-horizon change is therefore an adaptation result,
+ * not the authoritative paired equilibrium estimate.
  *
- * The warm start is the honest one: nobody builds a road into a town whose drivers
- * have no habits. It is also what a visitor watches, so it is what the page may
- * quote.
- *
- * Both halves come from one run, so demand, seed, driver population, departure
- * schedule, timestep and route-choice model are shared by construction — a
- * stronger guarantee than two runs sharing a config object.
+ * Demand generation, timestep and the routing model remain fixed, but the two
+ * measured windows contain disjoint departures. Do not describe them as the same
+ * drivers. `compare` supplies the controlled cold-start equilibrium evidence.
  */
 export function intervene(config: ExperimentConfig): Intervention {
   const network = networkOf(config);
@@ -215,7 +212,7 @@ function phaseOf(
     cohortSize: cohort.length,
     unfinished: expected - cohort.length,
     steadyState: steadyStateOf(cohort, { ...config, warmup: from, window: to - from }),
-    shares: sharesOfCohort(cohort),
+    shares: routeShares(routeCountsOfCohort(cohort)),
     routeMeans: {
       north: perRoute("north"),
       south: perRoute("south"),
@@ -351,9 +348,9 @@ export type Comparison = {
 };
 
 /**
- * The controlled before/after. Both halves come from the same config object, so
- * demand, seed, driver population, departure schedule, timestep and
- * route-choice model are identical by construction rather than by inspection.
+ * The controlled paired cold starts. Both halves use the same config, seeded
+ * departure schedule, departure-level random draws, timestep and route-choice
+ * model. Connector availability is the only configured treatment difference.
  */
 export function compare(config: ExperimentConfig): Comparison {
   const closed = runExperiment(config, { connectorOpen: false });

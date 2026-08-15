@@ -1,146 +1,39 @@
 #!/usr/bin/env node
-// Writes the controlled experiment's results into a module the page imports, so
-// the page states the numbers a test has verified rather than numbers computed
-// in a visitor's browser while they watch.
-//
-// The page also runs the simulation live, but a live run is one sample: its
-// rolling average wanders by more than the effect. The claim belongs to the
-// controlled experiment, so the claim is computed here, checked in, and asserted
-// current by spec/snapshot.test.ts.
+// Writes the controlled experiment's results into a module the page imports.
+// The calculation itself is pure and testable in src/experiment/evidence.ts;
+// this file is deliberately only the filesystem boundary.
 //
 //   mise exec -- node scripts/snapshot.ts
 
 import { writeFileSync } from "node:fs";
-import { CONTROL, TARGET } from "../src/experiment/config.ts";
-import type { ExperimentConfig } from "../src/experiment/config.ts";
-import { compare, horizonCheck, intervene, measureDecay, runExperiment } from "../src/experiment/run.ts";
-import { linkStats, meanOf, stdDevOf } from "../src/experiment/metrics.ts";
+import { buildEvidenceSnapshot } from "../src/experiment/evidence.ts";
 
-const SEEDS = 10;
-const SEED_STRIDE = 7919;
-
-function summarise(config: ExperimentConfig) {
-  const single = compare(config);
-  const horizon = horizonCheck(config);
-  const deltas: number[] = [];
-  let settled = 0;
-  for (let i = 0; i < SEEDS; i += 1) {
-    const run = compare({ ...config, seed: config.seed + i * SEED_STRIDE });
-    deltas.push(run.deltaPercent);
-    if (run.usable) settled += 1;
-  }
-  const signs = new Set(deltas.map((d) => Math.sign(d)));
-  return {
-    label: config.label,
-    demandPerHour: config.demandPerHour,
-    closedSeconds: round(single.closed.meanTravelTime),
-    openSeconds: round(single.open.meanTravelTime),
-    deltaSeconds: round(single.deltaSeconds),
-    deltaPercent: round(single.deltaPercent),
-    cohortSize: single.closed.cohortSize,
-    sharesClosed: roundShares(single.closed.shares),
-    sharesOpen: roundShares(single.open.shares),
-    horizonInvariant: horizon.ok,
-    seeds: {
-      count: SEEDS,
-      meanPercent: round(meanOf(deltas)),
-      sdPercent: round(stdDevOf(deltas)),
-      minPercent: round(Math.min(...deltas)),
-      maxPercent: round(Math.max(...deltas)),
-      settled,
-      signHeld: signs.size === 1,
-    },
-  };
-}
-
-function round(n: number): number {
-  return Math.round(n * 10) / 10;
-}
-
-function roundShares(shares: Record<string, number>): Record<string, number> {
-  return Object.fromEntries(Object.entries(shares).map(([k, v]) => [k, Math.round(v * 100)]));
-}
-
-/**
- * What each road takes when it is nearly empty, measured rather than derived.
- *
- * The pure free-flow figure (length ÷ speed limit) is the wrong reference: with
- * drivers of differing preferred speeds and no overtaking, a long road's mean
- * traversal time sits above it even with almost no traffic, because everyone
- * behind a slower driver stays behind them. Using free-flow made the ring roads
- * report "slowing" on an empty network. This is the honest baseline for the word
- * "free flowing".
- */
-function uncongestedReference(): Record<string, number> {
-  const quiet = runExperiment({ ...TARGET, demandPerHour: 90 }, { connectorOpen: true });
-  const reference: Record<string, number> = {};
-  for (const id of ["SA", "AT", "SB", "BT", "AB"]) {
-    reference[id] = round(linkStats(quiet.traversals, { ...TARGET, demandPerHour: 90 }, id).meanSeconds);
-  }
-  return reference;
-}
-
-/**
- * The adjustment period, measured separately from the equilibrium.
- *
- * Opening the connector on a network whose drivers have already settled produces a
- * transient noticeably worse than the equilibrium it decays to — around 10% at
- * first against 3.5% once everyone has re-learned. This is what a visitor watches,
- * because waiting out the decay would take minutes of real time. Both numbers are
- * real and both are worse than before; quoting only one of them would be the
- * dishonest option, so the page states both and says which is which.
- */
-function transientOf(config: ExperimentConfig) {
-  const warm = intervene(config);
-  const holds = measureDecay(config);
-  const deltas: number[] = [];
-  for (let i = 0; i < SEEDS; i += 1) {
-    deltas.push(intervene({ ...config, seed: config.seed + i * SEED_STRIDE }).deltaPercent);
-  }
-  const stayerCost = (route: "north" | "south"): number =>
-    warm.after.routeMeans[route] - warm.before.routeMeans[route];
-  return {
-    beforeSeconds: round(warm.before.meanTravelTime),
-    afterSeconds: round(warm.after.meanTravelTime),
-    /** Extra seconds borne by the drivers who never changed route — the punchline. */
-    stayerCostSeconds: round(Math.min(stayerCost("north"), stayerCost("south"))),
-    stayerCostNorth: round(stayerCost("north")),
-    stayerCostSouth: round(stayerCost("south")),
-    deltaPercent: round(warm.deltaPercent),
-    shortcutShare: Math.round(warm.after.shares.shortcut * 100),
-    settledPercent: round(holds.longPercent),
-    decaysToEquilibrium: !holds.ok,
-    seedMeanPercent: round(meanOf(deltas)),
-    seedSignHeld: new Set(deltas.map((d) => Math.sign(d))).size === 1,
-  };
-}
-
-const payload = {
-  seedStride: SEED_STRIDE,
-  uncongested: uncongestedReference(),
-  target: summarise(TARGET),
-  control: summarise(CONTROL),
-  transient: { target: transientOf(TARGET), control: transientOf(CONTROL) },
-};
+const payload = buildEvidenceSnapshot();
 
 writeFileSync(
   "src/experiment/result.generated.ts",
   `// GENERATED by scripts/snapshot.ts — do not edit by hand.
 // Regenerate with: mise exec -- node scripts/snapshot.ts
-// spec/snapshot.test.ts fails if these numbers no longer match a fresh run, so
-// the page can never quote a stale result.
+// spec/evidence.test.ts recomputes this entire payload and fails if it is stale.
 export const EXPERIMENT = ${JSON.stringify(payload, null, 2)} as const;
 `,
   "utf8",
 );
 
+function seedReport(seeds: typeof payload.target.seeds): string {
+  return (
+    `${seeds.usable}/${seeds.attempted} usable: mean ${seeds.meanPercent}%, ` +
+    `sd ${seeds.sdPercent}%, usable sign held ${seeds.signHeld}; ` +
+    `${seeds.excluded} excluded, attempted sign held ${seeds.attemptedSignHeld}`
+  );
+}
+
 console.log(
   `✓ src/experiment/result.generated.ts\n` +
     `  target  ${payload.target.closedSeconds}s → ${payload.target.openSeconds}s  ` +
     `${payload.target.deltaPercent >= 0 ? "+" : ""}${payload.target.deltaPercent}%  ` +
-    `(${payload.target.seeds.count} seeds: mean ${payload.target.seeds.meanPercent}%, ` +
-    `sd ${payload.target.seeds.sdPercent}%, sign held ${payload.target.seeds.signHeld})\n` +
+    `(${seedReport(payload.target.seeds)})\n` +
     `  control ${payload.control.closedSeconds}s → ${payload.control.openSeconds}s  ` +
     `${payload.control.deltaPercent >= 0 ? "+" : ""}${payload.control.deltaPercent}%  ` +
-    `(sign held ${payload.control.seeds.signHeld})`,
+    `(${seedReport(payload.control.seeds)})`,
 );

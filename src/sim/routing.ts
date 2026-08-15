@@ -1,16 +1,15 @@
 // How drivers choose. Deliberately the least clever part of the project.
 //
-// A driver knows only its own experience: the travel times it and other drivers
-// have actually had, smoothed. Nobody is told the topology, nobody is told which
-// link is congested, and nothing here can see whether the connector is open —
-// only which routes are on offer. That is what makes the shift in route shares
-// a *result* rather than a script.
+// Every departure consults one shared table of smoothed, completed-trip travel
+// times. This is aggregate/public learning, not private memory for each driver.
+// The table is not told which link is congested and cannot see connector state;
+// the chooser receives only the routes currently on offer. That is what makes a
+// shift in route shares a result rather than a script.
 //
 // The choice rule is a logit over learned route times, the standard model of
-// stochastic user equilibrium (Daganzo & Sheffi 1977); the smoothing is
-// ordinary day-to-day learning from experience. A route nobody has driven yet
-// starts at its free-flow time — the optimistic prior a real driver has for a
-// road they have only looked at, and the reason the shortcut gets tried at all.
+// stochastic user equilibrium (Daganzo & Sheffi 1977); the smoothing is a
+// stylised aggregate learning rule. A route with no completed trip starts at its
+// free-flow time, which is the optimistic prior that causes it to be sampled.
 
 import type { Network, RouteId } from "./network.ts";
 import { routeFreeFlowTime } from "./network.ts";
@@ -28,9 +27,9 @@ export function initialBeliefs(network: Network): Beliefs {
 /**
  * Choose among the available routes with P(r) ∝ exp(−θ · belief[r]).
  *
- * `draw` is a uniform in [0,1) drawn for this driver *before the run starts*, so
- * the same driver makes its choice from the same random number in both
- * configurations. Only the offered routes and the learned beliefs differ.
+ * `draw` is a uniform value in [0,1) assigned to this scheduled departure by the
+ * seeded demand stream. Paired cold-start configurations therefore use the same
+ * departure-level draws; only the offered routes and shared beliefs differ.
  */
 export function chooseRoute(
   beliefs: Beliefs,
@@ -53,7 +52,7 @@ export function chooseRoute(
   return available[available.length - 1];
 }
 
-/** Exponential smoothing towards the travel time a driver actually experienced. */
+/** Smooth the shared estimate toward one completed trip's measured travel time. */
 export function updateBelief(
   beliefs: Beliefs,
   route: RouteId,

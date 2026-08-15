@@ -2,7 +2,7 @@
 // any. Everything here is allowed to know about pixels; nothing here is allowed
 // to decide anything the experiment depends on.
 
-import type { LinkId, RouteId } from "../sim/network.ts";
+import type { LinkId } from "../sim/network.ts";
 import { buildNetwork } from "../sim/network.ts";
 import type { LiveRun } from "../live.ts";
 import type { LayoutKind, Point } from "./layout.ts";
@@ -32,18 +32,16 @@ export const ROAD_NAMES: Record<LinkId, string> = {
  */
 function labelFor(id: LinkId, network: ReturnType<typeof buildNetwork>): string {
   const km = network.links[id].length / 1000;
-  return `${ROAD_NAMES[id]} · ${km.toFixed(1)} km`;
+  if (id === "AB") return `proposed link · ${km.toFixed(1)} km`;
+  const kind = id === "AT" || id === "SB" ? "long road" : "short road";
+  return `${kind} · ${km.toFixed(1)} km`;
 }
 
 const LINK_ORDER: readonly LinkId[] = ["SB", "AT", "SA", "BT", "AB"];
-const ROUTE_LINKS: Record<RouteId, readonly LinkId[]> = {
-  north: ["SA", "AT"],
-  south: ["SB", "BT"],
-  shortcut: ["SA", "AB", "BT"],
-};
-
 /** Ceiling on drawn vehicles. Beyond this the picture is a jam either way. */
 const VEHICLE_POOL = 320;
+
+type NarrativeMode = "decide" | "watch" | "verdict" | "recover" | "reveal";
 
 
 function el<K extends keyof SVGElementTagNameMap>(
@@ -59,15 +57,14 @@ export class Scene {
   private readonly svg: SVGSVGElement;
   private readonly roadLayer = el("g", { class: "roads" });
   private readonly throatLayer = el("g", { class: "throats" });
-  private readonly hitLayer = el("g", { class: "road-hits" });
   private readonly vehicleLayer = el("g", { class: "vehicles", "aria-hidden": "true" });
   private readonly nodeLayer = el("g", { class: "nodes" });
   private readonly labelLayer = el("g", { class: "road-labels" });
+  private readonly annotationLayer = el("g", { class: "annotations", "aria-hidden": "true" });
 
   private readonly roads = new Map<LinkId, SVGPathElement>();
   private readonly labels = new Map<LinkId, SVGTextElement>();
-  private readonly stateLabels = new Map<LinkId, SVGTSpanElement>();
-  private readonly hitAreas = new Map<LinkId, SVGPathElement>();
+  private shortcutNote: SVGTextElement | null = null;
   private samples = new Map<LinkId, readonly Point[]>();
   /**
    * One circle per vehicle, keyed by its id rather than by draw order.
@@ -80,7 +77,6 @@ export class Scene {
   private readonly dots = new Map<number, SVGCircleElement>();
   private readonly spare: SVGCircleElement[] = [];
   private layout: LayoutKind | null = null;
-  private roadStateShown = false;
 
   constructor(host: HTMLElement) {
     this.svg = el("svg", {
@@ -90,9 +86,8 @@ export class Scene {
       // does change is announced from the live region in the readout instead —
       // a screen reader must not have to hear about 120 moving dots.
       "aria-label":
-        "Road network. Two short roads through narrow bridges, Riverside Rd and Millbrook Rd, " +
-        "and two long ring roads, North Ring and South Ring, connecting Eastgate to Central. " +
-        "A proposed new link would join Riverside to Millbrook across the middle.",
+        "Road network from Eastgate to Central. Two short roads pass through narrow bridges, " +
+        "two long roads loop around them, and a central link is currently closed.",
       preserveAspectRatio: "xMidYMid meet",
     });
     this.svg.append(
@@ -101,7 +96,7 @@ export class Scene {
       this.vehicleLayer,
       this.nodeLayer,
       this.labelLayer,
-      this.hitLayer,
+      this.annotationLayer,
     );
     host.append(this.svg);
   }
@@ -126,17 +121,16 @@ export class Scene {
     const segments = segmentsFor(kind);
     this.roadLayer.replaceChildren();
     this.throatLayer.replaceChildren();
-    this.hitLayer.replaceChildren();
     this.nodeLayer.replaceChildren();
     this.labelLayer.replaceChildren();
+    this.annotationLayer.replaceChildren();
     for (const dot of this.dots.values()) dot.remove();
     for (const dot of this.spare) dot.remove();
     this.dots.clear();
     this.spare.length = 0;
     this.roads.clear();
     this.labels.clear();
-    this.stateLabels.clear();
-    this.hitAreas.clear();
+    this.shortcutNote = null;
     this.samples = new Map();
 
     for (const id of LINK_ORDER) {
@@ -150,19 +144,6 @@ export class Scene {
       this.roads.set(id, path);
       this.samples.set(id, sampleSegment(segment, kind));
 
-      // A generous invisible stroke over each road: a 5px line is not a touch
-      // target, and pointing at a road is how a visitor explores the picture.
-      // Keyboard parity comes from the route legend, which lights the same roads
-      // and carries the same numbers.
-      const hit = el("path", {
-        class: "road-hit",
-        d: pathData(segment, kind),
-        "data-link": id,
-      });
-      hit.addEventListener("pointerenter", () => this.emphasise(id));
-      hit.addEventListener("pointerleave", () => this.emphasise(null));
-      this.hitLayer.append(hit);
-      this.hitAreas.set(id, hit);
     }
 
     // The pinch, drawn where it actually is. The queue that stands behind it is
@@ -199,6 +180,17 @@ export class Scene {
       tag.textContent = "bridge";
       marker.append(tag);
       this.throatLayer.append(marker);
+
+      const queueNote = el("text", {
+        class: `network-note network-note--queue network-note--${id.toLowerCase()}`,
+        // Put the note upstream of the bridge, where the queue actually sits.
+        // A normal offset placed it directly over the Riverside/Central labels.
+        x: (at.x - tangent.x * 58 + nx * 5).toFixed(1),
+        y: (at.y - tangent.y * 58 + ny * 5).toFixed(1),
+        "text-anchor": "middle",
+      });
+      queueNote.textContent = "queue forms here";
+      this.annotationLayer.append(queueNote);
     }
 
     for (const [id, point] of Object.entries(NODES[kind])) {
@@ -248,30 +240,25 @@ export class Scene {
       });
       const name = el("tspan", { class: "road-label__name", x: labelX.toFixed(1), dy: "0" });
       name.textContent = labelFor(id, network);
-      // A second line for how the road is running right now. The state belongs at
-      // the road, not in a status list beside the picture — that list was the
-      // dashboard this project is supposed not to be.
-      const state = el("tspan", {
-        class: "road-label__state",
-        x: labelX.toFixed(1),
-        dy: "15",
-      });
-      text.append(name, state);
+      text.append(name);
       this.labelLayer.append(text);
       this.labels.set(id, text);
-      this.stateLabels.set(id, state);
     }
 
-    this.svg.append(this.vehicleLayer, this.nodeLayer, this.labelLayer, this.hitLayer);
+    const connector = this.samples.get("AB");
+    if (connector !== undefined) {
+      const at = alongSamples(connector, 0.5);
+      this.shortcutNote = el("text", {
+        class: "network-note network-note--shortcut",
+        x: at.x.toFixed(1),
+        y: (at.y - (kind === "wide" ? 26 : 22)).toFixed(1),
+        "text-anchor": "middle",
+      });
+      this.annotationLayer.append(this.shortcutNote);
+    }
+
+    this.svg.append(this.vehicleLayer, this.nodeLayer, this.labelLayer, this.annotationLayer);
     this.keepLabelsInFrame();
-  }
-
-  /** Lift one road out of the picture on hover, or clear it. */
-  private emphasise(link: LinkId | null): void {
-    this.svg.classList.toggle("network--emphasising", link !== null);
-    for (const [id, path] of this.roads) {
-      path.classList.toggle("road--emphasis", id === link);
-    }
   }
 
   /**
@@ -326,40 +313,26 @@ export class Scene {
     }
   }
 
-  /**
-   * Whether roads report how they are running, annotated at the road.
-   *
-   * Off by default. Five roads each carrying a live status line is the dashboard
-   * this project is not; the state earns its place only once the explanation needs
-   * it, at which point it appears exactly where the thing it describes is.
-   */
-  showRoadState(on: boolean): void {
-    this.roadStateShown = on;
-    if (on) return;
-    for (const label of this.stateLabels.values()) label.textContent = "";
-  }
-
   setConnectorOpen(open: boolean): void {
     this.svg.classList.toggle("network--connector-open", open);
+    this.svg.setAttribute(
+      "aria-label",
+      "Road network from Eastgate to Central. Two short roads pass through narrow bridges, " +
+        `two long roads loop around them, and the central link is currently ${open ? "open" : "closed"}.`,
+    );
   }
 
-  /** Inspection, not a mechanic: show which roads a route actually uses. */
-  highlightRoute(route: RouteId | null): void {
-    const lit = route === null ? null : new Set(ROUTE_LINKS[route]);
-    this.svg.classList.toggle("network--highlighting", lit !== null);
-    for (const [id, path] of this.roads) {
-      path.classList.toggle("road--lit", lit !== null && lit.has(id));
+  /** Put the explanation on the network instead of opening another data panel. */
+  setNarrative(mode: NarrativeMode, shortcutShare: number): void {
+    this.svg.dataset.narrative = mode;
+    if (this.shortcutNote !== null) {
+      this.shortcutNote.textContent = `${Math.round(shortcutShare * 100)}% choose this link`;
     }
   }
 
   render(run: LiveRun, network: ReturnType<typeof buildNetwork>, alpha = 1): void {
     for (const [id, path] of this.roads) {
       const ratio = run.congestionOf(id);
-      const state = this.stateLabels.get(id);
-      if (state !== undefined) {
-        const words = this.roadStateShown ? describeLoad(ratio) : "";
-        if (state.textContent !== words) state.textContent = words;
-      }
       // Width carries load as well as colour, so the state does not depend on
       // being able to tell two hues apart.
       path.style.setProperty("--load", ratio.toFixed(3));
