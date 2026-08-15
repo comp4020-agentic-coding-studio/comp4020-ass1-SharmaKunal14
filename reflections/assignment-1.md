@@ -2,31 +2,30 @@
 
 ## The breakthrough
 
-The agent handed me a textbook result — a **+23.9%** Braess effect — and I nearly
-took it. It had everything: clean conservation checks, a settled steady-state
-verdict, plausible route shares. What made me suspicious was not the code but the
-shape of the number. It was too good for a paradox whose theoretical ceiling is
-about a third.
+The agent handed me a **+23.9%** Braess effect and I nearly accepted it. It had
+clean conservation checks, a steady-state verdict and plausible route shares. The
+number was not impossible in Braess networks generally; my concern was narrower:
+it looked too large for the measured congested-to-free-flow range of *this* street
+model.
 
-So instead of reading the implementation again, I asked what the number would
-look like if it were wrong. If the queue were still growing, the effect would
-depend on how long I watched. I re-ran the same configuration over a longer
-horizon: +20.5% → +38.8% → +49.5% → +58.4%. It had never been an equilibrium.
+Rather than rereading the implementation, I predicted what an unfinished queue
+would do. If the result was not an equilibrium, it would depend on how long I
+watched. The same configuration changed from +20.5% to +38.8%, +49.5% and +58.4%
+over longer horizons. The existing within-window check had passed while the queue
+grew slowly.
 
-The breakthrough was what I did next. My existing steady-state check had *passed*
-while this happened, so re-prompting would have fixed one number and left the
-hole. I wrote `horizonCheck` — re-run the configuration over a 1.75× horizon,
-require the same answer — and made it a gate rather than a warning. Against the
-whole parameter grid it reported that every Braess-positive configuration failed
-it. Two more false results fell out the same way. The honest effect is +3.5%.
-
-I found the bug by predicting its signature, not by reading code.
+I therefore added `horizonCheck`: rerun the candidate over a 1.75× horizon and
+require the answer to remain stable. I made it a gate, not a warning. Applied to
+the parameter grid, it rejected every apparently Braess-positive candidate. After
+correcting the network geometry and route learning, the defensible settled effect
+was roughly +4%, with a lower-demand control in which the same connector helped.
 
 ## What it changed
 
-I used to direct an agent by describing what I wanted more precisely. Now I think
-the real skill is building the thing that would catch the agent being
-convincingly wrong — and being willing to spend hours proving my own best result
-was worthless. A check that makes a failure mode unpassable is worth more than
-any number of clarified prompts, because it keeps working when I stop paying
-attention. I would rather ship +3.5% I can defend than +24% I merely liked.
+I used to think directing an agent mainly meant specifying the desired output more
+precisely. This episode changed the emphasis: I now try to specify the evidence
+that could falsify the output. Conservation was necessary but did not test
+equilibrium; a convincing number passed because my oracle was incomplete. The most
+valuable intervention was not another prompt or a larger-looking result, but a
+check that makes this failure mode hard to repeat. I would rather present a modest
+effect with explicit limits than a dramatic result supported by the wrong test.

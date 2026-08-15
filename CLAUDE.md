@@ -265,10 +265,11 @@ looking perfectly plausible.
 - **The control configuration is load-bearing.** The same engine must produce a
   configuration where the connector *helps*. If that test ever goes red, the
   engine has started hard-coding the answer — fix the engine, never the test.
-- **One frozen config, one boolean apart.** Baseline and treatment share the
-  same `ExperimentConfig` object; the only permitted difference is whether the
-  connector edge exists. Never build two scenario objects that are meant to
-  match — they drift. A check deep-compares them.
+- **One frozen config, one boolean apart.** The authoritative paired cold-start
+  baseline and treatment share one `ExperimentConfig`; connector availability is
+  their only treatment difference. The sequential live intervention instead
+  measures disjoint departure cohorts and is labelled as adaptation, not as the
+  same drivers observed twice.
 - **Physics never sees a pixel.** Nothing under `src/sim/` or `src/experiment/`
   may import from `src/view/` or touch `document`, `window`, or any dimension.
   Positions are metres, time is seconds, geometry is normalised. Resizing must
@@ -276,21 +277,24 @@ looking perfectly plausible.
 - **Fixed timestep only.** The engine advances in fixed `dt` steps driven by an
   accumulator. Never integrate with a `requestAnimationFrame` delta: that makes
   the experiment a function of frame rate.
-- **All randomness comes from the seeded stream, drawn once.** Departure times,
-  driver parameters and each driver's route-choice draw are generated *before*
-  the run from `config.seed`, so both configs get a literally identical driver
-  population. `Math.random()` is banned outside tests.
+- **All randomness comes from the seeded stream.** A headless run freezes a
+  finite seeded schedule before simulation; the live run extends the same stream
+  append-only without changing its prefix. Paired cold starts therefore receive
+  identical scheduled departures, parameter samples and departure-level route
+  draws. `Math.random()` is banned outside tests.
 - **A result with a growing queue is not a result.** Report a number only if the
   run reached steady state and no link's queue is growing monotonically.
-  Otherwise report "inconclusive". Demand must sit below every link's capacity
-  in *both* configurations.
+  Otherwise report "inconclusive". Total origin demand need not be below the
+  narrowest capacity of every possible link; route splitting matters. What must
+  be demonstrated is that realised queues stay bounded and the result remains
+  stable when the horizon grows.
 - **Measure cohorts, not arrivals.** Average over the drivers who *departed*
   inside the measurement window, counted when they arrive. Averaging whoever
   happened to finish lets a growing queue flatter its own average by excluding
   its victims.
-- **The effect is statistical.** It is claimed across seeds with the spread
-  reported, never from a single run, and never from a run chosen because it
-  looked good.
+- **The effect is statistical.** It is claimed from usable runs across seeds,
+  with spread plus attempted/usable/excluded counts reported. Unusable runs never
+  enter the quoted aggregate, and no run is chosen because it looked good.
 
 ## Assignment 1: claims we are allowed to make
 
@@ -299,7 +303,8 @@ measurement of anywhere. "Building roads makes traffic worse" is false and we
 never say it. What is true, and what the page says, is closer to: *under
 particular network, demand and routing conditions, adding a connection can
 change selfish route choices so that the resulting equilibrium is worse for
-everyone.* The control configuration is the honest other half of that sentence,
+the measured average.* Route-group averages do not prove every individual was
+worse off. The control configuration is the honest other half of that sentence,
 and it earns its one line on the page.
 
 Every simplification gets disclosed in the model note, with the model cited to

@@ -3,57 +3,60 @@
 ## What I built
 
 **One More Road** is an interactive explainer of Braess's paradox. A town has two
-routes to work; a new link would obviously shorten the trip. You build it, drivers
-re-route, and the average commute settles *worse*. Close it and it recovers. Only
-then is the paradox named. The traffic is a real Intelligent Driver Model
-simulation: the outcome is measured, not asserted.
+routes to work; a new connector appears to shorten the trip. You build it, drivers
+adapt, and the average commute becomes worse. Closing it lets the network recover.
+Only then is the paradox named. The outcome comes from a seeded Intelligent Driver
+Model simulation rather than a scripted animation.
 
 ## The moments that mattered
 
-**1. My best result was fake, and the fix went in the harness.** I wrote the
-conservation and fairness checks *before* the model, so its failures would arrive as
-red checks, not as my judgement of a plausible number. Then it reported **+23.9%**
-and none of them objected. Instead of banking it I asked what it would look like
-if it were wrong: a growing queue depends on how long you watch. Re-run over
-longer horizons it went **+20.5% → +38.8% → +49.5% → +58.4%**. My steady-state check
-had passed on 6 of 10 seeds throughout, because a slow monotone ramp looks flat
-inside any one window. So the correction went into the harness, not another attempt:
-`horizonCheck`, re-run at a longer horizon, same answer required, as a *gate*.
-Across the whole grid, every Braess-positive configuration failed it; every one that
-passed showed the link *helping*. Diagnosing why meant measuring, not tuning: the
-effect has to fit inside the street's congested-to-free-flow range, which caps it
-near 13% at any demand
-([`c7e1ad2...8171e40`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-SharmaKunal14/compare/c7e1ad2...8171e40)).
+**1. My best result was fake, so I strengthened the harness.** Before implementation,
+I made conservation, determinism and comparison fairness explicit in `PLAN.md`; the
+first runner then checked conservation every step and generated both conditions from
+one shared configuration. Those guards still accepted a **+23.9%** Braess effect.
+Instead of treating that as success, I predicted the signature of a growing queue:
+the result would change with observation length. It did — **+20.5% → +38.8% → +49.5%
+→ +58.4%** — while the within-window steady-state check passed on 6 of 10 seeds. I
+added `horizonCheck`, which reruns a candidate over a 1.75× horizon and rejects it if
+the answer changes. Across the search grid, every Braess-positive candidate failed.
+Measuring the streets' usable delay range then exposed the modelling error: the
+original shortcut saved more time than congestion could stably add
+([`4c473aa...8171e40`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-SharmaKunal14/compare/4c473aa...8171e40)).
 
-**2. I turned down the bigger number.** With the honest effect at about 4%, I was
-offered a way to make it larger: model the streets as several lanes narrowing to a
-single-lane bridge, widening the range a standing queue can occupy. It would
-probably have worked. I said no, because I wanted the experiment to stay simple,
-real and demonstrable — every parameter interpretable and every claim checkable. It
-was also the same trap in new clothes: every larger effect so far had turned out to
-be an artefact, and I had no reason to expect otherwise. What told me it was right
-is that the small effect survives everything — worse on all ten seeds,
-horizon-invariant, paired with a control where the same code makes the link help.
-The dramatic version never survived once
+**2. I turned down the bigger number.** The corrected network produced an effect of
+about 4%. A proposed multi-lane-to-single-lane bottleneck could have enlarged it,
+but it would also have changed the model's scope and introduced more parameters to
+defend. I kept the simpler network because its evidence was bounded and auditable:
+the sign was positive in all ten paired seed trials, eight met the steady-state
+gate, the base configuration passed the horizon check, and a lower-demand control
+made the same connector help. That is stronger than a dramatic single run, but it
+is not a claim that every trial fully settled
 ([`8171e40...9ae0852`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-SharmaKunal14/compare/8171e40...9ae0852)).
 
-**3. The page and the experiment disagreed threefold, and the page was wrong.** My
-chart said the link cost 54 seconds; the experiment said 11.6. The live run had
-settled — at a *different* equilibrium, because my headless comparison ran the open
-case cold, nobody holding habits. That is not what building a road is. So I rewrote
-it to do what the page does: settle closed, measure, open the link on the running
-network, measure again. Then the gate failed *that* too — given twice the settling
-time the effect fell from +10.1% to +3.4%. The +10% is a transient decaying to a
-real equilibrium, so the page states both and says which is which
+**3. The page and experiment disagreed threefold, and the page was wrong.** The live
+chart showed 54 seconds worse while the cold-start comparison showed 11.6. The live
+story first settles the closed network, then opens the connector; the original
+headless comparison started each condition independently. I changed the experiment
+to measure the intervention actually shown. A longer-horizon gate then revealed
+that its **+10.1%** warm-start penalty decayed to **+3.4%**. The page now distinguishes
+the adjustment-period transient from the settled effect, and a test requires both
+protocols to agree at equilibrium
 ([`c70f164`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-SharmaKunal14/commit/c70f164)).
 
-**4. The page's own readout caught my copy lying.** The lede read "Traffic is bad.
-Surely another road would help." Then the readout showed every road free-flowing —
-because a settled Braess effect *requires* spare capacity. The premise contradicted
-the simulation, so the premise went, and a test now ties the lede's claim to the
-measured baseline. It also added a scope guard with teeth — one primary action, zero
-sliders, a word budget on the copy — because every rejected feature would have
-arrived as a control
-([`9ae0852`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-SharmaKunal14/commit/9ae0852)).
-Rules in `CLAUDE.md`, prior commitments in `PLAN.md`, unedited record in
-`notes/log.md`.
+**4. User criticism made me remove work, then fix the right layer.** My first
+redesign still exposed eight named states, a route table and a trace. The user called
+it information-heavy, so I replaced it with one stable editorial spread and five
+internal states: decide, watch, verified verdict, recover, reveal. One button changes
+the network; the network carries the explanation. The same critique called motion
+abrupt but forbade changing the science to beautify it. Profiling showed the renderer
+was displaying raw fixed-step positions, so I interpolated previous/current state by
+`accumulator / dt` and keyed cars by stable IDs. A later audit found the live
+completion-time average was right-truncated; watch mode now shows only observable
+shortcut uptake, while **5:31 → 5:44** is reserved for the paired 280-trip cohort.
+The phone action fits the first viewport, the 38% label resolves to **106/280 trips**,
+and 79 checks cover both marking sizes, keyboard, resize, reduced motion and delayed
+responses
+([`5977880...ba26efc`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-SharmaKunal14/compare/5977880...ba26efc)).
+
+Rules are in `CLAUDE.md`, prior commitments in `PLAN.md`, and the unedited working
+record is in `notes/log.md`.

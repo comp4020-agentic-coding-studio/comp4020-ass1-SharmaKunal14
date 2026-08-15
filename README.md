@@ -1,64 +1,82 @@
-# COMP4020 static prototype template
+# One More Road
 
-A starter template for static-site prototypes in **COMP4020 / COMP8020 Agentic
-Coding Studio**. The course provisions a repo from this template for each
-deliverable --- you don't create it yourself. The `start` course skill clones it
-for you; from there, build your prototype and deploy it to GitHub Pages.
+One More Road is an interactive explainer of Braess's paradox. It asks the visitor
+to add an apparently useful connector, lets seeded drivers adapt their routes, and
+then reveals the counter-intuitive result: under the modelled peak demand, adding
+the road raises the average trip time. Closing the same road completes the story.
 
-## CI and Pages only turn on when you ship
+The traffic is produced by a deterministic, fixed-timestep Intelligent Driver
+Model (IDM) simulation with seeded departures and route learning. The page is a
+static TypeScript/Vite site; it does not call a server at runtime.
 
-Your repo starts private, and both CI jobs (`check` and `deploy`) are gated on
-it being public. While private, a push to `main` runs nothing in CI ---
-`pnpm check` (below) is your feedback loop until then. When you're ready, the
-course's `/ship` skill flips the repo public, turns on GitHub Pages, and
-dispatches the deploy for you; there's nothing to configure in the Pages
-settings yourself. From that point, every push to `main` builds and deploys, and
-the deploy step prints your live URL and checks it returns 200.
+## Result and evidence caveat
 
-## What gets marked
+The verdict shown on the page comes from a paired headless experiment, not from a
+convenient animation frame. The current snapshot reports **331.3 s closed versus
+343.8 s open (+3.8%)**. Both conditions use the same frozen configuration, seed and
+departure schedule; the connector state is the intervention. At lower demand, the
+control reverses sign: **318.6 s versus 310.7 s (-2.5%)**.
 
-The deployed site is the deliverable, assessed live in Chrome at two fixed
-viewports --- see the course website's
-[assessment page](https://comp.anu.edu.au/courses/comp4020-agentic-coding-studio/topics/assessment/#marking-environment)
-for the details.
+Ten target seeds were attempted, but only **8/10 met the usability/equilibrium
+gates**. The other two are excluded from the aggregate rather than presented as
+settled evidence; the usable-seed mean is +4.2%. The browser animation is one
+warm-start live run intended to illustrate gradual rerouting and congestion. Its
+rolling shortcut share can wander and is not the controlled verdict.
 
-## Quick start
+## Run locally
+
+Node 24 and pnpm 11.9.0 are pinned in `mise.toml`.
 
 ```sh
-mise install       # supported path: install the template's Node and pnpm
-pnpm install
-pnpm dev        # local dev server
-pnpm check      # most of what CI runs (links, secrets, evidence and deploy are CI-only)
-pnpm build      # produce dist/ (what gets deployed)
-pnpm dlx linkinator ./dist --silent   # reproduce CI's links check before you push
+mise install
+mise exec -- pnpm install --frozen-lockfile
+mise exec -- pnpm exec playwright install chromium
+mise exec -- pnpm dev
 ```
 
-`mise` is the course's recommended runtime manager. If you use another manager
-or the official installers, that is fine: provide the Node and pnpm versions in
-`mise.toml`, then run the same commands. Tutor support reproduces runtime
-problems with mise.
+Run the full type, build, lint, scientific and browser checks:
 
-## What's here
+```sh
+mise exec -- pnpm check
+```
 
-- `index.html`, `styles.css`, `main.ts` --- a minimal starting site. Replace it.
-- `mise.toml` --- the tested Node and pnpm versions for this template.
-- `spec/` --- what the checks are for (`README.md`), the shipped invariants
-  (`invariants.test.ts`), and a replaceable starter test (`starter.test.ts`);
-  your own spec tests live alongside them.
-- `CLAUDE.md` --- orients your coding agent: what the checks mean and how to
-  work here. Yours to grow.
-- `PROCESS.md` --- a template for your process overview, showing the
-  cited-moment format. Replace it with your own; `pnpm check:evidence` verifies
-  your citations resolve.
-- `.github/workflows/checks.yml` --- the CI sensors that run on every push once
-  your repo is public, and the GitHub Pages deploy.
-- `.githooks/pre-commit` --- blocks any commit that contains something shaped
-  like an API key, so your COMP4020 key can't end up in a public repo. Installed
-  automatically by `pnpm install`.
+Validate `PROCESS.md`, its commit citations and the current reflection name:
 
-This template is SSG-agnostic: it's plain HTML/CSS/TypeScript on Vite, so you
-can add Astro, Eleventy, or any static generator later without changing how it
-deploys. TypeScript is the course default over plain JavaScript: the types are
-extra backpressure, and your agent feels it before you do.
+```sh
+mise exec -- pnpm check:evidence
+```
 
-See the course site for how the checks map to each week of the course.
+After an intentional experiment or model change, regenerate the checked-in
+evidence snapshot, then run the full check again:
+
+```sh
+mise exec -- node scripts/snapshot.ts
+mise exec -- pnpm check
+```
+
+The snapshot command writes `src/experiment/result.generated.ts`; do not hand-edit
+that file.
+
+## Architecture
+
+| Area | Responsibility |
+| --- | --- |
+| `index.html`, `styles.css`, `main.ts` | Accessible page shell, presentation and interaction orchestration |
+| `src/story.ts` | Narrative states and simulation-driven transition conditions |
+| `src/live.ts` | The illustrative browser run, fixed-step clock and render interpolation |
+| `src/sim/` | IDM physics, network, routing and seeded randomness |
+| `src/experiment/` | Frozen configurations, paired runs, equilibrium gates, metrics and evidence aggregation |
+| `src/experiment/result.generated.ts` | Generated evidence payload imported by the page |
+| `src/view/` | Responsive SVG layout, traffic scene and visual annotations |
+| `scripts/snapshot.ts` | Recomputes the evidence payload from the headless experiment |
+| `spec/` | Scientific, content, accessibility, responsive and real-browser checks |
+| `PROCESS.md`, `notes/log.md`, `reflections/` | Cited process evidence and working record |
+
+## Deployment
+
+Expected GitHub Pages URL after a successful public deployment:
+[comp4020-agentic-coding-studio.github.io/comp4020-ass1-SharmaKunal14/](https://comp4020-agentic-coding-studio.github.io/comp4020-ass1-SharmaKunal14/)
+
+This address is inferred from the repository remote; it is not a claim that the
+deployment is currently live. The Pages workflow publishes `dist/` from `main`
+only after the repository is public and the check job succeeds.
