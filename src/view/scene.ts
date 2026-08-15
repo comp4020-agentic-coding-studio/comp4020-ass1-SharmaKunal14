@@ -355,9 +355,13 @@ export class Scene {
     if (this.shortcutNote !== null) {
       const percentage = `${Math.round(shortcutShare * 100)}%`;
       const paired = mode === "verdict" || mode === "diagnose" || mode === "reveal";
-      this.shortcutNote.textContent = paired
-        ? `paired cohort · ${percentage}`
-        : `live choices · ${percentage}`;
+      if (mode === "wave_two") {
+        this.shortcutNote.textContent = "same trip → both bridges";
+      } else {
+        this.shortcutNote.textContent = paired
+          ? `paired cohort · ${percentage}`
+          : `live choices · ${percentage}`;
+      }
     }
   }
 

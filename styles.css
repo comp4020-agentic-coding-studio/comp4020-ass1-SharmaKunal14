@@ -340,6 +340,10 @@ body[data-state="proposal"] .measure__value {
   text-wrap: pretty;
 }
 
+.measure__context:empty {
+  display: none;
+}
+
 .comparison {
   display: grid;
   grid-template-columns: auto min-content auto;
@@ -753,7 +757,7 @@ body:not([data-state="map"]) .throat__label {
 }
 
 .network[data-narrative="wave_one"] .network-note--shortcut,
-.network[data-narrative="wave_two"] .network-note,
+.network[data-narrative="wave_two"] .network-note--shortcut,
 .network[data-narrative="wave_three"] .network-note--shortcut,
 .network[data-narrative="wave_four"] .network-note,
 .network[data-narrative="diagnose"] .network-note {
@@ -779,13 +783,15 @@ body[data-state="proposal"][data-shortcut-traced="false"] .road-label--ab {
   opacity: 0;
 }
 
-/* stylelint-disable no-descending-specificity -- narrative state deliberately
-   suppresses secondary labels after the generic spotlight treatment. */
+/* stylelint-disable no-descending-specificity, selector-not-notation -- narrative
+   state deliberately suppresses labels after the generic spotlight treatment;
+   chained :not() avoids relying on selector-list support inside :not(). */
 body[data-state="proposal"] .road-label:not(.road-label--ab),
-body:not([data-state="map"], [data-state="proposal"]) .road-label {
+.network[data-narrative]:not([data-narrative="map"]):not([data-narrative="proposal"])
+  .road-label {
   opacity: 0;
 }
-/* stylelint-enable no-descending-specificity */
+/* stylelint-enable no-descending-specificity, selector-not-notation */
 
 /* These chapters discuss geometry or frozen paired evidence. Live traffic begins
    only when the visitor explicitly releases the peak waves. */

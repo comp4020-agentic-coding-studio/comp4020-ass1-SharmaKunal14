@@ -593,6 +593,16 @@ function renderStateCopy(): void {
 }
 
 function renderWaveCopy(): void {
+  if (state === "wave_two") {
+    ui.metric.textContent = "1 → 2";
+    ui.metricLabel.textContent = "shortcut trip → old bridges";
+    ui.metricContext.textContent = "";
+    ui.status.textContent = "Next, add more drivers and watch the two shared roads.";
+    ui.caption.textContent =
+      "The highlighted journey runs from Riverside, across the new link, to Millbrook.";
+    return;
+  }
+
   const total = run.choiceCountSinceAnchor;
   const shortcut = run.choicesSinceAnchorFor("shortcut");
   const share = Math.round(run.choiceShareSinceAnchor("shortcut") * 100);
@@ -608,12 +618,6 @@ function renderWaveCopy(): void {
       : "Gold cars chose the shortcut. Follow where they go next.";
     ui.caption.textContent =
       "This percentage counts route decisions as they happen—not only trips that finish first.";
-  } else if (state === "wave_two") {
-    ui.status.textContent = reducesMotion
-      ? "Shortcut traffic is added to both bridge approaches, not removed from the network."
-      : "The same gold journeys are now loading both old bridges.";
-    ui.caption.textContent =
-      "Road width and rust colour show slower traversal; the dots are individual cars.";
   } else if (state === "wave_three") {
     ui.status.textContent = "Choices keep adapting. The verdict needs a complete paired cohort.";
     ui.caption.textContent = "The live share can move; the later 38% is the measured paired-run outcome.";

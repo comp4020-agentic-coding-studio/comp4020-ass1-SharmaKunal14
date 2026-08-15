@@ -234,6 +234,14 @@ describe("one investigation carried through six chapters", () => {
     }
   });
 
+  it("uses the second wave to explain topology instead of repeating route share", () => {
+    expect(STORY.wave_two.headline).toBe("One shortcut trip uses both bridges.");
+    expect(STORY.wave_two.body).toMatch(/does not bypass the old bridges/i);
+    expect(STORY.wave_two.action).toBe("Add another traffic wave");
+    expect(mainSource).toContain('ui.metric.textContent = "1 → 2"');
+    expect(mainSource).toContain('ui.metricLabel.textContent = "shortcut trip → old bridges"');
+  });
+
   it("withholds the phenomenon until the final reveal", () => {
     const opening = [
       doc.title,

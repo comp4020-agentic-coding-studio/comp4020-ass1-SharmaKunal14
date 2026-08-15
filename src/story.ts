@@ -100,10 +100,10 @@ export const STORY: Readonly<Record<StateId, Beat>> = Object.freeze({
   },
   wave_two: {
     chapter: 5,
-    eyebrow: "Shared learning · second wave",
-    headline: "Both short roads absorb the shift.",
-    body: "Each gold shortcut journey crosses Riverside Road, the new link, and Millbrook Road.",
-    action: "Let drivers keep learning",
+    eyebrow: "Cause · follow one shortcut trip",
+    headline: "One shortcut trip uses both bridges.",
+    body: "The new link does not bypass the old bridges. It connects them into one route.",
+    action: "Add another traffic wave",
     spotlight: ["SA", "AB", "BT"],
   },
   wave_three: {

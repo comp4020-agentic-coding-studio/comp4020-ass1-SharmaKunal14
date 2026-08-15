@@ -394,7 +394,20 @@ async function completeCase(page: Page, layout: "wide" | "tall"): Promise<void> 
 
   await action.click();
   await waitForState(page, "wave_two");
-  expect(await text(page, "[data-headline]")).toContain("Both short roads");
+  expect(await text(page, "[data-headline]")).toBe("One shortcut trip uses both bridges.");
+  expect(await text(page, "[data-metric-value]")).toBe("1 → 2");
+  expect(await text(page, "[data-metric-label]")).toBe("shortcut trip → old bridges");
+  expect(await text(page, ".network-note--shortcut")).toBe("same trip → both bridges");
+  expect(
+    await page.locator(".network-note--queue").evaluateAll((notes) =>
+      notes.filter((note) => Number.parseFloat(getComputedStyle(note).opacity) > 0.05).length,
+    ),
+  ).toBe(0);
+  expect(
+    await page.locator(".road-label").evaluateAll((labels) =>
+      labels.filter((label) => Number.parseFloat(getComputedStyle(label).opacity) > 0.05).length,
+    ),
+  ).toBe(0);
   await expectNoOverflow(page);
   await action.click();
   await waitForState(page, "wave_three");
