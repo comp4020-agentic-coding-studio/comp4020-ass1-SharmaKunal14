@@ -43,23 +43,21 @@ the adjustment-period transient from the settled effect, and a test requires bot
 protocols to agree at equilibrium
 ([`c70f164`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-SharmaKunal14/commit/c70f164)).
 
-**4. The polished two-button story still removed the visitor.** The user rejected my
+**4. A polished interaction can still hide its meaning.** The user rejected my
 collapsed Build/Close interface: one click started an opaque sequence instead of a
-chaptered investigation. I kept one network and replaced passive waiting with
-evidence-bearing actions: trace both original routes, draw the shortcut, predict the
-300-car/hour control, release four peak waves, construct the paired comparison and
-inspect both bridges. Completed-trip shares favoured fast-finishing routes, so live
-percentages now count choices at departure. A third checkpoint showed only one slow
-bridge; a fourth shows both slowing while the connector stays clear. Screenshots
-exposed comprehension failures: predetermined endpoint clicks made
-nothing connect, and a repeated live percentage obscured why the shortcut loads both
-bridges. I removed the clicks, replaced the percentage with a **1 → 2** causal step,
-demoted secondary navigation and captions, drew the route onscreen, kept panel motion
-presentation-only, and made shortcut cars larger and gold. The paired verdict remains
-**106/280 = 38%**; browser tests traverse all
-fifteen states at both marking sizes, by keyboard, through resize, reduced motion and
-delayed responses
-([`5977880...2077c3b`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-SharmaKunal14/compare/5977880...2077c3b)).
+chaptered investigation. I kept one network and added actions:
+trace both ways, draw the shortcut, predict the quiet result, watch choices, design a
+fair comparison and inspect both bridges. Screenshots exposed two more failures.
+Endpoint clicks made nothing connect, while “traffic wave,”
+“paired cohort” and unexplained percentages made visitors decode the implementation.
+I removed the fake clicks, drew the route onscreen, made shortcut cars larger and gold,
+and renamed each pause for what it does: let the same morning continue without changing
+rules. The page now shows its arithmetic — **46/90 ≈ 51%** during the illustration,
+**106/280 ≈ 38%** in the complete replay, and **92 + 106 = 198** at Riverside — and
+labels **5:05 → 4:34** honestly as a length-and-speed estimate rather than timed trips.
+Browser tests traverse all fifteen states at both marking sizes, by keyboard, through
+resize, reduced motion and delayed responses
+([`5977880...8079525`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-SharmaKunal14/compare/5977880...8079525)).
 
 Rules are in `CLAUDE.md`, prior commitments in `PLAN.md`, and the unedited working
 record is in `notes/log.md`.
