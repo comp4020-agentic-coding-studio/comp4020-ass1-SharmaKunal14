@@ -9,6 +9,8 @@ export type StateId =
   | "map"
   | "proposal"
   | "quiet"
+  | "quiet_closed"
+  | "quiet_open"
   | "quiet_result"
   | "peak"
   | "wave_one"
@@ -26,6 +28,8 @@ export const STATES: readonly StateId[] = [
   "map",
   "proposal",
   "quiet",
+  "quiet_closed",
+  "quiet_open",
   "quiet_result",
   "peak",
   "wave_one",
@@ -71,14 +75,30 @@ export const STORY: Readonly<Record<StateId, Beat>> = Object.freeze({
     eyebrow: "Chapter 3 of 6 · Try a quiet morning",
     headline: "Will the shortcut still help?",
     body: "300 cars an hour is about five each minute. First guess, then see two replays where only the shortcut changes.",
-    action: "Show the quiet-road test",
+    action: "Set up the quiet-road test",
     spotlight: ["AB"],
+  },
+  quiet_closed: {
+    chapter: 3,
+    eyebrow: "Quiet test · Step 1 of 3",
+    headline: "First, keep the shortcut closed.",
+    body: "A complete replay already timed the same 96 starts from departure to arrival. Your click will reveal that checked result; it is not running the simulation now.",
+    action: "Show the closed-road arithmetic",
+    spotlight: ["SA", "AT", "SB", "BT"],
+  },
+  quiet_open: {
+    chapter: 3,
+    eyebrow: "Quiet test · Step 2 of 3",
+    headline: "Closed-road average: 5:19.",
+    body: "All 96 trip times add to 30,586 seconds. Divide that total by 96 to get the average trip time.",
+    action: "Reuse the starts with shortcut open",
+    spotlight: ["SA", "AT", "SB", "BT"],
   },
   quiet_result: {
     chapter: 3,
-    eyebrow: "Quiet result · about 5 cars a minute",
-    headline: "Here, the shortcut saves time.",
-    body: "300 an hour is an average, not an exact count. This saved 20-minute list had 96 start times; we replayed it with the shortcut closed and open.",
+    eyebrow: "Quiet test · Step 3 of 3",
+    headline: "Opening it saves about 8 seconds.",
+    body: "The second checked replay reused the same 96 start times. The only change was opening the shortcut.",
     action: "Try a busy morning",
     spotlight: ["AB"],
   },

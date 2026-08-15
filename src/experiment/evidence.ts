@@ -123,6 +123,8 @@ function summariseExperiment(config: ExperimentConfig) {
     demandPerHour: config.demandPerHour,
     closedSeconds: round(single.closed.meanTravelTime),
     openSeconds: round(single.open.meanTravelTime),
+    closedTotalSeconds: Math.round(single.closed.meanTravelTime * single.closed.cohortSize),
+    openTotalSeconds: Math.round(single.open.meanTravelTime * single.open.cohortSize),
     deltaSeconds: round(single.deltaSeconds),
     deltaPercent: round(single.deltaPercent),
     cohortSize: single.closed.cohortSize,

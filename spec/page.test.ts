@@ -148,11 +148,13 @@ describe("the page quotes controlled evidence", () => {
 });
 
 describe("one investigation carried through six chapters", () => {
-  it("uses fifteen ordered, user-paced states", () => {
+  it("uses seventeen ordered, user-paced states", () => {
     expect(STATES).toEqual([
       "map",
       "proposal",
       "quiet",
+      "quiet_closed",
+      "quiet_open",
       "quiet_result",
       "peak",
       "wave_one",
@@ -167,7 +169,7 @@ describe("one investigation carried through six chapters", () => {
       "reveal",
     ]);
     expect(STATES.map((state) => STORY[state].chapter)).toEqual([
-      1, 2, 3, 3, 4, 5, 5, 5, 5, 5, 5, 6, 6, 6, 6,
+      1, 2, 3, 3, 3, 3, 4, 5, 5, 5, 5, 5, 5, 6, 6, 6, 6,
     ]);
     expect(new Set(STATES.map((state) => STORY[state].chapter))).toEqual(
       new Set([1, 2, 3, 4, 5, 6]),
@@ -322,12 +324,26 @@ describe("one investigation carried through six chapters", () => {
   });
 
   it("labels saved evidence as something shown, not a live test being run", () => {
-    expect(STORY.quiet.action).toBe("Show the quiet-road test");
+    expect(STORY.quiet.action).toBe("Set up the quiet-road test");
+    expect(STORY.quiet_closed.body).toMatch(/not running the simulation now/i);
+    expect(STORY.quiet_closed.action).toMatch(/^Show\b/);
+    expect(STORY.quiet_open.action).toMatch(/^Reuse\b/);
     expect(STORY.compare.action).toBe("Show the two full replays");
-    expect(STORY.quiet.action).toMatch(/^Show\b/);
     expect(STORY.compare.action).toMatch(/^Show\b/);
-    expect(STORY.quiet.action).not.toMatch(/^Run\b/);
+    expect(STORY.quiet_closed.action).not.toMatch(/^Run\b/);
     expect(STORY.compare.action).not.toMatch(/^Run\b/);
+  });
+
+  it("reveals the quiet-road calculation before its conclusion", () => {
+    const control = EXPERIMENT.control;
+    expect(control.closedTotalSeconds).toBe(30_586);
+    expect(control.openTotalSeconds).toBe(29_826);
+    expect(STORY.quiet_open.headline).toContain("5:19");
+    expect(STORY.quiet_open.body).toContain("30,586");
+    expect(mainSource).toContain('state === "quiet_closed"');
+    expect(mainSource).toContain('state === "quiet_open"');
+    expect(mainSource).toContain('`${EXPERIMENT.control.closedTotalSeconds.toLocaleString("en-AU")} ÷ `');
+    expect(mainSource).toContain('`Open: ${EXPERIMENT.control.openTotalSeconds.toLocaleString("en-AU")} ÷ `');
   });
 
   it("withholds the phenomenon until the final reveal", () => {
@@ -352,7 +368,7 @@ describe("one investigation carried through six chapters", () => {
     expect(STORY.quiet.body).toContain(String(EXPERIMENT.control.demandPerHour));
     expect(STORY.verdict.body).toContain(String(EXPERIMENT.target.demandPerHour));
     expect(mainSource).toContain('ui.metric.textContent = "860"');
-    expect(mainSource).toContain("5:19 − 5:11 = 8 seconds saved");
+    expect(mainSource).toContain("`${Math.abs(EXPERIMENT.control.deltaSeconds)} seconds saved, rounded to 8. `");
     expect(STORY.compare.body).toMatch(/change only whether the shortcut is open/i);
   });
 });

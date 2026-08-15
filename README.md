@@ -64,7 +64,7 @@ that file.
 | Area | Responsibility |
 | --- | --- |
 | `index.html`, `styles.css`, `main.ts` | Accessible page shell, presentation and interaction orchestration |
-| `src/story.ts` | Six user-paced chapters and their fifteen narrative states |
+| `src/story.ts` | Six user-paced chapters and their seventeen narrative states |
 | `src/live.ts` | Illustrative fixed-step run, departure-choice measurement and render interpolation |
 | `src/sim/` | IDM physics, network, routing and seeded randomness |
 | `src/experiment/` | Frozen configurations, paired runs, equilibrium gates, metrics and evidence aggregation |

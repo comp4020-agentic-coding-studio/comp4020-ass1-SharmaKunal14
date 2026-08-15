@@ -27,6 +27,8 @@ type StateId =
   | "map"
   | "proposal"
   | "quiet"
+  | "quiet_closed"
+  | "quiet_open"
   | "quiet_result"
   | "peak"
   | "wave_one"
@@ -325,6 +327,10 @@ async function reachPeak(page: Page): Promise<void> {
   await waitForState(page, "quiet");
   await selectRadio(page, "quiet-prediction", "help");
   await page.locator("[data-action]").click();
+  await waitForState(page, "quiet_closed");
+  await page.locator("[data-action]").click();
+  await waitForState(page, "quiet_open");
+  await page.locator("[data-action]").click();
   await waitForState(page, "quiet_result");
   await page.locator("[data-action]").click();
   await waitForState(page, "peak");
@@ -379,6 +385,16 @@ async function completeCase(page: Page, layout: "wide" | "tall"): Promise<void> 
   await selectRadio(page, "quiet-prediction", "hurt");
   expect(await action.isEnabled()).toBe(true);
   await action.click();
+  await waitForState(page, "quiet_closed");
+  expect(await text(page, "[data-metric-value]")).toBe("96");
+  expect(await text(page, "[data-status]")).toContain("being calculated by this click");
+  await action.click();
+  await waitForState(page, "quiet_open");
+  expect(await text(page, "[data-metric-value]")).toBe("30,586");
+  expect(await text(page, "[data-metric-context]")).toContain(
+    "30,586 ÷ 96 = 318.6 seconds",
+  );
+  await action.click();
   await waitForState(page, "quiet_result");
   await expectComparison(page, {
     closed: "5:19",
@@ -387,7 +403,12 @@ async function completeCase(page: Page, layout: "wide" | "tall"): Promise<void> 
     direction: "better",
   });
   expect(await text(page, "[data-status]")).toContain("different from your guess");
-  expect(await text(page, "[data-metric-context]")).toContain("5:19 − 5:11 = 8 seconds saved");
+  expect(await text(page, "[data-metric-context]")).toContain(
+    "Open: 29,826 ÷ 96 = 310.7 seconds",
+  );
+  expect(await text(page, "[data-metric-context]")).toContain(
+    "318.6 − 310.7 = 7.9 seconds saved, rounded to 8",
+  );
   expect(await text(page, "[data-metric-context]")).toContain("41 ÷ 96 ≈ 43%");
   await expectNoOverflow(page);
 
@@ -631,6 +652,10 @@ describe("keyboard-only chapter flow", () => {
     expect(await page.evaluate(() => document.activeElement?.matches("[data-headline]") ?? false)).toBe(true);
     await keyboardChoose(page, 'input[data-radio="quiet-prediction"][value="help"]', "Space");
     await keyboardChoose(page, "[data-action]", "Enter");
+    await waitForState(page, "quiet_closed");
+    await keyboardChoose(page, "[data-action]", "Space");
+    await waitForState(page, "quiet_open");
+    await keyboardChoose(page, "[data-action]", "Enter");
     await waitForState(page, "quiet_result");
     await keyboardChoose(page, "[data-action]", "Space");
     await waitForState(page, "peak");
@@ -754,6 +779,10 @@ describe("reduced motion", () => {
     await page.locator("[data-action]").click();
     await waitForState(page, "quiet");
     await selectRadio(page, "quiet-prediction", "help");
+    await page.locator("[data-action]").click();
+    await waitForState(page, "quiet_closed");
+    await page.locator("[data-action]").click();
+    await waitForState(page, "quiet_open");
     await page.locator("[data-action]").click();
     await waitForState(page, "quiet_result");
     await page.locator("[data-action]").click();

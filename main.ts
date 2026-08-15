@@ -539,12 +539,38 @@ function renderStateCopy(): void {
     return;
   }
 
+  if (state === "quiet_closed") {
+    ui.metric.textContent = String(EXPERIMENT.control.cohortSize);
+    ui.metricLabel.textContent = "saved car start times";
+    ui.metricContext.textContent =
+      "The starts are unevenly spaced across 20 minutes. Both replays use this exact same list.";
+    ui.status.textContent =
+      "Nothing is being calculated by this click. The complete replay was generated and checked beforehand.";
+    ui.caption.textContent = "Replay one: shortcut closed. Every car must use an original route.";
+    return;
+  }
+
+  if (state === "quiet_open") {
+    ui.metric.textContent = EXPERIMENT.control.closedTotalSeconds.toLocaleString("en-AU");
+    ui.metricLabel.textContent = `seconds across ${EXPERIMENT.control.cohortSize} trips`;
+    ui.metricContext.textContent =
+      `${EXPERIMENT.control.closedTotalSeconds.toLocaleString("en-AU")} ÷ ` +
+      `${EXPERIMENT.control.cohortSize} = ${EXPERIMENT.control.closedSeconds} seconds, ` +
+      `rounded to ${formatDuration(EXPERIMENT.control.closedSeconds)}.`;
+    ui.status.textContent =
+      "Next, reveal the second checked replay. It uses the same starts and opens only the shortcut.";
+    ui.caption.textContent = "Replay one is complete. Replay two changes just one thing: the teal shortcut opens.";
+    return;
+  }
+
   if (state === "quiet_result") {
     renderComparison(EXPERIMENT.control);
     ui.metricContext.textContent =
-      `We add ${EXPERIMENT.control.cohortSize} trip times and divide by ` +
-      `${EXPERIMENT.control.cohortSize} for each average. ` +
-      `5:19 − 5:11 = 8 seconds saved. ${EXPERIMENT.control.routeCountsOpen.shortcut} ÷ ` +
+      `Open: ${EXPERIMENT.control.openTotalSeconds.toLocaleString("en-AU")} ÷ ` +
+      `${EXPERIMENT.control.cohortSize} = ${EXPERIMENT.control.openSeconds} seconds. ` +
+      `${EXPERIMENT.control.closedSeconds} − ${EXPERIMENT.control.openSeconds} = ` +
+      `${Math.abs(EXPERIMENT.control.deltaSeconds)} seconds saved, rounded to 8. ` +
+      `${EXPERIMENT.control.routeCountsOpen.shortcut} ÷ ` +
       `${EXPERIMENT.control.cohortSize} ≈ ${EXPERIMENT.control.sharesOpen.shortcut}% used the shortcut.`;
     ui.status.textContent =
       quietPrediction === "help"
@@ -911,7 +937,9 @@ function onAction(event: MouseEvent): void {
       "Shortcut drawn. The map estimate falls from 5 minutes 5 seconds to 4 minutes 34 seconds.",
     );
   } else if (state === "proposal") enter("quiet", keyboardActivation);
-  else if (state === "quiet") enter("quiet_result", keyboardActivation);
+  else if (state === "quiet") enter("quiet_closed", keyboardActivation);
+  else if (state === "quiet_closed") enter("quiet_open", keyboardActivation);
+  else if (state === "quiet_open") enter("quiet_result", keyboardActivation);
   else if (state === "quiet_result") enter("peak", keyboardActivation);
   else if (state === "peak") startPeakWaves(keyboardActivation);
   else if (state === "wave_one") startPeakCheckpoint(1, "wave_two", keyboardActivation);
