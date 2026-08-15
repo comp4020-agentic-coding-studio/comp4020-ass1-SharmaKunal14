@@ -1,8 +1,8 @@
 # One More Road
 
 One More Road is a six-chapter interactive investigation of Braess's paradox. The
-visitor traces the original routes, designs a connector, predicts a quiet-road
-control, stress-tests the same network at peak demand, releases three traffic
+visitor traces the original routes, draws and traces a shortcut, predicts a quiet-road
+control, stress-tests the same network at peak demand, releases four traffic
 waves, constructs a fair comparison and inspects both bottlenecks before the
 phenomenon is named.
 
@@ -64,7 +64,7 @@ that file.
 | Area | Responsibility |
 | --- | --- |
 | `index.html`, `styles.css`, `main.ts` | Accessible page shell, presentation and interaction orchestration |
-| `src/story.ts` | Six user-paced chapters and their fourteen narrative checkpoints |
+| `src/story.ts` | Six user-paced chapters and their fifteen narrative states |
 | `src/live.ts` | Illustrative fixed-step run, departure-choice measurement and render interpolation |
 | `src/sim/` | IDM physics, network, routing and seeded randomness |
 | `src/experiment/` | Frozen configurations, paired runs, equilibrium gates, metrics and evidence aggregation |

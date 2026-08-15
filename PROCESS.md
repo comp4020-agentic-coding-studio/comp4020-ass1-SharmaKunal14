@@ -43,20 +43,21 @@ the adjustment-period transient from the settled effect, and a test requires bot
 protocols to agree at equilibrium
 ([`c70f164`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-SharmaKunal14/commit/c70f164)).
 
-**4. The polished two-button story still removed the visitor.** After I collapsed the
-interface to Build and Close, the user objected that one click started an opaque
-automatic sequence and demanded a chapter-by-chapter investigation. I kept one
-network and replaced passive waiting with evidence-bearing actions: trace both
-routes, choose connector endpoints, predict the validated 300-cars/hour control,
-release four peak waves, construct the paired comparison and inspect both bridges.
-This also exposed a measurement error: completed-trip share favoured routes that
-finished first, so the live percentages now count choices at departure. An
-adversarial pass then rejected my third checkpoint because only one bridge was still
-slow; a fourth exact checkpoint shows both slowing while the connector remains clear.
-The paired verdict is separately labelled **106/280 = 38%**, and ten browser tests
-complete all fifteen states at both marking sizes, by keyboard, through a resize,
-reduced motion and delayed responses
-([`5977880...71fb99b`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-SharmaKunal14/compare/5977880...71fb99b)).
+**4. The polished two-button story still removed the visitor.** The user rejected my
+collapsed Build/Close interface: one click started an opaque sequence instead of a
+chaptered investigation. I kept one network and replaced passive waiting with
+evidence-bearing actions: trace both original routes, draw the shortcut, predict the
+300-car/hour control, release four peak waves, construct the paired comparison and
+inspect both bridges. Completed-trip shares favoured fast-finishing routes, so live
+percentages now count choices at departure. A third checkpoint showed only one slow
+bridge; a fourth shows both slowing while the connector stays clear. A later
+screenshot exposed another empty interaction: two predetermined endpoint clicks made
+nothing connect. I removed them, demoted secondary navigation and captions, drew the
+route onscreen, kept panel motion presentation-only, and made shortcut cars larger
+and gold. The paired verdict remains **106/280 = 38%**; browser tests traverse all
+fifteen states at both marking sizes, by keyboard, through resize, reduced motion and
+delayed responses
+([`5977880...6528e57`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-SharmaKunal14/compare/5977880...6528e57)).
 
 Rules are in `CLAUDE.md`, prior commitments in `PLAN.md`, and the unedited working
 record is in `notes/log.md`.
