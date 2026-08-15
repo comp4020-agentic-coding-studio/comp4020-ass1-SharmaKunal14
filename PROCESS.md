@@ -50,14 +50,16 @@ evidence-bearing actions: trace both original routes, draw the shortcut, predict
 300-car/hour control, release four peak waves, construct the paired comparison and
 inspect both bridges. Completed-trip shares favoured fast-finishing routes, so live
 percentages now count choices at departure. A third checkpoint showed only one slow
-bridge; a fourth shows both slowing while the connector stays clear. A later
-screenshot exposed another empty interaction: two predetermined endpoint clicks made
-nothing connect. I removed them, demoted secondary navigation and captions, drew the
-route onscreen, kept panel motion presentation-only, and made shortcut cars larger
-and gold. The paired verdict remains **106/280 = 38%**; browser tests traverse all
+bridge; a fourth shows both slowing while the connector stays clear. Screenshots
+exposed comprehension failures: predetermined endpoint clicks made
+nothing connect, and a repeated live percentage obscured why the shortcut loads both
+bridges. I removed the clicks, replaced the percentage with a **1 → 2** causal step,
+demoted secondary navigation and captions, drew the route onscreen, kept panel motion
+presentation-only, and made shortcut cars larger and gold. The paired verdict remains
+**106/280 = 38%**; browser tests traverse all
 fifteen states at both marking sizes, by keyboard, through resize, reduced motion and
 delayed responses
-([`5977880...6528e57`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-SharmaKunal14/compare/5977880...6528e57)).
+([`5977880...2077c3b`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-SharmaKunal14/compare/5977880...2077c3b)).
 
 Rules are in `CLAUDE.md`, prior commitments in `PLAN.md`, and the unedited working
 record is in `notes/log.md`.
