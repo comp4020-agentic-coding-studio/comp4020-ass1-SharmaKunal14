@@ -216,3 +216,30 @@ purely relative. That is a scaling defect in the criterion, not a growing queue.
 Gave it an absolute floor of 1.5 points, and added a regression test that feeds the
 gate the original +23.9%→+58.4% artefact and requires it to still reject it.
 Loosening a check is only defensible with that test next to it.
+
+## Sat 15 Aug — the focused version was too passive
+
+The user rejected the five-state redesign for a different reason than the earlier
+dashboard: it had only Build and Close, and Build started a long automatic sequence.
+The page looked controlled but the visitor did not conduct the investigation.
+
+Reframed it as six chapters on the same network, with no new slider or second model:
+trace both routes; select the connector endpoints; predict the 300/h control; choose
+a peak route; release traffic in checkpoints; choose the fair comparison; inspect
+both bridges; close the connector; name the result. This is more interaction, but
+every action reveals one part of the same causal claim.
+
+The redesign exposed another scientific presentation bug. The old live percentage
+used the last 60 completed trips, so shortly after opening it mixed pre-opening
+arrivals with post-opening trips and favoured routes that finished sooner. Added an
+anchor over the simulation's departure-choice counts instead. At the first exact
+checkpoint it reports 46/90 choices (51%), before most of those journeys can finish.
+The controlled verdict remains a different object: 106/280 departures (38%) in the
+complete paired open-road cohort.
+
+An adversarial visual audit rejected the 1,300-second checkpoint too: Riverside was
+only 1.056× its free-flow reference while the interface drew two queue callouts. The
+new fourth checkpoint at 1,800 seconds shows Riverside at 1.195×, Millbrook at 1.210×
+and the connector at 1.013×. The picture now supports its own explanation. Static
+labels say “paired cohort” and live labels say “live choices” so the two protocols
+cannot quietly blur together.

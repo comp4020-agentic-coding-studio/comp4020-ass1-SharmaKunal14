@@ -236,21 +236,23 @@ locally and 404s on the deployed URL.
 ## Assignment 1: what this prototype is, and what it must stay
 
 **One More Road** — an interactive explainer of Braess's paradox. The visitor
-sees a small synthetic road network with a visible average commute, is offered a
-new connector, and builds it. Drivers gradually re-route, the shared streets
-choke, and the average commute settles *worse* than before. Then they can close
-the road again and watch it recover. Only then is the paradox named.
+conducts one six-chapter investigation on a fixed synthetic road network. They
+trace both original routes, design the connector, predict a validated quiet-road
+control, stress-test peak demand, release deterministic traffic waves, choose a
+fair counterfactual and inspect both old bottlenecks. Only then is the paradox
+named.
 
-**One idea, one mechanic.** The mechanic is a single road toggling between built
-and not built. `CLOSE THE ROAD` is that same mechanic run backwards — it
-completes the experiment; it is not a second idea. Route highlighting on
-hover/focus is inspection of an object already on screen, not a mechanic.
+**One idea, one experiment.** More clicks do not mean more unrelated mechanics.
+Every action observes, predicts or changes the same network: trace a route,
+select the connector endpoints, choose a prediction, release a traffic cohort or
+inspect a bridge. Closing the connector is the same experiment run backwards.
 
 Before adding anything, the question is *does this make the visitor understand
 the central idea more strongly?* If not, delete it. Prefer deleting UI over
-adding an explanatory control. There is no demand slider, no second network, no
-network editor, no traffic lights, no lane changing, no chart beyond the one
-time-series of average journey time, and no claim about any real city.
+adding an explanatory control. There is no continuous demand slider, no second
+network, no network editor, no traffic lights, no lane changing, no chart and no
+claim about any real city. The only demand values exposed are the two validated
+configurations, 300 and 860 cars per hour.
 
 ## Assignment 1: rules the simulation must not break
 
@@ -318,12 +320,13 @@ its primary source.
   behaviour at phone size with the real vehicle count, don't assume it.
 - **Resize mid-interaction** is explicitly in the artefact band. Test it while
   the simulation is running, not while it is idle.
-- **Keyboard**: both buttons reachable by Tab, activated by Enter *and* Space,
-  with visible focus. State changes are announced through a live region, because
-  a screen reader user cannot see the queue grow.
-- **Reduced motion** removes decorative transitions and interpolation. It does
-  **not** stop the simulation — the simulation is the explanation. The readout,
-  the queues and the time series still have to carry the argument.
+- **Keyboard**: every route, endpoint, prediction, wave, comparison and bridge
+  action is reachable in logical order, native radio groups keep focus when their
+  value changes, and Enter/Space activation has a visible focus indicator. Major
+  checkpoints are announced through one polite live region.
+- **Reduced motion** removes moving vehicle dots and lands immediately on the
+  same deterministic checkpoints. It does **not** change the fixed-step physics,
+  route choices or quoted evidence.
 - Hundreds of SVG vehicles must never be traversable by a screen reader: the
   vehicle layer is `aria-hidden`, and the meaningful state is exposed as text.
 - No text is allowed to appear before the main decision that a visitor would
@@ -426,15 +429,13 @@ Two rules of judgement from the same pass:
 
 ## Assignment 1: rendering is not simulation
 
-- **Interpolate between fixed steps; never render the raw state.** With a fixed
-  `dt` the accumulator runs a whole number of steps per frame, so at 45× on a
-  120Hz display it alternated one step, two steps, one step — and a car's apparent
-  speed swung by 50% every frame while the physics underneath was perfectly even.
-  Measured per car, frame-to-frame motion variation was CV 0.343; interpolating by
-  `accumulator / dt` took it to 0.132. Snap rather than interpolate across a
-  junction, where the previous position is on a different road. `?nointerp=1`
-  brings the stutter back on demand, so the fix can be demonstrated rather than
-  asserted.
+- **Match rendering to the clock that drives it.** A continuous `LiveRun.advance`
+  clock may interpolate `prevPos → pos` by its fractional accumulator; snapping
+  across a junction is still required because the previous point is on another
+  road. The chapter controller instead advances batches of whole fixed steps to
+  exact checkpoints, so it renders the current position with alpha `1`. Passing
+  `stepAlpha` there would leave every paused vehicle one physics tick behind the
+  metric because that internal accumulator is deliberately zero.
 - **The renderer may never be an input.** `prevPos`/`prevLeg` are written by the
   engine and read only by the view. If a rendering concern ever needs the physics
   to change, it is the wrong fix — a jerky picture is a rendering bug until proven
@@ -443,12 +444,11 @@ Two rules of judgement from the same pass:
   by draw order meant a given circle stood for a different car each frame as
   vehicles came and went, so its shade jumped for no reason and nothing on screen
   had a stable identity.
-- **Every state declares what may be on screen.** The page was showing the
-  network, the traffic, four metrics, a chart, a route table, the controls and the
-  model note at once, so a visitor met the whole apparatus before they had a reason
-  to care about any of it. A panel now appears at the moment it explains something
-  and not before, and that list lives in `src/story.ts` next to the beat, not
-  scattered through the controller.
+- **Every checkpoint earns its controls.** The page once showed the network,
+  traffic, four metrics, a chart, a route table and the model note at once. The
+  current chapter contract lives in `src/story.ts`; `main.ts` renders only the
+  route, prediction, wave, comparison or bridge controls required by that beat.
+  Adding a generic Continue click does not count as interaction.
 - **A visually hidden equivalent is not subject to progressive disclosure.** The
   road-state list is the map for a screen-reader user, so it stays present the whole
   way through even while the visual panels come and go.

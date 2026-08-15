@@ -4,9 +4,9 @@
 
 **One More Road** is an interactive explainer of Braess's paradox. A town has two
 routes to work; a new connector appears to shorten the trip. You build it, drivers
-adapt, and the average commute becomes worse. Closing it lets the network recover.
-Only then is the paradox named. The outcome comes from a seeded Intelligent Driver
-Model simulation rather than a scripted animation.
+adapt, and the average commute becomes worse. Closing it removes the shortcut from
+new choices. Only then is the paradox named. The outcome comes from a seeded
+Intelligent Driver Model simulation rather than a scripted animation.
 
 ## The moments that mattered
 
@@ -43,20 +43,20 @@ the adjustment-period transient from the settled effect, and a test requires bot
 protocols to agree at equilibrium
 ([`c70f164`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-SharmaKunal14/commit/c70f164)).
 
-**4. User criticism made me remove work, then fix the right layer.** My first
-redesign still exposed eight named states, a route table and a trace. The user called
-it information-heavy, so I replaced it with one stable editorial spread and five
-internal states: decide, watch, verified verdict, recover, reveal. One button changes
-the network; the network carries the explanation. The same critique called motion
-abrupt but forbade changing the science to beautify it. Profiling showed the renderer
-was displaying raw fixed-step positions, so I interpolated previous/current state by
-`accumulator / dt` and keyed cars by stable IDs. A later audit found the live
-completion-time average was right-truncated; watch mode now shows only observable
-shortcut uptake, while **5:31 → 5:44** is reserved for the paired 280-trip cohort.
-The phone action fits the first viewport, the 38% label resolves to **106/280 trips**,
-and 79 checks cover both marking sizes, keyboard, resize, reduced motion and delayed
-responses
-([`5977880...ba26efc`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-SharmaKunal14/compare/5977880...ba26efc)).
+**4. The polished two-button story still removed the visitor.** After I collapsed the
+interface to Build and Close, the user objected that one click started an opaque
+automatic sequence and demanded a chapter-by-chapter investigation. I kept one
+network and replaced passive waiting with evidence-bearing actions: trace both
+routes, choose connector endpoints, predict the validated 300-cars/hour control,
+release four peak waves, construct the paired comparison and inspect both bridges.
+This also exposed a measurement error: completed-trip share favoured routes that
+finished first, so the live percentages now count choices at departure. An
+adversarial pass then rejected my third checkpoint because only one bridge was still
+slow; a fourth exact checkpoint shows both slowing while the connector remains clear.
+The paired verdict is separately labelled **106/280 = 38%**, and ten browser tests
+complete all fifteen states at both marking sizes, by keyboard, through a resize,
+reduced motion and delayed responses
+([`5977880...71fb99b`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-SharmaKunal14/compare/5977880...71fb99b)).
 
 Rules are in `CLAUDE.md`, prior commitments in `PLAN.md`, and the unedited working
 record is in `notes/log.md`.

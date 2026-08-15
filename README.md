@@ -1,9 +1,10 @@
 # One More Road
 
-One More Road is an interactive explainer of Braess's paradox. It asks the visitor
-to add an apparently useful connector, lets seeded drivers adapt their routes, and
-then reveals the counter-intuitive result: under the modelled peak demand, adding
-the road raises the average trip time. Closing the same road completes the story.
+One More Road is a six-chapter interactive investigation of Braess's paradox. The
+visitor traces the original routes, designs a connector, predicts a quiet-road
+control, stress-tests the same network at peak demand, releases three traffic
+waves, constructs a fair comparison and inspects both bottlenecks before the
+phenomenon is named.
 
 The traffic is produced by a deterministic, fixed-timestep Intelligent Driver
 Model (IDM) simulation with seeded departures and route learning. The page is a
@@ -21,7 +22,8 @@ Ten target seeds were attempted, but only **8/10 met the usability/equilibrium
 gates**. The other two are excluded from the aggregate rather than presented as
 settled evidence; the usable-seed mean is +4.2%. The browser animation is one
 warm-start live run intended to illustrate gradual rerouting and congestion. Its
-rolling shortcut share can wander and is not the controlled verdict.
+checkpoint percentages count post-opening route decisions as they occur; they can
+wander and are not the controlled verdict.
 
 ## Run locally
 
@@ -62,8 +64,8 @@ that file.
 | Area | Responsibility |
 | --- | --- |
 | `index.html`, `styles.css`, `main.ts` | Accessible page shell, presentation and interaction orchestration |
-| `src/story.ts` | Narrative states and simulation-driven transition conditions |
-| `src/live.ts` | The illustrative browser run, fixed-step clock and render interpolation |
+| `src/story.ts` | Six user-paced chapters and their fourteen narrative checkpoints |
+| `src/live.ts` | Illustrative fixed-step run, departure-choice measurement and render interpolation |
 | `src/sim/` | IDM physics, network, routing and seeded randomness |
 | `src/experiment/` | Frozen configurations, paired runs, equilibrium gates, metrics and evidence aggregation |
 | `src/experiment/result.generated.ts` | Generated evidence payload imported by the page |

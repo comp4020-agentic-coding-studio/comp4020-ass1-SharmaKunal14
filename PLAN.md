@@ -175,6 +175,23 @@ Demand/speed/lane sliders · a second network · a network editor · traffic lig
 about a real city · a backend · charts beyond the one above · a derivation ·
 scroll-driven sections · a hero section · icons · more than two buttons.
 
+### 4.1 Scope revision after user testing — 15 August
+
+The two-button contract above failed in use. The page was visually focused, but
+`BUILD` started a long automatic sequence and `CLOSE` ended it; the visitor had
+too little agency to reconstruct the mechanism. The user explicitly rejected
+that result and asked for a chapter-by-chapter investigation with more meaningful
+interactions. This supersedes “more than two buttons” without changing the one
+idea or adding a second network.
+
+The revised contract keeps one fixed topology and exposes only evidence-backed
+actions: trace both routes; choose the connector endpoints; predict and compare
+the validated 300-cars/hour control; choose a route at the validated 860-cars/hour
+peak; release four deterministic traffic waves; select the fair counterfactual;
+inspect both bridge loads; close the connector; reveal the name. There is still
+no free-form demand slider, network editor or chart. Live wave percentages count
+post-anchor departure choices; the verdict remains the frozen paired cohort.
+
 ## 5. The model
 
 ### 5.1 Network
