@@ -4,6 +4,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { JSDOM } from "jsdom";
+import * as ts from "typescript";
 import { describe, expect, it } from "vitest";
 import { CONTROL, TARGET, networkOf } from "../src/experiment/config.ts";
 import { EXPERIMENT } from "../src/experiment/result.generated.ts";
@@ -20,6 +21,29 @@ const cssSource = readFileSync(resolve("styles.css"), "utf8");
 
 function words(text: string): number {
   return text.trim().split(/\s+/).filter(Boolean).length;
+}
+
+function primaryMainCopy(source: string): string {
+  const sourceFile = ts.createSourceFile(
+    "main.ts",
+    source,
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.TS,
+  );
+  const fragments: string[] = [];
+
+  function visit(node: ts.Node): void {
+    if (ts.isStringLiteralLike(node) && /\s/.test(node.text)) {
+      fragments.push(node.text);
+    } else if (ts.isTemplateExpression(node)) {
+      fragments.push(node.head.text, ...node.templateSpans.map((span) => span.literal.text));
+    }
+    ts.forEachChild(node, visit);
+  }
+
+  visit(sourceFile);
+  return fragments.join(" ");
 }
 
 describe("the page quotes controlled evidence", () => {
@@ -102,8 +126,14 @@ describe("the page quotes controlled evidence", () => {
     expect(Math.round(north)).toBe(305);
     expect(Math.round(shortcut)).toBe(274);
     expect(Math.round(saving)).toBe(31);
-    expect(STORY.map.headline.toLowerCase()).toContain("same empty-road time");
-    expect(mainSource).toMatch(/shortcut is 31 seconds quicker/i);
+    expect(STORY.map.headline).toBe("The map says both ways take 5:05.");
+    expect(STORY.map.body).toMatch(/road lengths and speed limits/i);
+    expect(mainSource).toContain(
+      'ui.metricContext.textContent = "305 − 274 = 31 seconds. These are estimates, not timed trips."',
+    );
+    expect((doc.querySelector(".model-note")?.textContent ?? "").toLowerCase()).toContain(
+      "the first 5:05 and 4:34 numbers are map estimates",
+    );
   });
 
   it("serves the authoritative peak comparison before JavaScript runs", () => {
@@ -155,17 +185,17 @@ describe("one investigation carried through six chapters", () => {
     const rail = doc.querySelector("nav.chapters");
     const items = [...doc.querySelectorAll<HTMLElement>("[data-chapter]")];
 
-    expect(rail?.getAttribute("aria-label")).toBe("Investigation progress");
+    expect(rail?.getAttribute("aria-label")).toBe("Story progress");
     expect(rail?.querySelector("ol")).not.toBeNull();
     expect(items).toHaveLength(6);
     expect(items.map((item) => item.dataset.chapter)).toEqual(["1", "2", "3", "4", "5", "6"]);
     expect(items.map((item) => item.textContent?.trim())).toEqual([
-      "Read the map",
-      "Try the shortcut",
-      "Try quiet roads",
-      "Stress the network",
-      "Watch drivers learn",
-      "Explain the result",
+      "Meet the roads",
+      "Add a shortcut",
+      "Try a quiet morning",
+      "Make it busy",
+      "Watch cars choose",
+      "Explain the surprise",
     ]);
     expect(items.filter((item) => item.getAttribute("aria-current") === "step")).toHaveLength(1);
     expect(items[0].getAttribute("aria-current")).toBe("step");
@@ -185,9 +215,9 @@ describe("one investigation carried through six chapters", () => {
   });
 
   it("makes the proposal a route trace rather than two mandatory endpoint cards", () => {
-    expect(STORY.proposal.eyebrow).toMatch(/tempting shortcut/i);
-    expect(STORY.proposal.headline).toMatch(/build one shortcut/i);
-    expect(STORY.proposal.body).toMatch(/Riverside and Millbrook/i);
+    expect(STORY.proposal.eyebrow).toMatch(/add a shortcut/i);
+    expect(STORY.proposal.headline).toMatch(/build a third way/i);
+    expect(STORY.proposal.body).toMatch(/Riverside to Millbrook/i);
     expect(STORY.proposal.action).toBe("Draw the shortcut");
 
     expect(mainSource).toContain("let shortcutTraced = false");
@@ -229,17 +259,75 @@ describe("one investigation carried through six chapters", () => {
     for (const state of STATES) {
       const beat = STORY[state];
       expect(words(beat.headline), `${state} headline`).toBeLessThanOrEqual(12);
-      expect(words(beat.body), `${state} body`).toBeLessThanOrEqual(26);
+      expect(words(beat.body), `${state} body`).toBeLessThanOrEqual(28);
       expect(words(beat.action), `${state} action`).toBeLessThanOrEqual(7);
     }
   });
 
   it("uses the second wave to explain topology instead of repeating route share", () => {
-    expect(STORY.wave_two.headline).toBe("One shortcut trip uses both bridges.");
-    expect(STORY.wave_two.body).toMatch(/does not bypass the old bridges/i);
-    expect(STORY.wave_two.action).toBe("Add another traffic wave");
-    expect(mainSource).toContain('ui.metric.textContent = "1 → 2"');
-    expect(mainSource).toContain('ui.metricLabel.textContent = "shortcut trip → old bridges"');
+    expect(STORY.wave_two.headline).toBe("One shortcut car uses both old bridges.");
+    expect(STORY.wave_two.body).toMatch(/enters on Riverside Road/i);
+    expect(STORY.wave_two.body).toMatch(/leaves on Millbrook Road/i);
+    expect(STORY.wave_two.action).toBe("Let the next cars choose");
+    expect(mainSource).toContain('ui.metric.textContent = "1 car → 2 bridges"');
+    expect(mainSource).toContain('ui.metricLabel.textContent = "every shortcut trip does this"');
+  });
+
+  it("keeps the main story child-friendly while the evidence disclosure stays technical", () => {
+    const storyCopy = Object.values(STORY)
+      .flatMap((beat) => [beat.eyebrow, beat.headline, beat.body, beat.action])
+      .join(" ");
+    const visibleCopy = `${storyCopy} ${primaryMainCopy(mainSource)}`;
+
+    for (const term of [
+      "wave",
+      "demand",
+      "paired",
+      "cohort",
+      "counterfactual",
+      "seeded",
+      "fixed-step",
+    ]) {
+      expect(visibleCopy, `primary copy contains unexplained “${term}”`).not.toMatch(
+        new RegExp(`\\b${term}\\b`, "i"),
+      );
+    }
+  });
+
+  it("shows where the key percentages and bridge totals come from", () => {
+    expect(mainSource).toContain(
+      "${EXPERIMENT.control.routeCountsOpen.shortcut} ÷ ` +",
+    );
+    expect(mainSource).toContain(
+      "${EXPERIMENT.target.routeCountsOpen.shortcut} ÷ ` +",
+    );
+    expect(mainSource).toContain(
+      "`${oldWay} + ${target.routeCountsOpen.shortcut} = ${counts.open}`",
+    );
+
+    const control = EXPERIMENT.control;
+    const target = EXPERIMENT.target;
+    expect(
+      `${control.routeCountsOpen.shortcut} ÷ ${control.cohortSize} ≈ ${control.sharesOpen.shortcut}%`,
+    ).toBe("41 ÷ 96 ≈ 43%");
+    expect(
+      `${target.routeCountsOpen.shortcut} ÷ ${target.cohortSize} ≈ ${target.sharesOpen.shortcut}%`,
+    ).toBe("106 ÷ 280 ≈ 38%");
+    expect(
+      `${target.routeCountsOpen.north} + ${target.routeCountsOpen.shortcut} = ${target.routeCountsOpen.north + target.routeCountsOpen.shortcut}`,
+    ).toBe("92 + 106 = 198");
+    expect(
+      `${target.routeCountsOpen.south} + ${target.routeCountsOpen.shortcut} = ${target.routeCountsOpen.south + target.routeCountsOpen.shortcut}`,
+    ).toBe("82 + 106 = 188");
+  });
+
+  it("labels saved evidence as something shown, not a live test being run", () => {
+    expect(STORY.quiet.action).toBe("Show the quiet-road test");
+    expect(STORY.compare.action).toBe("Show the two full replays");
+    expect(STORY.quiet.action).toMatch(/^Show\b/);
+    expect(STORY.compare.action).toMatch(/^Show\b/);
+    expect(STORY.quiet.action).not.toMatch(/^Run\b/);
+    expect(STORY.compare.action).not.toMatch(/^Run\b/);
   });
 
   it("withholds the phenomenon until the final reveal", () => {
@@ -262,9 +350,10 @@ describe("one investigation carried through six chapters", () => {
 
   it("uses the two evidence-backed demand scenarios and no invented third case", () => {
     expect(STORY.quiet.body).toContain(String(EXPERIMENT.control.demandPerHour));
-    expect(STORY.peak.body).toContain(String(EXPERIMENT.target.demandPerHour));
-    expect(STORY.quiet_result.body).toMatch(/saves eight seconds/i);
-    expect(STORY.verdict.body).toMatch(/only the road changed/i);
+    expect(STORY.verdict.body).toContain(String(EXPERIMENT.target.demandPerHour));
+    expect(mainSource).toContain('ui.metric.textContent = "860"');
+    expect(mainSource).toContain("5:19 − 5:11 = 8 seconds saved");
+    expect(STORY.compare.body).toMatch(/change only whether the shortcut is open/i);
   });
 });
 

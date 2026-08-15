@@ -156,6 +156,7 @@ async function waitForState(page: Page, state: StateId, timeout = 30_000): Promi
     state,
     { timeout },
   );
+  await expectPlainPrimaryStory(page);
 }
 
 function overflow(page: Page): Promise<boolean> {
@@ -170,6 +171,18 @@ function expectHealthy(observed: ObservedPage): void {
 
 async function text(page: Page, selector: string): Promise<string> {
   return ((await page.locator(selector).textContent()) ?? "").replace(/\s+/g, " ").trim();
+}
+
+async function expectPlainPrimaryStory(page: Page): Promise<void> {
+  const primaryStory = await text(page, ".experience");
+  const unexplainedJargon =
+    primaryStory.match(
+      /\b(?:wave|demand|paired|cohort|counterfactual|seeded|fixed(?:-| )step)\b/gi,
+    ) ?? [];
+  expect(
+    unexplainedJargon,
+    `primary story contains unexplained jargon: ${unexplainedJargon.join(", ")}`,
+  ).toEqual([]);
 }
 
 async function expectNoOverflow(page: Page): Promise<void> {
@@ -271,6 +284,7 @@ async function expectInitialScene(page: Page, layout: "wide" | "tall"): Promise<
     return {
       state: document.body.dataset.state,
       metric: document.querySelector("[data-metric-value]")?.textContent?.trim(),
+      metricLabel: document.querySelector("[data-metric-label]")?.textContent?.trim(),
       roads: document.querySelectorAll(".road").length,
       choices: document.querySelectorAll("[data-choice]").length,
       vehicles: visibleVehicles.length,
@@ -285,11 +299,12 @@ async function expectInitialScene(page: Page, layout: "wide" | "tall"): Promise<
   expect(observed).toMatchObject({
     state: "map",
     metric: "5:05",
+    metricLabel: "map estimate · minutes:seconds",
     roads: 5,
     choices: 2,
     strays: 0,
     layout,
-    action: "Continue to the proposal",
+    action: "Go to the shortcut",
     actionDisabled: true,
   });
   // Chapters 1–4 are a reference drawing. Live cars appear only when the user
@@ -298,14 +313,14 @@ async function expectInitialScene(page: Page, layout: "wide" | "tall"): Promise<
   await expectNoOverflow(page);
 }
 
-/** Complete chapters 1–3 and stop at the peak-demand route choice. */
+/** Complete chapters 1–3 and stop at the busy-morning route choice. */
 async function reachPeak(page: Page): Promise<void> {
   await choose(page, "north");
   await choose(page, "south");
   await page.locator("[data-action]").click();
   await waitForState(page, "proposal");
   await page.locator("[data-action]").click();
-  expect(await text(page, "[data-action]")).toBe("Test with light traffic");
+  expect(await text(page, "[data-action]")).toBe("Try it on a quiet morning");
   await page.locator("[data-action]").click();
   await waitForState(page, "quiet");
   await selectRadio(page, "quiet-prediction", "help");
@@ -324,10 +339,12 @@ async function completeCase(page: Page, layout: "wide" | "tall"): Promise<void> 
   await choose(page, "north");
   expect(await page.locator('[data-choice="north"]').getAttribute("aria-pressed")).toBe("true");
   expect(await action.isDisabled()).toBe(true);
-  expect(await text(page, "[data-status]")).toContain("1 of 2 viewed");
+  expect(await text(page, "[data-status]")).toContain("1 of 2 shown");
   await choose(page, "south");
   expect(await action.isEnabled()).toBe(true);
-  expect(await text(page, "[data-status]")).toContain("same 305 seconds");
+  expect(await text(page, "[data-status]")).toContain(
+    "Both map estimates are 305 seconds",
+  );
   await expectNoOverflow(page);
 
   await action.click();
@@ -340,9 +357,12 @@ async function completeCase(page: Page, layout: "wide" | "tall"): Promise<void> 
 
   await action.click();
   expect(await page.locator("body").getAttribute("data-shortcut-traced")).toBe("true");
-  expect(await text(page, "[data-action]")).toBe("Test with light traffic");
+  expect(await text(page, "[data-action]")).toBe("Try it on a quiet morning");
   expect(await text(page, "[data-metric-value]")).toBe("5:05 → 4:34");
-  expect(await text(page, "[data-metric-context]")).toContain("31 seconds quicker");
+  expect(await text(page, "[data-metric-context]")).toContain("305 − 274 = 31 seconds");
+  expect(await text(page, "[data-metric-context]")).toContain(
+    "estimates, not timed trips",
+  );
   expect(
     await page.locator("[data-trace-link]").evaluateAll((traces) =>
       traces.map((trace) => trace.getAttribute("data-trace-link")),
@@ -366,24 +386,30 @@ async function completeCase(page: Page, layout: "wide" | "tall"): Promise<void> 
     delta: "−8 seconds",
     direction: "better",
   });
-  expect(await text(page, "[data-status]")).toContain("overturns your prediction");
-  expect(await text(page, "[data-metric-context]")).toContain("41 of 96");
-  expect(await text(page, "[data-metric-context]")).toContain("43%");
+  expect(await text(page, "[data-status]")).toContain("different from your guess");
+  expect(await text(page, "[data-metric-context]")).toContain("5:19 − 5:11 = 8 seconds saved");
+  expect(await text(page, "[data-metric-context]")).toContain("41 ÷ 96 ≈ 43%");
   await expectNoOverflow(page);
 
   await action.click();
   await waitForState(page, "peak");
+  expect(await text(page, "[data-action]")).toBe("Open shortcut and watch cars choose");
   expect(await action.isDisabled()).toBe(true);
   await selectRadio(page, "personal-route", "shortcut");
   expect(await action.isEnabled()).toBe(true);
-  expect(await text(page, "[data-status]")).toContain("model will make its own seeded choices");
+  expect(await text(page, "[data-status]")).toContain(
+    "Your pick does not control the computer cars",
+  );
 
   await action.click();
   await waitForState(page, "wave_one");
-  expect(await text(page, "[data-metric-value]")).toBe("51%");
+  expect(await text(page, "[data-metric-value]")).toBe("46 of 90");
+  expect(await text(page, "[data-metric-label]")).toContain("51% picked the shortcut");
   expect(await text(page, "[data-metric-context]")).toBe(
-    "46 of 90 choices in this live run.",
+    "46 ÷ 90 ≈ 51%. This count is still changing.",
   );
+  expect(await text(page, ".network-note--shortcut")).toBe("51% picked the shortcut");
+  expect(await text(page, "[data-action]")).toBe("Let the next cars choose");
   expect(
     await page.locator("svg.network").evaluate((svg) =>
       svg.classList.contains("network--connector-open"),
@@ -394,10 +420,11 @@ async function completeCase(page: Page, layout: "wide" | "tall"): Promise<void> 
 
   await action.click();
   await waitForState(page, "wave_two");
-  expect(await text(page, "[data-headline]")).toBe("One shortcut trip uses both bridges.");
-  expect(await text(page, "[data-metric-value]")).toBe("1 → 2");
-  expect(await text(page, "[data-metric-label]")).toBe("shortcut trip → old bridges");
-  expect(await text(page, ".network-note--shortcut")).toBe("same trip → both bridges");
+  expect(await text(page, "[data-headline]")).toBe("One shortcut car uses both old bridges.");
+  expect(await text(page, "[data-metric-value]")).toBe("1 car → 2 bridges");
+  expect(await text(page, "[data-metric-label]")).toBe("every shortcut trip does this");
+  expect(await text(page, ".network-note--shortcut")).toBe("one trip uses both bridges");
+  expect(await text(page, "[data-action]")).toBe("Let the next cars choose");
   expect(
     await page.locator(".network-note--queue").evaluateAll((notes) =>
       notes.filter((note) => Number.parseFloat(getComputedStyle(note).opacity) > 0.05).length,
@@ -411,7 +438,10 @@ async function completeCase(page: Page, layout: "wide" | "tall"): Promise<void> 
   await expectNoOverflow(page);
   await action.click();
   await waitForState(page, "wave_three");
-  expect(await text(page, "[data-caption]")).toContain("later 38%");
+  expect(await text(page, "[data-caption]")).toContain(
+    "separate from the later two-replay result",
+  );
+  expect(await text(page, "[data-action]")).toBe("Let the final cars choose");
   await expectNoOverflow(page);
 
   await action.click();
@@ -426,14 +456,16 @@ async function completeCase(page: Page, layout: "wide" | "tall"): Promise<void> 
   expect(await action.isDisabled()).toBe(true);
   await selectRadio(page, "comparison-design", "different-morning");
   expect(await action.isDisabled()).toBe(true);
-  expect(await text(page, "[data-status]")).toContain("different departures");
+  expect(await text(page, "[data-status]")).toContain("changes the car start times too");
   await selectRadio(page, "comparison-design", "different-demand");
   expect(await action.isDisabled()).toBe(true);
-  expect(await text(page, "[data-status]")).toContain("second change in demand");
+  expect(await text(page, "[data-status]")).toContain(
+    "changes both the number of cars and the shortcut",
+  );
   await selectRadio(page, "comparison-design", "road-only");
   expect(await action.isEnabled()).toBe(true);
   expect(await text(page, "[data-status]")).toContain(
-    "same demand, departure schedule and random seed; only the road changes",
+    "same car start times and same numbered dice rolls; only the shortcut changes",
   );
 
   await action.click();
@@ -444,29 +476,49 @@ async function completeCase(page: Page, layout: "wide" | "tall"): Promise<void> 
     delta: "+13 seconds",
     direction: "worse",
   });
-  expect(await text(page, "[data-metric-context]")).toContain("106 of 280");
-  expect(await text(page, "[data-metric-context]")).toContain("38%");
-  expect(await text(page, "[data-status]")).toContain("38% is an outcome, not an input");
+  expect(await text(page, "[data-metric-context]")).toContain(
+    "5:44 − 5:31 = 13 seconds longer",
+  );
+  expect(await text(page, "[data-metric-context]")).toContain("106 ÷ 280 ≈ 38%");
+  expect(await text(page, "[data-status]")).toContain(
+    "The 38% came out of the replay; it was not chosen beforehand",
+  );
   await expectNoOverflow(page);
 
   // Both bottlenecks must be inspected, and their counts reconstruct why the
   // 106 shortcut trips load both old bridge approaches.
   await action.click();
   await waitForState(page, "diagnose");
+  expect(await text(page, "[data-headline]")).toBe(
+    "The shortcut makes both bridges busier.",
+  );
   expect(await action.isDisabled()).toBe(true);
   await choose(page, "SA");
-  expect(await text(page, "[data-metric-value]")).toBe("131 → 198");
-  expect(await text(page, "[data-status]")).toContain("all 106 shortcut trips");
+  expect(await text(page, "[data-metric-value]")).toBe("92 + 106 = 198");
+  expect(await text(page, "[data-metric-context]")).toContain(
+    "Shortcut closed: 131. Open: 92 old-way trips + 106 shortcut trips.",
+  );
+  expect(await text(page, "[data-status]")).toContain(
+    "Every shortcut trip enters through Riverside Road",
+  );
   expect(await action.isDisabled()).toBe(true);
   await choose(page, "BT");
-  expect(await text(page, "[data-metric-value]")).toBe("149 → 188");
-  expect(await text(page, "[data-status]")).toContain("all 106 shortcut trips");
+  expect(await text(page, "[data-metric-value]")).toBe("82 + 106 = 188");
+  expect(await text(page, "[data-metric-context]")).toContain(
+    "Shortcut closed: 149. Open: 82 old-way trips + 106 shortcut trips.",
+  );
+  expect(await text(page, "[data-status]")).toContain(
+    "Every shortcut trip leaves through Millbrook Road",
+  );
   expect(await action.isEnabled()).toBe(true);
 
   await action.click();
   await waitForState(page, "recovery");
   expect(await text(page, "[data-metric-value]")).toBe("0");
-  expect(await text(page, "[data-metric-label]")).toContain("post-closure departures yet");
+  expect(await text(page, "[data-metric-label]")).toBe("new car choices since closing");
+  expect(await text(page, "[data-metric-context]")).toBe(
+    "No new car can choose the closed shortcut.",
+  );
   expect(
     await page.locator("svg.network").evaluate((svg) =>
       svg.classList.contains("network--connector-open"),
@@ -475,9 +527,11 @@ async function completeCase(page: Page, layout: "wide" | "tall"): Promise<void> 
 
   await action.click();
   await waitForState(page, "synthesis");
-  expect(await text(page, "[data-metric-value]")).toBe("0%");
-  expect(await text(page, "[data-metric-label]")).toBe("new choices using the closed link");
-  expect(await text(page, "[data-metric-context]")).toMatch(/^0 of \d+ post-closure departures\.$/);
+  expect(await text(page, "[data-metric-value]")).toMatch(/^0 of \d+$/);
+  expect(await text(page, "[data-metric-label]")).toBe("new cars picked the shortcut · 0%");
+  expect(await text(page, "[data-metric-context]")).toMatch(
+    /^0 ÷ \d+ = 0%\. The old two-way map is back\.$/,
+  );
   await expectNoOverflow(page);
 
   await action.click();
@@ -564,7 +618,7 @@ describe("keyboard-only chapter flow", () => {
     expect(await page.evaluate(() => document.activeElement?.matches("[data-headline]") ?? false)).toBe(true);
 
     await keyboardChoose(page, "[data-action]", "Enter");
-    expect(await text(page, "[data-action]")).toBe("Test with light traffic");
+    expect(await text(page, "[data-action]")).toBe("Try it on a quiet morning");
     expect(
       await page.locator("[data-trace-link]").evaluateAll((traces) =>
         traces.map((trace) => trace.getAttribute("data-trace-link")),
@@ -588,6 +642,9 @@ describe("keyboard-only chapter flow", () => {
     ).toBe(true);
     await keyboardChoose(page, "[data-action]", "Enter");
     await waitForState(page, "wave_one");
+    expect(
+      await page.evaluate(() => document.activeElement?.matches("[data-headline]") ?? false),
+    ).toBe(true);
 
     await keyboardChoose(page, "[data-action]", "Space");
     await waitForState(page, "wave_two");
@@ -618,10 +675,10 @@ describe("keyboard-only chapter flow", () => {
   }, 90_000);
 });
 
-describe("resize during a traffic wave", () => {
+describe("resize while more cars enter", () => {
   it("preserves the choice, connector and simulation while switching layouts", async () => {
     // Explicit 100× compression leaves roughly four wall-clock seconds to resize
-    // while the first fixed-step wave is still running.
+    // while the first group of cars is still entering.
     const observed = await open(DESKTOP, { speed: 100 });
     const { page } = observed;
     await reachPeak(page);
@@ -636,7 +693,10 @@ describe("resize during a traffic wave", () => {
 
     await page.locator("[data-action]").click();
     await page.waitForFunction(
-      () => document.querySelector("[data-action]")?.textContent?.includes("Running traffic wave"),
+      () =>
+        document
+          .querySelector("[data-action]")
+          ?.textContent?.includes("Starting the busy morning"),
     );
     await page.setViewportSize(PHONE);
     await page.waitForFunction(
@@ -657,7 +717,8 @@ describe("resize during a traffic wave", () => {
     await expectNoOverflow(page);
 
     await waitForState(page, "wave_one");
-    expect(await text(page, "[data-metric-context]")).toContain("46 of 90 choices");
+    expect(await text(page, "[data-metric-value]")).toBe("46 of 90");
+    expect(await text(page, "[data-metric-context]")).toContain("46 ÷ 90 ≈ 51%");
     expect(await page.locator("svg.network").getAttribute("data-layout")).toBe("tall");
     await expectNoOverflow(page);
     expectHealthy(observed);
@@ -711,7 +772,9 @@ describe("reduced motion", () => {
     }));
     expect(after.time).toBeGreaterThanOrEqual(beforeWave + 400);
     expect(after.visibleVehicles).toBe(0);
-    expect(await text(page, "[data-metric-context]")).toContain("46 of 90 choices");
+    expect(await text(page, "[data-metric-value]")).toBe("46 of 90");
+    expect(await text(page, "[data-metric-label]")).toBe("51% picked the shortcut");
+    expect(await text(page, "[data-metric-context]")).toContain("46 ÷ 90 ≈ 51%");
 
     await page.locator("[data-action]").click();
     await waitForState(page, "wave_two", 10_000);
@@ -734,7 +797,7 @@ describe("scientific disclosure", () => {
       "fixed 0.25-second timestep",
       "same generated departure schedule",
       "random seed",
-      "lighter traffic",
+      "quiet test uses about 300 cars an hour",
     ]) {
       expect(disclosure, `disclosure no longer mentions "${required}"`).toContain(required);
     }

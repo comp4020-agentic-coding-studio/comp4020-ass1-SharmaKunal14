@@ -29,6 +29,12 @@ function need<T extends Element>(selector: string): T {
   return element;
 }
 
+function needAll<T extends Element>(selector: string): T[] {
+  const elements = Array.from(document.querySelectorAll<T>(selector));
+  if (elements.length === 0) throw new Error(`Missing required elements: ${selector}`);
+  return elements;
+}
+
 function requestedTimeScale(): number {
   const raw = new URLSearchParams(window.location.search).get("speed");
   const parsed = raw === null ? Number.NaN : Number.parseFloat(raw);
@@ -62,12 +68,18 @@ const ui = {
   announce: need<HTMLElement>("[data-announce]"),
   loads: need<HTMLUListElement>("[data-loads]"),
   afterword: need<HTMLElement>("[data-afterword]"),
+  controlDemand: need<HTMLElement>("[data-control-demand]"),
+  controlClosed: need<HTMLElement>("[data-control-closed]"),
+  controlOpen: need<HTMLElement>("[data-control-open]"),
   controlSeconds: need<HTMLElement>("[data-control-seconds]"),
+  controlCount: need<HTMLElement>("[data-control-count]"),
+  controlCohorts: needAll<HTMLElement>("[data-control-cohort]"),
+  controlShare: need<HTMLElement>("[data-control-share]"),
   evidenceClosed: need<HTMLElement>("[data-evidence-closed]"),
   evidenceOpen: need<HTMLElement>("[data-evidence-open]"),
   evidencePercent: need<HTMLElement>("[data-evidence-percent]"),
   evidenceCount: need<HTMLElement>("[data-evidence-count]"),
-  evidenceCohort: need<HTMLElement>("[data-evidence-cohort]"),
+  evidenceCohorts: needAll<HTMLElement>("[data-evidence-cohort]"),
   evidenceShare: need<HTMLElement>("[data-evidence-share]"),
   seedUsable: need<HTMLElement>("[data-seed-usable]"),
   seedAttempts: need<HTMLElement>("[data-seed-attempts]"),
@@ -83,6 +95,7 @@ let previousFrame = 0;
 let announcementTimer = 0;
 let animationTarget: number | null = null;
 let animationNextState: StateId | null = null;
+let animationFocusHeading = false;
 let animationBudget = 0;
 let isAdvancing = false;
 let peakOpenedAt = 0;
@@ -118,6 +131,7 @@ function resetInvestigation(): void {
   comparisonChoice = null;
   animationTarget = null;
   animationNextState = null;
+  animationFocusHeading = false;
   animationBudget = 0;
   isAdvancing = false;
   peakOpenedAt = 0;
@@ -146,12 +160,18 @@ function fillEvidence(): void {
   const closed = formatDuration(target.closedSeconds);
   const open = formatDuration(target.openSeconds);
 
+  ui.controlDemand.textContent = String(control.demandPerHour);
+  ui.controlClosed.textContent = formatDuration(control.closedSeconds);
+  ui.controlOpen.textContent = formatDuration(control.openSeconds);
   ui.controlSeconds.textContent = String(Math.round(Math.abs(control.deltaSeconds)));
+  ui.controlCount.textContent = String(control.routeCountsOpen.shortcut);
+  for (const element of ui.controlCohorts) element.textContent = String(control.cohortSize);
+  ui.controlShare.textContent = `${control.sharesOpen.shortcut}%`;
   ui.evidenceClosed.textContent = closed;
   ui.evidenceOpen.textContent = open;
   ui.evidencePercent.textContent = `${target.deltaPercent}%`;
   ui.evidenceCount.textContent = String(target.routeCountsOpen.shortcut);
-  ui.evidenceCohort.textContent = String(target.cohortSize);
+  for (const element of ui.evidenceCohorts) element.textContent = String(target.cohortSize);
   ui.evidenceShare.textContent = `${target.sharesOpen.shortcut}%`;
   ui.seedUsable.textContent = String(target.seeds.usable);
   ui.seedAttempts.textContent = String(target.seeds.attempted);
@@ -198,13 +218,26 @@ function enter(next: StateId, focusHeading = false): void {
     announce(
       `Quiet-road result: ${formatDuration(EXPERIMENT.control.closedSeconds)} without the road, ` +
         `${formatDuration(EXPERIMENT.control.openSeconds)} with it: ` +
-        `${Math.round(Math.abs(EXPERIMENT.control.deltaSeconds))} seconds shorter.`,
+        `${Math.round(Math.abs(EXPERIMENT.control.deltaSeconds))} seconds shorter. ` +
+        `${EXPERIMENT.control.routeCountsOpen.shortcut} of ${EXPERIMENT.control.cohortSize} trips ` +
+        `used the shortcut, which rounds to ${EXPERIMENT.control.sharesOpen.shortcut} percent.`,
     );
   } else if (next === "verdict") {
     announce(
       `Peak result: ${formatDuration(EXPERIMENT.target.closedSeconds)} without the road, ` +
         `${formatDuration(EXPERIMENT.target.openSeconds)} with it: ` +
-        `${Math.round(EXPERIMENT.target.deltaSeconds)} seconds longer.`,
+        `${Math.round(EXPERIMENT.target.deltaSeconds)} seconds longer. ` +
+        `${EXPERIMENT.target.routeCountsOpen.shortcut} of ${EXPERIMENT.target.cohortSize} trips ` +
+        `used the shortcut, which rounds to ${EXPERIMENT.target.sharesOpen.shortcut} percent.`,
+    );
+  } else if (next === "wave_one" || next === "wave_three") {
+    const shortcut = run.choicesSinceAnchorFor("shortcut");
+    const total = run.choiceCountSinceAnchor;
+    const share = Math.round(run.choiceShareSinceAnchor("shortcut") * 100);
+    announce(`${shortcut} of ${total} cars chose the shortcut, which rounds to ${share} percent.`);
+  } else if (next === "synthesis") {
+    announce(
+      `Zero of ${run.choiceCountSinceAnchor} new cars chose the closed shortcut: zero percent.`,
     );
   } else {
     announce(`${beat.eyebrow}. ${beat.headline}`);
@@ -333,15 +366,15 @@ function renderControls(): void {
     ui.choices.append(
       choiceButton(
         "north",
-        "Trace north",
-        "via Riverside",
+        "Show north way",
+        "through Riverside",
         selectedRoute === "north",
         routesVisited.has("north"),
       ),
       choiceButton(
         "south",
-        "Trace south",
-        "via Millbrook",
+        "Show south way",
+        "through Millbrook",
         selectedRoute === "south",
         routesVisited.has("south"),
       ),
@@ -353,9 +386,9 @@ function renderControls(): void {
         "quiet-prediction",
         "Your prediction",
         [
-          { value: "help", label: "Trips get faster", detail: "the extra option helps" },
-          { value: "same", label: "No real change", detail: "traffic simply redistributes" },
-          { value: "hurt", label: "Trips get slower", detail: "the link creates a new queue" },
+          { value: "help", label: "Trips get shorter", detail: "the shortcut helps" },
+          { value: "same", label: "Almost no change", detail: "cars spread between the roads" },
+          { value: "hurt", label: "Trips get longer", detail: "the shortcut causes crowding" },
         ],
         quietPrediction,
       ),
@@ -365,11 +398,11 @@ function renderControls(): void {
     ui.choices.append(
       radioGroup<RouteId>(
         "personal-route",
-        "Which route would you try?",
+        "Which way would you try?",
         [
-          { value: "north", label: "North route", detail: "one bridge, long ring road" },
-          { value: "shortcut", label: "New middle route", detail: "two bridges, shortest distance" },
-          { value: "south", label: "South route", detail: "long ring road, one bridge" },
+          { value: "north", label: "North way", detail: "one bridge, then the long road" },
+          { value: "shortcut", label: "Middle shortcut", detail: "shortest distance, but two bridges" },
+          { value: "south", label: "South way", detail: "the long road, then one bridge" },
         ],
         personalRoute,
       ),
@@ -383,18 +416,18 @@ function renderControls(): void {
         [
           {
             value: "road-only",
-            label: "Change only the road",
-            detail: "same demand, departures and seed",
+            label: "Change only the shortcut",
+            detail: "keep the same traffic and start times",
           },
           {
             value: "different-morning",
-            label: "Use another morning",
-            detail: "different departures and random choices",
+            label: "Use different start times",
+            detail: "that changes the morning too",
           },
           {
             value: "different-demand",
-            label: "Raise demand again",
-            detail: "changes traffic and the road together",
+            label: "Add more cars",
+            detail: "that changes two things at once",
           },
         ],
         comparisonChoice,
@@ -406,14 +439,14 @@ function renderControls(): void {
       choiceButton(
         "SA",
         "Riverside bridge",
-        "inspect north approach",
+        "add up its trips",
         selectedBridge === "SA",
         bridgesInspected.has("SA"),
       ),
       choiceButton(
         "BT",
         "Millbrook bridge",
-        "inspect south approach",
+        "add up its trips",
         selectedBridge === "BT",
         bridgesInspected.has("BT"),
       ),
@@ -428,7 +461,12 @@ function renderControls(): void {
       control.disabled = true;
     }
     ui.action.disabled = true;
-    ui.action.textContent = "Running traffic wave…";
+    ui.action.textContent =
+      state === "recovery"
+        ? "Letting traffic move…"
+        : state === "peak"
+          ? "Starting the busy morning…"
+          : "Letting more cars choose…";
   }
 }
 
@@ -447,21 +485,23 @@ function renderStateCopy(): void {
   if (state === "map") {
     ui.metric.textContent = "5:05";
     ui.metricLabel.textContent =
-      selectedRoute === null ? "each route · roads empty" : `${selectedRoute} route · roads empty`;
+      selectedRoute === null
+        ? "map estimate · minutes:seconds"
+        : `${selectedRoute} way · map estimate`;
     ui.metricContext.textContent =
       selectedRoute === null
-        ? "Different shapes, equal free-flow time."
+        ? "Road lengths and speed limits add up to 305 seconds, or 5:05."
         : selectedRoute === "north"
           ? "Eastgate → Riverside → North Ring → Central"
           : "Eastgate → South Ring → Millbrook → Central";
     ui.status.textContent =
       routesVisited.size < 2
-        ? `Inspect both routes to continue · ${routesVisited.size} of 2 viewed.`
-        : "Both routes take the same 305 seconds with no traffic.";
+        ? `Tap both ways to continue · ${routesVisited.size} of 2 shown.`
+        : "Both map estimates are 305 seconds, which is 5:05.";
     ui.caption.textContent =
       selectedRoute === null
-        ? "Choose a route to trace it on the network."
-        : `The ${selectedRoute} route is highlighted. It crosses one narrow bridge.`;
+        ? "Choose a way to trace it on the map."
+        : `The ${selectedRoute} way is highlighted. It crosses one narrow bridge.`;
     return;
   }
 
@@ -469,60 +509,60 @@ function renderStateCopy(): void {
     document.body.dataset.shortcutTraced = String(shortcutTraced);
     ui.measure.hidden = !shortcutTraced;
     ui.headline.textContent = shortcutTraced
-      ? "It looks like the obvious choice."
+      ? "The map makes the shortcut look faster."
       : STORY.proposal.headline;
     ui.body.textContent = shortcutTraced
-      ? "The new path uses both bridges, yet it is shortest while the roads are empty."
+      ? "Using the same length-and-speed estimate, the time falls from 5:05 to 4:34."
       : STORY.proposal.body;
-    ui.action.textContent = shortcutTraced ? "Test with light traffic" : STORY.proposal.action;
+    ui.action.textContent = shortcutTraced ? "Try it on a quiet morning" : STORY.proposal.action;
     ui.metric.textContent = "5:05 → 4:34";
-    ui.metricLabel.textContent = "empty-road trip · old route → shortcut";
-    ui.metricContext.textContent =
-      "Same origin and destination. The shortcut is 31 seconds quicker before congestion.";
+    ui.metricLabel.textContent = "map estimate · old way → shortcut";
+    ui.metricContext.textContent = "305 − 274 = 31 seconds. These are estimates, not timed trips.";
     ui.status.textContent = shortcutTraced
-      ? "That speed is why drivers will try it. Now add traffic."
-      : "Draw the missing link to complete the middle route.";
+      ? "Now check whether it still helps after cars appear."
+      : "Draw the missing road to complete the shortcut.";
     ui.caption.textContent = shortcutTraced
-      ? "Highlighted path: Eastgate → Riverside → new link → Millbrook → Central."
+      ? "Highlighted path: Eastgate → Riverside → shortcut → Millbrook → Central."
       : "The shortcut will connect Riverside directly to Millbrook.";
     return;
   }
 
   if (state === "quiet") {
     ui.metric.textContent = "300";
-    ui.metricLabel.textContent = "cars per hour · quiet case";
-    ui.metricContext.textContent = "Same network and model; only demand is lighter.";
+    ui.metricLabel.textContent = "average car starts per hour";
+    ui.metricContext.textContent = "300 ÷ 60 = about 5 cars each minute.";
     ui.status.textContent =
       quietPrediction === null
-        ? "Record a prediction to run the test."
-        : `Prediction recorded: ${predictionLabel(quietPrediction)}.`;
-    ui.caption.textContent = "The proposed link is teal. Both bridge approaches have spare room.";
+        ? "Choose your guess to see the answer from two complete replays."
+        : `Your guess: ${predictionLabel(quietPrediction)}.`;
+    ui.caption.textContent = "The shortcut is teal. Both narrow bridges have room for more cars.";
     return;
   }
 
   if (state === "quiet_result") {
     renderComparison(EXPERIMENT.control);
     ui.metricContext.textContent =
-      `Paired result · ${EXPERIMENT.control.routeCountsOpen.shortcut} of ` +
-      `${EXPERIMENT.control.cohortSize} measured trips used the link ` +
-      `(${EXPERIMENT.control.sharesOpen.shortcut}%).`;
+      `We add ${EXPERIMENT.control.cohortSize} trip times and divide by ` +
+      `${EXPERIMENT.control.cohortSize} for each average. ` +
+      `5:19 − 5:11 = 8 seconds saved. ${EXPERIMENT.control.routeCountsOpen.shortcut} ÷ ` +
+      `${EXPERIMENT.control.cohortSize} ≈ ${EXPERIMENT.control.sharesOpen.shortcut}% used the shortcut.`;
     ui.status.textContent =
       quietPrediction === "help"
-        ? "Your prediction matched this low-demand result."
-        : "The evidence overturns your prediction for the quiet case.";
-    ui.caption.textContent = "At low demand, the extra route spreads traffic without overloading the bridges.";
+        ? "Your guess matched this quiet-road result."
+        : "This quiet-road result was different from your guess.";
+    ui.caption.textContent = "With fewer cars, the shortcut spreads traffic without crowding the bridges.";
     return;
   }
 
   if (state === "peak") {
     ui.metric.textContent = "860";
-    ui.metricLabel.textContent = "cars per hour · morning peak";
-    ui.metricContext.textContent = "Same road. Nearly three times the quiet-road demand.";
+    ui.metricLabel.textContent = "average car starts per hour";
+    ui.metricContext.textContent = "860 ÷ 60 = about 14 cars each minute.";
     ui.status.textContent =
       personalRoute === null
-        ? "Choose the route you would try after the link opens."
-        : `You chose the ${routeLabel(personalRoute)}. The model will make its own seeded choices.`;
-    ui.caption.textContent = "Your choice records an intuition; it does not steer any simulated driver.";
+        ? "Pick the way you would try after the shortcut opens."
+        : `You picked the ${routeLabel(personalRoute)}. Your pick does not control the computer cars.`;
+    ui.caption.textContent = "Your answer is only a guess. It does not steer any computer car.";
     return;
   }
 
@@ -538,23 +578,23 @@ function renderStateCopy(): void {
 
   if (state === "compare") {
     ui.metric.textContent = "2";
-    ui.metricLabel.textContent = "counterfactual runs";
-    ui.metricContext.textContent = "One road closed, one road open. Everything else should match.";
+    ui.metricLabel.textContent = "replays of the same morning";
+    ui.metricContext.textContent = "Same car start times. Shortcut closed once, open once.";
     ui.status.textContent = comparisonStatus();
-    ui.caption.textContent = "The live illustration is paused. The verdict comes from complete measured cohorts.";
+    ui.caption.textContent = "The moving example is paused. The answer comes from two complete replays.";
     return;
   }
 
   if (state === "verdict") {
     renderComparison(EXPERIMENT.target);
     ui.metricContext.textContent =
-      `Paired result · ${EXPERIMENT.target.routeCountsOpen.shortcut} of ` +
-      `${EXPERIMENT.target.cohortSize} measured open-road trips chose the link ` +
-      `(${EXPERIMENT.target.sharesOpen.shortcut}%).`;
-    ui.status.textContent =
-      `The 38% is an outcome, not an input. ${personalChoiceReflection()}`;
+      `We add ${EXPERIMENT.target.cohortSize} trip times and divide by ` +
+      `${EXPERIMENT.target.cohortSize} for each average. ` +
+      `5:44 − 5:31 = 13 seconds longer. ${EXPERIMENT.target.routeCountsOpen.shortcut} ÷ ` +
+      `${EXPERIMENT.target.cohortSize} ≈ ${EXPERIMENT.target.sharesOpen.shortcut}% used the shortcut.`;
+    ui.status.textContent = `The 38% came out of the replay; it was not chosen beforehand. ${personalChoiceReflection()}`;
     ui.caption.textContent =
-      "The teal link stays attractive while both old bridge approaches carry shortcut traffic.";
+      "The teal shortcut stays attractive while both old bridge roads carry its traffic.";
     return;
   }
 
@@ -565,89 +605,106 @@ function renderStateCopy(): void {
 
   if (state === "recovery") {
     ui.metric.textContent = "0";
-    ui.metricLabel.textContent = "post-closure departures yet";
-    ui.metricContext.textContent = "Cars already inside the link remain visible until they clear it.";
-    ui.status.textContent = "The connector is unavailable to every new route choice.";
-    ui.caption.textContent = "The dashed link is closed. Existing cars are not removed from the model.";
+    ui.metricLabel.textContent = "new car choices since closing";
+    ui.metricContext.textContent = "No new car can choose the closed shortcut.";
+    ui.status.textContent = "Cars already on the shortcut keep moving; new cars use the old ways.";
+    ui.caption.textContent = "The dashed shortcut is closed. Cars already on it are not erased.";
     return;
   }
 
   if (state === "synthesis") {
     const total = run.choiceCountSinceAnchor;
     const shortcut = run.choicesSinceAnchorFor("shortcut");
-    ui.metric.textContent = `${Math.round(run.choiceShareSinceAnchor("shortcut") * 100)}%`;
-    ui.metricLabel.textContent = "new choices using the closed link";
-    ui.metricContext.textContent = `${shortcut} of ${total} post-closure departures.`;
-    ui.status.textContent = "The original two-route choice set has returned.";
-    ui.caption.textContent = "No new driver can choose the link; any remaining link traffic entered earlier.";
+    const share = Math.round(run.choiceShareSinceAnchor("shortcut") * 100);
+    ui.metric.textContent = `${shortcut} of ${total}`;
+    ui.metricLabel.textContent = `new cars picked the shortcut · ${share}%`;
+    ui.metricContext.textContent = `${shortcut} ÷ ${total} = ${share}%. The old two-way map is back.`;
+    ui.status.textContent = "Closing the shortcut removed it from every new car's choices.";
+    ui.caption.textContent = "Any car still on the shortcut chose it before it closed.";
     return;
   }
 
   renderComparison(EXPERIMENT.target);
   ui.metricContext.textContent =
-    `Conditional, not anti-road: at ${EXPERIMENT.control.demandPerHour} cars an hour, ` +
-    `the same link saves ${Math.round(Math.abs(EXPERIMENT.control.deltaSeconds))} seconds.`;
+    `This does not mean “roads are bad.” With about 5 cars a minute, ` +
+    `the same shortcut saved ${Math.round(Math.abs(EXPERIMENT.control.deltaSeconds))} seconds.`;
   ui.status.textContent =
-    `${personalChoiceReflection()} The measured peak average rose ${EXPERIMENT.target.deltaPercent}%.`;
-  ui.caption.textContent = "You revealed the name only after observing, testing and explaining the mechanism.";
+    `${personalChoiceReflection()} In the busy test, the average rose ${EXPERIMENT.target.deltaPercent}%.`;
+  ui.caption.textContent = "You saw the surprise, tested it fairly, and followed where the cars went.";
 }
 
 function renderWaveCopy(): void {
   if (state === "wave_two") {
-    ui.metric.textContent = "1 → 2";
-    ui.metricLabel.textContent = "shortcut trip → old bridges";
-    ui.metricContext.textContent = "";
-    ui.status.textContent = "Next, add more drivers and watch the two shared roads.";
+    ui.metric.textContent = "1 car → 2 bridges";
+    ui.metricLabel.textContent = "every shortcut trip does this";
+    ui.metricContext.textContent = "The shortcut joins the old roads. It does not skip them.";
+    ui.status.textContent = isAdvancing
+      ? "The same morning is continuing. No road or rule changed."
+      : "Next, let more cars choose and watch both old bridges.";
     ui.caption.textContent =
-      "The highlighted journey runs from Riverside, across the new link, to Millbrook.";
+      "The highlighted journey runs from Riverside, across the shortcut, to Millbrook.";
+    return;
+  }
+
+  if (state === "wave_four") {
+    ui.metric.textContent = "2";
+    ui.metricLabel.textContent = "old bridge roads are slowing";
+    ui.metricContext.textContent = "Every gold shortcut trip adds a car to both of them.";
+    ui.status.textContent = isAdvancing
+      ? "The same morning is continuing. No road or rule changed."
+      : "The moving example suggests a problem. Now measure it fairly.";
+    ui.caption.textContent = "Time is sped up, but every car still follows the same road rules.";
     return;
   }
 
   const total = run.choiceCountSinceAnchor;
   const shortcut = run.choicesSinceAnchorFor("shortcut");
   const share = Math.round(run.choiceShareSinceAnchor("shortcut") * 100);
-  ui.metric.textContent = `${share}%`;
-  ui.metricLabel.textContent = reducesMotion
-    ? "post-opening shortcut choices"
-    : "shortcut choices · gold cars";
-  ui.metricContext.textContent = `${shortcut} of ${total} choices in this live run.`;
+  ui.metric.textContent = `${shortcut} of ${total}`;
+  ui.metricLabel.textContent = `${share}% picked the shortcut${reducesMotion ? "" : " · gold cars"}`;
+  ui.metricContext.textContent = `${shortcut} ÷ ${total} ≈ ${share}%. This count is still changing.`;
 
   if (state === "wave_one") {
-    ui.status.textContent = reducesMotion
-      ? "The short empty-road time makes the middle route an attractive first guess."
-      : "Gold cars chose the shortcut. Follow where they go next.";
+    ui.status.textContent = isAdvancing
+      ? "The same morning is continuing. No road or rule changed."
+      : "This button only lets the same morning continue. No road or rule changes.";
     ui.caption.textContent =
-      "This percentage counts route decisions as they happen—not only trips that finish first.";
-  } else if (state === "wave_three") {
-    ui.status.textContent = "Choices keep adapting. The verdict needs a complete paired cohort.";
-    ui.caption.textContent = "The live share can move; the later 38% is the measured paired-run outcome.";
+      "This counts choices when cars are ready to leave, including trips that have not finished yet.";
   } else {
-    ui.status.textContent = "Both bridge approaches are slowing; the connector is not.";
-    ui.caption.textContent = "Time is compressed; the physics still advances in fixed 0.25-second steps.";
+    ui.status.textContent = isAdvancing
+      ? "The same morning is continuing. No road or rule changed."
+      : "Finished trip times changed what later cars were likely to pick.";
+    ui.caption.textContent = "This moving count is separate from the later two-replay result.";
   }
 }
 
 function renderDiagnosis(): void {
   if (selectedBridge === null) {
     ui.metric.textContent = "2";
-    ui.metricLabel.textContent = "old bridges to inspect";
-    ui.metricContext.textContent = "Every shortcut trip crosses both of them.";
-    ui.status.textContent = "Inspect Riverside and Millbrook to reconstruct the route shift.";
-    ui.caption.textContent = "The queue annotations sit upstream of each narrow bridge.";
+    ui.metricLabel.textContent = "old bridges to tap";
+    ui.metricContext.textContent = "Every shortcut trip crosses both bridges.";
+    ui.status.textContent = "Tap Riverside and Millbrook to add up their trips.";
+    ui.caption.textContent = "Cars bunch up just before each narrow bridge.";
     return;
   }
 
   const counts = bridgeCounts(selectedBridge);
-  ui.metric.textContent = `${counts.closed} → ${counts.open}`;
-  ui.metricLabel.textContent = `${selectedBridge === "SA" ? "Riverside" : "Millbrook"} bridge trips`;
-  ui.metricContext.textContent = "Measured closed-road cohort → measured open-road cohort.";
+  const target = EXPERIMENT.target;
+  const oldWay =
+    selectedBridge === "SA" ? target.routeCountsOpen.north : target.routeCountsOpen.south;
+  const bridgeName = selectedBridge === "SA" ? "Riverside" : "Millbrook";
+  ui.metric.textContent = `${oldWay} + ${target.routeCountsOpen.shortcut} = ${counts.open}`;
+  ui.metricLabel.textContent = `trips crossed ${bridgeName}`;
+  ui.metricContext.textContent =
+    `Shortcut closed: ${counts.closed}. Open: ${oldWay} old-way trips + ` +
+    `${target.routeCountsOpen.shortcut} shortcut trips.`;
   ui.status.textContent =
     selectedBridge === "SA"
-      ? "North-route traffic plus all 106 shortcut trips use Riverside Road."
-      : "South-route traffic plus all 106 shortcut trips use Millbrook Road.";
+      ? "Every shortcut trip enters through Riverside Road."
+      : "Every shortcut trip leaves through Millbrook Road.";
   ui.caption.textContent =
     bridgesInspected.size === 2
-      ? "Both old bottlenecks carry the shortcut flow. You can now close the link."
+      ? "Both old bridges carry the shortcut cars. You can now close it."
       : "Inspect the other bridge to complete the causal chain.";
 }
 
@@ -666,35 +723,35 @@ function bridgeCounts(bridge: BridgeId): { readonly closed: number; readonly ope
 }
 
 function comparisonStatus(): string {
-  if (comparisonChoice === null) return "Pick the design that changes one cause at a time.";
+  if (comparisonChoice === null) return "Pick the test that changes only one thing.";
   if (comparisonChoice === "road-only") {
-    return "Correct: same demand, departure schedule and random seed; only the road changes.";
+    return "Right: same car start times and same numbered dice rolls; only the shortcut changes.";
   }
   if (comparisonChoice === "different-morning") {
-    return "That mixes the road effect with different departures and route-choice randomness.";
+    return "That changes the car start times too, so it would not be the same morning.";
   }
-  return "That mixes the road effect with a second change in demand.";
+  return "That changes both the number of cars and the shortcut, so we could not tell which mattered.";
 }
 
 function predictionLabel(prediction: QuietPrediction): string {
-  if (prediction === "help") return "trips get faster";
-  if (prediction === "same") return "no real change";
-  return "trips get slower";
+  if (prediction === "help") return "trips get shorter";
+  if (prediction === "same") return "almost no change";
+  return "trips get longer";
 }
 
 function routeLabel(route: RouteId): string {
-  if (route === "shortcut") return "new middle route";
-  return `${route} route`;
+  if (route === "shortcut") return "middle shortcut";
+  return `${route} way`;
 }
 
 function personalChoiceReflection(): string {
   if (personalRoute === "shortcut") {
-    return "Your middle-route choice mirrors the option 106 measured trips found attractive.";
+    return "You also guessed the shortcut would look tempting.";
   }
   if (personalRoute === "north" || personalRoute === "south") {
-    return `You chose the ${personalRoute} route, but the group-wide route shift still changed its load.`;
+    return `You chose the ${personalRoute} way, but other cars still changed how busy it became.`;
   }
-  return "The result is produced by the model’s seeded route choices.";
+  return "The computer cars produced this result from their road choices.";
 }
 
 function currentSpotlight(): readonly LinkId[] {
@@ -793,7 +850,7 @@ function onChoice(event: Event): void {
     renderControls();
     renderStateCopy();
     restoreChoiceFocus(choice, keyboardActivation);
-    announce(`${choice === "north" ? "North" : "South"} route traced. Empty-road time: 5 minutes 5 seconds.`);
+    announce(`${choice === "north" ? "North" : "South"} way shown. Map estimate: 5 minutes 5 seconds.`);
     return;
   }
 
@@ -807,7 +864,7 @@ function onChoice(event: Event): void {
     const counts = bridgeCounts(choice);
     announce(
       `${choice === "SA" ? "Riverside" : "Millbrook"} bridge: ` +
-        `${counts.closed} measured trips without the link, ${counts.open} with it.`,
+        `${counts.closed} trips with the shortcut closed, ${counts.open} with it open.`,
     );
   }
 }
@@ -851,15 +908,15 @@ function onAction(event: MouseEvent): void {
     renderStateCopy();
     animatePanels(true);
     announce(
-      "Shortcut drawn. Empty-road time falls from 5 minutes 5 seconds to 4 minutes 34 seconds.",
+      "Shortcut drawn. The map estimate falls from 5 minutes 5 seconds to 4 minutes 34 seconds.",
     );
   } else if (state === "proposal") enter("quiet", keyboardActivation);
   else if (state === "quiet") enter("quiet_result", keyboardActivation);
   else if (state === "quiet_result") enter("peak", keyboardActivation);
-  else if (state === "peak") startPeakWaves();
-  else if (state === "wave_one") startPeakCheckpoint(1, "wave_two");
-  else if (state === "wave_two") startPeakCheckpoint(2, "wave_three");
-  else if (state === "wave_three") startPeakCheckpoint(3, "wave_four");
+  else if (state === "peak") startPeakWaves(keyboardActivation);
+  else if (state === "wave_one") startPeakCheckpoint(1, "wave_two", keyboardActivation);
+  else if (state === "wave_two") startPeakCheckpoint(2, "wave_three", keyboardActivation);
+  else if (state === "wave_three") startPeakCheckpoint(3, "wave_four", keyboardActivation);
   else if (state === "wave_four") enter("compare", keyboardActivation);
   else if (state === "compare") enter("verdict", keyboardActivation);
   else if (state === "verdict") enter("diagnose", keyboardActivation);
@@ -869,7 +926,7 @@ function onAction(event: MouseEvent): void {
     scene.setConnectorOpen(false);
     enter("recovery", keyboardActivation);
   } else if (state === "recovery") {
-    startAnimation(run.simTime + RECOVERY_SECONDS, "synthesis");
+    startAnimation(run.simTime + RECOVERY_SECONDS, "synthesis", keyboardActivation);
   } else if (state === "synthesis") enter("reveal", keyboardActivation);
   else {
     resetInvestigation();
@@ -877,28 +934,32 @@ function onAction(event: MouseEvent): void {
   }
 }
 
-function startPeakWaves(): void {
+function startPeakWaves(focusHeading: boolean): void {
   run = freshTargetRun();
   run.setConnectorOpen(true);
   run.setAnchor(run.simTime);
   peakOpenedAt = run.simTime;
   scene.setConnectorOpen(true);
-  startPeakCheckpoint(0, "wave_one");
+  startPeakCheckpoint(0, "wave_one", focusHeading);
 }
 
-function startPeakCheckpoint(index: number, next: StateId): void {
+function startPeakCheckpoint(index: number, next: StateId, focusHeading: boolean): void {
   const elapsed = WAVE_CHECKPOINTS[index];
   if (elapsed === undefined) throw new Error(`Unknown peak checkpoint: ${index}`);
-  startAnimation(peakOpenedAt + elapsed, next);
+  startAnimation(peakOpenedAt + elapsed, next, focusHeading);
 }
 
-function startAnimation(target: number, next: StateId): void {
+function startAnimation(target: number, next: StateId, focusHeading = false): void {
   isAdvancing = true;
   animationTarget = target;
   animationNextState = next;
+  animationFocusHeading = focusHeading;
   animationBudget = 0;
   renderControls();
-  ui.status.textContent = "Advancing the same fixed-step simulation to the next checkpoint…";
+  ui.status.textContent =
+    state === "recovery"
+      ? "Cars already on the road are finishing; new cars use the two old ways."
+      : "The same morning is continuing. No road or rule changed.";
 
   if (reducesMotion) {
     run.advanceSimulated(target - run.simTime);
@@ -933,11 +994,13 @@ function presentationTimeScale(): number {
 
 function finishAnimation(): void {
   const next = animationNextState;
+  const focusHeading = animationFocusHeading;
   animationTarget = null;
   animationNextState = null;
+  animationFocusHeading = false;
   animationBudget = 0;
   isAdvancing = false;
-  if (next !== null) enter(next);
+  if (next !== null) enter(next, focusHeading);
 }
 
 function frame(now: number): void {

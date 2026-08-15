@@ -317,6 +317,18 @@ body[data-state="proposal"] .measure__value {
   white-space: nowrap;
 }
 
+body:is(
+    [data-state="wave_one"],
+    [data-state="wave_two"],
+    [data-state="wave_three"],
+    [data-state="diagnose"],
+    [data-state="synthesis"]
+  )
+  .measure__value {
+  font-size: clamp(2.35rem, 3.25vw, 4rem);
+  white-space: nowrap;
+}
+
 .measure__label,
 .comparison__label {
   display: block;
@@ -980,6 +992,17 @@ body[data-state="compare"] .road:not(.road--connector) {
 
   body[data-state="proposal"] .measure__value {
     font-size: 2.25rem;
+  }
+
+  body:is(
+      [data-state="wave_one"],
+      [data-state="wave_two"],
+      [data-state="wave_three"],
+      [data-state="diagnose"],
+      [data-state="synthesis"]
+    )
+    .measure__value {
+    font-size: 2.05rem;
   }
 
   .measure__label,

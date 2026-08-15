@@ -23,7 +23,7 @@ export const ROAD_NAMES: Record<LinkId, string> = {
   BT: "Millbrook Rd",
   AT: "North Ring",
   SB: "South Ring",
-  AB: "the new link",
+  AB: "the shortcut",
 };
 
 /**
@@ -33,7 +33,7 @@ export const ROAD_NAMES: Record<LinkId, string> = {
  */
 function labelFor(id: LinkId, network: ReturnType<typeof buildNetwork>): string {
   const km = network.links[id].length / 1000;
-  if (id === "AB") return `proposed link · ${km.toFixed(1)} km`;
+  if (id === "AB") return `shortcut · ${km.toFixed(1)} km`;
   const kind = id === "AT" || id === "SB" ? "long road" : "short road";
   return `${kind} · ${km.toFixed(1)} km`;
 }
@@ -90,8 +90,8 @@ export class Scene {
       // does change is announced from the live region in the readout instead —
       // a screen reader must not have to hear about 120 moving dots.
       "aria-label":
-        "Road network from Eastgate to Central. Two short roads pass through narrow bridges, " +
-        "two long roads loop around them, and a central link is currently closed.",
+        "Road map from Eastgate to Central. Two short roads pass through narrow bridges, " +
+        "two long roads loop around them, and a middle shortcut is currently closed.",
       preserveAspectRatio: "xMidYMid meet",
     });
     this.svg.append(
@@ -183,7 +183,7 @@ export class Scene {
         "text-anchor": "middle",
         dy: "4",
       });
-      tag.textContent = "bridge";
+      tag.textContent = "narrow bridge";
       marker.append(tag);
       this.throatLayer.append(marker);
 
@@ -195,7 +195,7 @@ export class Scene {
         y: (at.y - tangent.y * 58 + ny * 5).toFixed(1),
         "text-anchor": "middle",
       });
-      queueNote.textContent = "queue forms here";
+      queueNote.textContent = "cars bunch up here";
       this.annotationLayer.append(queueNote);
     }
 
@@ -344,8 +344,8 @@ export class Scene {
     this.svg.classList.toggle("network--connector-open", open);
     this.svg.setAttribute(
       "aria-label",
-      "Road network from Eastgate to Central. Two short roads pass through narrow bridges, " +
-        `two long roads loop around them, and the central link is currently ${open ? "open" : "closed"}.`,
+      "Road map from Eastgate to Central. Two short roads pass through narrow bridges, " +
+        `two long roads loop around them, and the middle shortcut is currently ${open ? "open" : "closed"}.`,
     );
   }
 
@@ -354,13 +354,10 @@ export class Scene {
     this.svg.dataset.narrative = mode;
     if (this.shortcutNote !== null) {
       const percentage = `${Math.round(shortcutShare * 100)}%`;
-      const paired = mode === "verdict" || mode === "diagnose" || mode === "reveal";
       if (mode === "wave_two") {
-        this.shortcutNote.textContent = "same trip → both bridges";
+        this.shortcutNote.textContent = "one trip uses both bridges";
       } else {
-        this.shortcutNote.textContent = paired
-          ? `paired cohort · ${percentage}`
-          : `live choices · ${percentage}`;
+        this.shortcutNote.textContent = `${percentage} picked the shortcut`;
       }
     }
   }
