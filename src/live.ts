@@ -77,6 +77,12 @@ export class LiveRun {
   private anchor = 0;
   private anchorSum = 0;
   private anchorCount = 0;
+  /** Cumulative engine choice counts when the current observation began. */
+  private choiceAnchor: Record<RouteId, number> = {
+    north: 0,
+    south: 0,
+    shortcut: 0,
+  };
   private anchorByRoute: Record<RouteId, { sum: number; count: number }> = {
     north: { sum: 0, count: 0 },
     south: { sum: 0, count: 0 },
@@ -191,6 +197,7 @@ export class LiveRun {
     this.anchor = simTime;
     this.anchorSum = 0;
     this.anchorCount = 0;
+    this.choiceAnchor = { ...this.sim.departureCounts };
     this.anchorByRoute = {
       north: { sum: 0, count: 0 },
       south: { sum: 0, count: 0 },
@@ -206,6 +213,32 @@ export class LiveRun {
 
   tripsSinceAnchorFor(route: RouteId): number {
     return this.anchorByRoute[route].count;
+  }
+
+  /**
+   * Drivers who selected this route after the anchor was set.
+   *
+   * This reads the choice made when a scheduled departure becomes due, rather
+   * than waiting for that trip to finish. It is therefore safe for describing
+   * route adoption while differently timed routes are still in flight.
+   */
+  choicesSinceAnchorFor(route: RouteId): number {
+    return this.sim.departureCounts[route] - this.choiceAnchor[route];
+  }
+
+  /** Number of route decisions made after the current anchor. */
+  get choiceCountSinceAnchor(): number {
+    return (
+      this.choicesSinceAnchorFor("north") +
+      this.choicesSinceAnchorFor("south") +
+      this.choicesSinceAnchorFor("shortcut")
+    );
+  }
+
+  /** Share of post-anchor route decisions selecting one route. */
+  choiceShareSinceAnchor(route: RouteId): number {
+    const total = this.choiceCountSinceAnchor;
+    return total === 0 ? 0 : this.choicesSinceAnchorFor(route) / total;
   }
 
   /** Mean door-to-door time of completed post-anchor departures. */
