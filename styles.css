@@ -516,15 +516,6 @@ svg[data-layout="tall"] .road-label {
   text-wrap: pretty;
 }
 
-.readout__heading {
-  font-size: 0.72rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--ink-faint);
-  font-weight: 600;
-  margin: 1.4rem 0 0.4rem;
-}
-
 .routes {
   list-style: none;
   margin: 0;
@@ -644,9 +635,8 @@ svg[data-layout="tall"] .road-label {
   margin: 0.4rem 0 0;
 }
 
-/* ------------------------------------------------------- verdict and closing */
+/* --------------------------------------------------------- closing and notes */
 
-.verdict,
 .closing,
 .notes {
   margin-top: clamp(2rem, 6vh, 3.6rem);
@@ -655,30 +645,9 @@ svg[data-layout="tall"] .road-label {
   max-width: 40rem;
 }
 
-.verdict__headline {
-  font-size: var(--step-2);
-  line-height: 1.1;
-  letter-spacing: -0.015em;
-  font-weight: 500;
-  margin: 0 0 0.8rem;
-  text-wrap: balance;
-}
-
-.verdict__body,
 .closing__body {
   margin: 0 0 1rem;
   text-wrap: pretty;
-}
-
-.chain__heading,
-.closing__name {
-  font-size: 0.72rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--ink-faint);
-  font-family: var(--sans);
-  font-weight: 600;
-  margin: 1.6rem 0 0.6rem;
 }
 
 .closing__name {
@@ -689,23 +658,6 @@ svg[data-layout="tall"] .road-label {
   font-family: var(--serif);
   font-weight: 500;
   margin: 0 0 0.8rem;
-}
-
-.chain__steps {
-  margin: 0;
-  padding-left: 1.3rem;
-}
-
-.chain__steps li {
-  margin-bottom: 0.35rem;
-}
-
-.chain__kicker {
-  border-left: 2px solid var(--connector);
-  padding-left: 1rem;
-  margin: 1.2rem 0 0;
-  color: var(--ink-soft);
-  text-wrap: pretty;
 }
 
 /* --------------------------------------------------------------------- notes */
