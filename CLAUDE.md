@@ -231,10 +231,9 @@ locally and 404s on the deployed URL.
 
 **One More Road** — an interactive explainer of Braess's paradox. The visitor
 uses one transparent classroom network, one range slider, a prediction, one
-Play/Pause control and one causal close/reopen action. Eighty dots represent
-4,000 drivers. Dragging or playing changes the same range input; the town average,
-map and five visible equations all update from the pure calculation in
-`src/braess.ts`. There is no second animation model.
+deliberate comparison action and one causal close/reopen action. Eighty dots
+represent 4,000 drivers. Dragging the slider updates the town average, map and
+five visible equations from the pure calculation in `src/braess.ts`.
 
 **One controlled comparison.** Reaching the endpoint must not move the viewport
 or open the result automatically. It offers one compact comparison action; only
@@ -316,8 +315,8 @@ make an equation look simpler.
 - Run `pnpm check` before every commit; run `pnpm check:evidence` after changing
   `PROCESS.md`, the reflection or commit citations.
 - Test the whole interaction at **1920×1080** and **390×844**, including the
-  slider midpoint and endpoint, Play/Pause/Replay and horizontal overflow.
-- The public contract is one range input, one prediction group, one Play control,
+  slider midpoint and endpoint, deliberate reveal and horizontal overflow.
+- The public contract is one range input, one prediction group, one comparison action,
   five always-visible equations and one causal road toggle. There is no staged
   Continue-button sequence. `spec/page.test.ts` makes that scope explicit.
 - All displayed numbers must come from `calculateBraess`; browser tests check the
@@ -326,8 +325,6 @@ make an equation look simpler.
 - The eighty decorative driver dots stay `aria-hidden`. The meaningful counts and
   times remain text and are announced through the polite live region.
 - Reduced motion shortens transitions without changing values or interaction.
-  Play jumps directly to the same 4,000-driver endpoint when reduced motion is
-  requested.
 - Built assets remain relative for the GitHub Pages subpath, and the page loads
   no third-party runtime resources.
 

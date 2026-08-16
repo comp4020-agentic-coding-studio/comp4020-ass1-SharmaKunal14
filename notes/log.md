@@ -379,3 +379,11 @@ I removed every automatic result scroll and separated “finish moving drivers�
 calculator. Its button deliberately opens a centred result surface with the controlling
 `65 → 80` comparison first, followed by only two explanations: what changed and why the
 bad state persists. Keyboard and reduced-motion paths use the same explicit action.
+
+## Mon 17 Aug — the extra playback control did not earn its place
+
+The slower Play/Pause/Replay control worked, but it duplicated the slider and made the
+experiment feel managed rather than directly explored. The user rejected it. I removed
+the control, timer, playback state, responsive styling and dedicated browser path rather
+than merely hiding the button. The range input is again the only mechanism that changes
+driver allocation; the deliberate comparison and close-road actions remain distinct.

@@ -47,15 +47,15 @@ interface as buttons causing unexplained events. I first responded by adding cha
 predictions, route tracing and evidence cards. That made the mechanism more defensible
 but also made the visitor learn the simulator before learning the paradox. I finally
 separated realism from clarity and deleted the staged interface. The delivered page has
-three explicit rules and direct manipulation: predict, drag or play eighty driver groups,
+three explicit rules and direct manipulation: predict and drag eighty driver groups,
 and find the derived **64.7-minute** best balance and **65-minute** break-even. The five
 equations now update beside the slider instead of hiding in a disclosure. Reaching the
 endpoint waits for a deliberate comparison before revealing the same 4,000 drivers at **65 → 80 minutes**, then closing
 the shortcut reverses it. The key explanation is earned: at the town's best balance it is
 still **22.5 minutes** quicker, so individually sensible switching continues until the
-group is worse. Browser tests cover landmarks, play/pause/replay, label clearance,
+group is worse. Browser tests cover landmarks, the deliberate reveal, label clearance,
 reversal, both marking viewports, keyboard and reduced motion
-([`5977880...219cc54`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-SharmaKunal14/compare/5977880...219cc54)).
+([`5977880...7e6b7d2`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-SharmaKunal14/compare/5977880...7e6b7d2)).
 
 Rules are in `CLAUDE.md`, prior commitments in `PLAN.md`, and the unedited working
 record is in `notes/log.md`.
