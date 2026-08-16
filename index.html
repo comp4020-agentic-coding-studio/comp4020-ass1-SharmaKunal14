@@ -101,7 +101,9 @@
             <desc id="network-description">
               Start is on the left and work is on the right. Two old routes pass through one
               narrow road and one fixed forty-five-minute road. A new vertical shortcut joins
-              the two middle junctions.
+              the two middle junctions. Driver dots are unique route groups. Road labels show
+              how many of those drivers pass through each road, so the road loads are not totals
+              to add together.
             </desc>
 
             <line class="road road--narrow road--top road--shortcut-leg" x1="90" y1="260" x2="430" y2="90" />
@@ -121,23 +123,24 @@
             <g class="node"><circle cx="810" cy="260" r="14" /><text x="760" y="225">Work</text></g>
 
             <g class="road-label">
-              <text x="120" y="72">narrow road</text>
-              <text class="road-value" data-narrow-label x="120" y="99">2,000 cars → 20 min</text>
+              <text x="120" y="72">Top narrow road</text>
+              <text class="road-value" data-narrow-label x="120" y="99">2,000 pass here · 20 min</text>
             </g>
-            <g class="road-label"><text x="650" y="82">always 45 min</text></g>
-            <g class="road-label"><text x="120" y="476">always 45 min</text></g>
-            <g class="road-label">
-              <text x="620" y="454">narrow road</text>
-              <text class="road-value" data-narrow-label x="620" y="481">2,000 cars → 20 min</text>
+            <g class="road-label"><text x="610" y="82">Top fixed road · always 45 min</text></g>
+            <g class="road-label"><text x="120" y="476">Bottom fixed road · always 45 min</text></g>
+            <g class="road-label road-label--bottom">
+              <text x="790" y="454" text-anchor="end">Bottom narrow road</text>
+              <text class="road-value" data-narrow-label x="790" y="481" text-anchor="end">2,000 pass here · 20 min</text>
             </g>
             <g class="shortcut-label">
-              <text x="450" y="246">0 min connector</text>
-              <text data-shortcut-count x="450" y="275">0 drivers</text>
+              <text x="450" y="234">Middle connector · 0 min</text>
+              <text data-shortcut-count x="450" y="263">0 shortcut drivers</text>
+              <text data-shortcut-overlap x="450" y="290">No one uses both narrow roads yet</text>
             </g>
           </svg>
           <p class="network-note">
-            <strong>Same 4,000 drivers = 80 dots throughout.</strong> Each dot represents 50 drivers.
-            No dots are added or removed.
+            <strong>4,000 unique drivers = 80 dots throughout.</strong> Each dot belongs to one
+            chosen route. Road labels count who passes there, so do not add those road loads.
           </p>
         </div>
 
@@ -228,8 +231,8 @@
           </section>
 
           <section class="calculation-ledger" aria-labelledby="route-ledger-title">
-            <p class="step-label">Where the drivers are</p>
-            <h4 id="route-ledger-title">The same 4,000 drivers</h4>
+            <p class="step-label">Unique drivers by chosen route</p>
+            <h4 id="route-ledger-title">These three groups add to 4,000</h4>
             <div class="route-ledger" role="group" aria-label="Inspect where all 80 dots are now">
               <button class="route-ledger__route" type="button" data-spotlight="top" aria-pressed="false">
                 <span class="route-ledger__label">Top old route</span>
@@ -245,7 +248,7 @@
               </button>
             </div>
             <p class="dot-rule" data-spotlight-copy>
-              Each 100-driver slider step moves two existing dots—one from each old route—onto the shortcut.
+              Road loads overlap: every shortcut driver passes through both narrow roads.
             </p>
           </section>
 
@@ -256,7 +259,7 @@
               <p>Select a row to highlight those roads on the map.</p>
             </div>
             <ol>
-              <li><button type="button" data-spotlight="narrow-load" aria-pressed="false"><span>Narrow road load</span><code data-narrow-math>0 + (4,000 ÷ 2) = 2,000 cars</code></button></li>
+              <li><button type="button" data-spotlight="narrow-load" aria-pressed="false"><span>Each narrow road load</span><code data-narrow-math>0 + (4,000 ÷ 2) = 2,000 drivers passing</code></button></li>
               <li><button type="button" data-spotlight="narrow-time" aria-pressed="false"><span>Narrow road time</span><code data-narrow-time-math>2,000 ÷ 100 = 20 min</code></button></li>
               <li><button type="button" data-spotlight="old-route" aria-pressed="false"><span>Old route</span><code data-old-math>20 + 45 = 65 min</code></button></li>
               <li><button type="button" data-spotlight="shortcut-route" aria-pressed="false"><span>Shortcut route</span><code data-shortcut-math>20 + 0 + 20 = 40 min</code></button></li>

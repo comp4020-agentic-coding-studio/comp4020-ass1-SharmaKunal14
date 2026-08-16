@@ -68,9 +68,10 @@ describe("transparent direct interactions", () => {
     ]);
     expect(doc.querySelector(".intro__setup")?.getAttribute("aria-labelledby")).toBe("setup-title");
     expect(doc.querySelector(".setup-summary")?.getAttribute("aria-label")).toBe("Experiment setup");
-    expect(copy).toContain("Same 4,000 drivers = 80 dots throughout");
-    expect(copy).toContain("No dots are added or removed");
-    expect(copy).toContain("Each 100-driver slider step moves two existing dots");
+    expect(copy).toContain("4,000 unique drivers = 80 dots throughout");
+    expect(copy).toContain("Road labels count who passes there, so do not add those road loads");
+    expect(copy).toContain("These three groups add to 4,000");
+    expect(copy).toContain("Road loads overlap: every shortcut driver passes through both narrow roads");
     expect(doc.querySelector(".route-ledger")?.getAttribute("aria-label")).toBe("Inspect where all 80 dots are now");
     expect(doc.querySelectorAll(".route-ledger [data-spotlight]")).toHaveLength(3);
     expect(doc.querySelectorAll(".calculation-equations [data-spotlight]")).toHaveLength(5);
@@ -107,7 +108,9 @@ describe("transparent direct interactions", () => {
   });
 
   it("contains the complete initial arithmetic and withholds the reveal", () => {
-    expect(doc.querySelector("[data-narrow-math]")?.textContent).toContain("0 + (4,000 ÷ 2) = 2,000");
+    expect(doc.querySelector("[data-narrow-math]")?.textContent).toContain(
+      "0 + (4,000 ÷ 2) = 2,000 drivers passing",
+    );
     expect(doc.querySelector("[data-old-math]")?.textContent).toContain("20 + 45 = 65 min");
     expect(doc.querySelector("[data-shortcut-math]")?.textContent).toContain("20 + 0 + 20 = 40 min");
     expect(doc.querySelector("[data-reveal]")?.hasAttribute("hidden")).toBe(true);

@@ -227,7 +227,9 @@ describe("transparent desktop experiment", () => {
     const { page } = observed;
     await setUsers(page, 2_000);
     expect(await text(page, "[data-average-time]")).toBe("67.5");
-    expect(await text(page, "[data-narrow-math]")).toBe("2,000 + (2,000 ÷ 2) = 3,000 cars");
+    expect(await text(page, "[data-narrow-math]")).toBe(
+      "2,000 + (2,000 ÷ 2) = 3,000 drivers passing",
+    );
     expect(await text(page, "[data-old-math]")).toBe("30 + 45 = 75 min");
     expect(await text(page, "[data-shortcut-math]")).toBe("30 + 0 + 30 = 60 min");
     expect(await text(page, "[data-average-math]")).toBe("(2,000 × 75 + 2,000 × 60) ÷ 4,000 = 67.5 min");
@@ -241,6 +243,37 @@ describe("transparent desktop experiment", () => {
     expect(await text(page, "[data-shortcut-route-ledger]")).toBe("2,000 drivers · 40 dots");
     expect(await text(page, "[data-bottom-route-ledger]")).toBe("1,000 drivers · 20 dots");
 
+    healthy(observed);
+    await page.close();
+  });
+
+  it("distinguishes unique route groups from overlapping road loads", async () => {
+    const observed = await open(DESKTOP);
+    const { page } = observed;
+    await setUsers(page, 600);
+    expect(await text(page, "[data-top-route-ledger]")).toBe("1,700 drivers · 34 dots");
+    expect(await text(page, "[data-shortcut-route-ledger]")).toBe("600 drivers · 12 dots");
+    expect(await text(page, "[data-bottom-route-ledger]")).toBe("1,700 drivers · 34 dots");
+    expect(await page.locator("[data-narrow-label]").allTextContents()).toEqual([
+      "2,300 pass here · 23 min",
+      "2,300 pass here · 23 min",
+    ]);
+    expect(await text(page, "[data-shortcut-count]")).toBe("600 shortcut drivers");
+    expect(await text(page, "[data-shortcut-overlap]")).toBe(
+      "The same 600 also use both narrow roads",
+    );
+    expect(await text(page, ".network-note")).toContain("do not add those road loads");
+    const labelBounds = await page.locator(".road-label, .shortcut-label").evaluateAll((labels) =>
+      labels.map((label) => {
+        const box = (label as SVGGraphicsElement).getBBox();
+        return { left: box.x, right: box.x + box.width };
+      }),
+    );
+    for (const bounds of labelBounds) {
+      expect(bounds.left).toBeGreaterThanOrEqual(0);
+      expect(bounds.right).toBeLessThanOrEqual(900);
+    }
+    await noOverflow(page);
     healthy(observed);
     await page.close();
   });

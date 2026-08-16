@@ -22,6 +22,7 @@ const averageTime = need<HTMLOutputElement>("[data-average-time]");
 const averageChange = need<HTMLElement>("[data-average-change]");
 const decision = need<HTMLElement>("[data-decision]");
 const shortcutCount = need<SVGTextElement>("[data-shortcut-count]");
+const shortcutOverlap = need<SVGTextElement>("[data-shortcut-overlap]");
 const narrowLabels = [...document.querySelectorAll<SVGTextElement>("[data-narrow-label]")];
 const narrowMath = need<HTMLElement>("[data-narrow-math]");
 const narrowTimeMath = need<HTMLElement>("[data-narrow-time-math]");
@@ -254,12 +255,12 @@ const SPOTLIGHTS: Record<string, { map: string; dots: string; copy: string }> = 
   "narrow-load": {
     map: "narrow",
     dots: "all",
-    copy: "Both narrow roads glow because the shortcut sends every shortcut driver through both of them.",
+    copy: "Each label is one road’s load. The same shortcut drivers appear in both totals.",
   },
   "narrow-time": {
     map: "narrow",
     dots: "all",
-    copy: "Both narrow roads use the same rule: 100 cars add 1 minute.",
+    copy: "Each narrow road uses the same rule: 100 drivers passing add 1 minute.",
   },
   "old-route": {
     map: "top",
@@ -286,7 +287,7 @@ function renderSpotlight(): void {
   network.dataset.focus = spotlight?.map ?? "";
   driverLayer.dataset.focus = spotlight?.dots ?? "";
   spotlightCopy.textContent = spotlight?.copy ??
-    "Each 100-driver slider step moves two existing dots—one from each old route—onto the shortcut.";
+    "Road loads overlap: every shortcut driver passes through both narrow roads.";
   for (const button of spotlightButtons) {
     button.setAttribute("aria-pressed", String(button.dataset.spotlight === activeSpotlight));
   }
@@ -315,9 +316,12 @@ function render(result: BraessResult): void {
   document.body.dataset.roadClosed = String(roadClosed);
   shortcutOutput.value = `${drivers(shortcutUsers)} of ${drivers(TOTAL_DRIVERS)}`;
   averageTime.value = minutes(averageMinutes);
-  shortcutCount.textContent = `${drivers(shortcutUsers)} drivers`;
+  shortcutCount.textContent = `${drivers(shortcutUsers)} shortcut drivers`;
+  shortcutOverlap.textContent = shortcutUsers === 0
+    ? "No one uses both narrow roads yet"
+    : `The same ${drivers(shortcutUsers)} also use both narrow roads`;
   for (const label of narrowLabels) {
-    label.textContent = `${drivers(narrowRoadUsers)} cars → ${minutes(narrowRoadMinutes)} min`;
+    label.textContent = `${drivers(narrowRoadUsers)} pass here · ${minutes(narrowRoadMinutes)} min`;
   }
   renderDriverDots(shortcutUsers, usersPerOldRoute);
   renderDiscovery(result);
@@ -350,7 +354,8 @@ function render(result: BraessResult): void {
   }
 
   narrowMath.textContent =
-    `${drivers(shortcutUsers)} + (${drivers(oldRouteUsers)} ÷ 2) = ${drivers(narrowRoadUsers)} cars`;
+    `${drivers(shortcutUsers)} + (${drivers(oldRouteUsers)} ÷ 2) = ` +
+    `${drivers(narrowRoadUsers)} drivers passing`;
   narrowTimeMath.textContent = `${drivers(narrowRoadUsers)} ÷ 100 = ${minutes(narrowRoadMinutes)} min`;
   oldMath.textContent = `${minutes(narrowRoadMinutes)} + 45 = ${minutes(oldRouteMinutes)} min`;
   shortcutMath.textContent =

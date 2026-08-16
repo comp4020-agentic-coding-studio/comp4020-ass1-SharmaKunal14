@@ -557,7 +557,7 @@ body[data-road-closed="true"] .shortcut-label {
 }
 
 .road-label .road-value,
-.shortcut-label text:last-child {
+.shortcut-label text:not(:first-child) {
   fill: var(--ink-soft);
   font-family: "DM Mono", monospace;
   font-size: 15px;
