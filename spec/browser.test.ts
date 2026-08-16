@@ -108,8 +108,8 @@ describe("transparent desktop experiment", () => {
   it("shows the rules and initial calculation before interaction", async () => {
     const observed = await open(DESKTOP);
     const { page } = observed;
-    expect(await page.locator("button").count()).toBe(3);
-    expect(await page.locator("[data-play]").isVisible()).toBe(true);
+    expect(await page.locator("button").count()).toBe(2);
+    expect(await page.locator("[data-play]").count()).toBe(0);
     expect(await page.locator("[data-endpoint-prompt]").isHidden()).toBe(true);
     expect(await page.locator("[data-toggle-road]").isHidden()).toBe(true);
     expect(await page.locator('input[type="range"]').count()).toBe(1);
@@ -253,31 +253,6 @@ describe("transparent desktop experiment", () => {
     await page.close();
   });
 
-  it("plays, pauses and completes the same slider calculation", async () => {
-    const observed = await open(DESKTOP);
-    const { page } = observed;
-    const play = page.locator("[data-play]");
-    await play.click();
-    await page.waitForFunction(() => Number((document.querySelector("#shortcut-users") as HTMLInputElement).value) >= 300);
-    expect(await text(page, "[data-play]")).toContain("Pause");
-
-    await play.click();
-    const pausedAt = await page.locator("#shortcut-users").inputValue();
-    await page.waitForTimeout(180);
-    expect(await page.locator("#shortcut-users").inputValue()).toBe(pausedAt);
-
-    await play.click();
-    await page.waitForFunction(() => document.body.dataset.complete === "true", undefined, { timeout: 8_000 });
-    expect(await page.locator("#shortcut-users").inputValue()).toBe("4000");
-    expect(await page.locator("[data-endpoint-prompt]").isVisible()).toBe(true);
-    expect(await page.locator("[data-reveal]").isHidden()).toBe(true);
-    await page.waitForFunction(() => document.querySelector("[data-play]")?.textContent?.includes("Replay"));
-    expect(await text(page, "[data-play]")).toContain("Replay from the start");
-    await page.locator("[data-show-result]").click();
-    expect(await page.locator("[data-reveal]").isVisible()).toBe(true);
-    healthy(observed);
-    await page.close();
-  }, 12_000);
 });
 
 describe("phone and keyboard", () => {
@@ -320,7 +295,7 @@ describe("phone and keyboard", () => {
   it("removes decorative motion when reduced motion is requested", async () => {
     const observed = await open(PHONE, true);
     const { page } = observed;
-    await page.locator("[data-play]").click();
+    await setUsers(page, 4_000);
     expect(await page.locator("#shortcut-users").inputValue()).toBe("4000");
     expect(await page.locator("[data-reveal]").isHidden()).toBe(true);
     await page.locator("[data-show-result]").click();

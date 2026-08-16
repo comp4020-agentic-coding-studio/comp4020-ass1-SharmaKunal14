@@ -22,8 +22,8 @@ describe("transparent direct interactions", () => {
     expect(sliders).toHaveLength(1);
     expect(doc.querySelectorAll<HTMLInputElement>('input[name="personal-route"]')).toHaveLength(0);
     expect(doc.querySelectorAll<HTMLInputElement>('input[name="prediction"]')).toHaveLength(3);
-    expect(doc.querySelectorAll("button")).toHaveLength(3);
-    expect(doc.querySelector("[data-play]")).not.toBeNull();
+    expect(doc.querySelectorAll("button")).toHaveLength(2);
+    expect(doc.querySelector("[data-play]")).toBeNull();
     expect(doc.querySelector("[data-show-result]")).not.toBeNull();
     expect(doc.querySelector("[data-toggle-road]")).not.toBeNull();
     expect(sliders[0]).toMatchObject({ min: "0", max: "4000", step: "100", value: "0" });
@@ -85,9 +85,7 @@ describe("transparent direct interactions", () => {
     expect(mainSource).toContain("const DRIVERS_PER_DOT = 50");
     expect(mainSource).toContain("BRAESS_LANDMARKS");
     expect(mainSource).toContain("BEST_RESULT.individualSavingMinutes");
-    expect(mainSource).toContain("playNextStep");
-    expect(mainSource).toContain("const PLAY_STEP_MS = 140");
-    expect(mainSource).toContain("window.setTimeout(playNextStep, PLAY_STEP_MS)");
+    expect(mainSource).not.toContain("setTimeout");
   });
 
   it("keeps the primary copy free of the discarded process jargon", () => {

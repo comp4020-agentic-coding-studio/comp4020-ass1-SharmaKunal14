@@ -43,7 +43,6 @@ const roadControlCopy = need<HTMLElement>("[data-road-control-copy]");
 const closureResult = need<HTMLElement>("[data-closure-result]");
 const toggleRoad = need<HTMLButtonElement>("[data-toggle-road]");
 const driverLayer = need<SVGGElement>("[data-driver-layer]");
-const playButton = need<HTMLButtonElement>("[data-play]");
 const topFlow = need<SVGPathElement>("#top-flow");
 const bottomFlow = need<SVGPathElement>("#bottom-flow");
 const shortcutFlow = need<SVGPathElement>("#shortcut-flow");
@@ -51,7 +50,6 @@ const shortcutFlow = need<SVGPathElement>("#shortcut-flow");
 const number = new Intl.NumberFormat("en-AU", { maximumFractionDigits: 1 });
 const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
 const DRIVERS_PER_DOT = 50;
-const PLAY_STEP_MS = 140;
 const DOTS = TOTAL_DRIVERS / DRIVERS_PER_DOT;
 const BEST_RESULT = calculateBraess(BRAESS_LANDMARKS.bestShortcutUsers);
 const driverDots = Array.from({ length: DOTS }, () => {
@@ -64,7 +62,6 @@ const driverDots = Array.from({ length: DOTS }, () => {
 let selectedPrediction: "faster" | "same" | "slower" | null = null;
 let roadClosed = false;
 let resultRevealed = false;
-let playTimer: number | null = null;
 
 function minutes(value: number): string {
   return number.format(value);
@@ -240,15 +237,9 @@ function render(result: BraessResult): void {
       `Old route ${minutes(oldRouteMinutes)} minutes, shortcut ${minutes(shortcutRouteMinutes)} minutes, ` +
       `town average ${minutes(averageMinutes)} minutes.`;
 
-  if (playTimer === null) {
-    playButton.innerHTML = shortcutUsers === TOTAL_DRIVERS
-      ? '<span aria-hidden="true">↺</span> Replay from the start'
-      : '<span aria-hidden="true">▶</span> Play the full change';
-  }
 }
 
 input.addEventListener("input", () => {
-  stopPlaying();
   roadClosed = false;
   const result = calculateBraess(Number(input.value));
   input.value = String(result.shortcutUsers);
@@ -266,55 +257,10 @@ showResult.addEventListener("click", () => {
 });
 
 toggleRoad.addEventListener("click", () => {
-  stopPlaying();
   roadClosed = !roadClosed;
   input.disabled = roadClosed;
   input.value = roadClosed ? "0" : String(TOTAL_DRIVERS);
   render(calculateBraess(Number(input.value)));
-});
-
-function stopPlaying(): void {
-  if (playTimer !== null) window.clearTimeout(playTimer);
-  playTimer = null;
-  playButton.setAttribute("aria-pressed", "false");
-}
-
-function playNextStep(): void {
-  const current = Number(input.value);
-  if (current >= TOTAL_DRIVERS) {
-    stopPlaying();
-    render(calculateBraess(current));
-    return;
-  }
-
-  input.value = String(Math.min(TOTAL_DRIVERS, current + 100));
-  playTimer = window.setTimeout(playNextStep, PLAY_STEP_MS);
-  render(calculateBraess(Number(input.value)));
-}
-
-playButton.addEventListener("click", () => {
-  if (playTimer !== null) {
-    stopPlaying();
-    render(calculateBraess(Number(input.value)));
-    return;
-  }
-
-  roadClosed = false;
-  input.disabled = false;
-  if (Number(input.value) >= TOTAL_DRIVERS) {
-    input.value = "0";
-    resultRevealed = false;
-  }
-
-  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-    input.value = String(TOTAL_DRIVERS);
-    render(calculateBraess(TOTAL_DRIVERS));
-    return;
-  }
-
-  playButton.innerHTML = '<span aria-hidden="true">❚❚</span> Pause';
-  playButton.setAttribute("aria-pressed", "true");
-  playNextStep();
 });
 
 for (const predictionInput of predictionInputs) {

@@ -506,36 +506,6 @@ input[type="range"] {
   text-transform: uppercase;
 }
 
-.play-row {
-  margin-top: var(--space-3);
-  display: flex;
-  gap: var(--space-3);
-  align-items: center;
-}
-
-.play-button {
-  min-height: 2.75rem;
-  padding: 0.7rem 0.9rem;
-  border: 1px solid var(--gold);
-  background: var(--gold);
-  color: var(--ink);
-  font-size: 0.67rem;
-  font-weight: 800;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  cursor: pointer;
-}
-
-.play-button:hover {
-  background: var(--paper);
-}
-
-.play-row__help {
-  margin: 0;
-  color: #c9d0cd;
-  font-size: 0.65rem;
-}
-
 .discovery {
   display: block;
   min-height: 3em;
@@ -1040,15 +1010,6 @@ footer {
   .slider-heading output {
     display: block;
     margin-top: 0.35rem;
-  }
-
-  .play-row {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  .play-button {
-    width: 100%;
   }
 
   .endpoint-prompt {
