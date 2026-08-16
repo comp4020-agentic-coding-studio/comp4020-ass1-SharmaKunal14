@@ -50,13 +50,13 @@ separated realism from clarity and deleted the staged interface. The delivered p
 three explicit rules and direct manipulation: drag eighty driver groups,
 and find the derived **64.7-minute** best balance and **65-minute** break-even. The five
 equations and an 80-dot route ledger now update beside the slider. Every 100-driver
-step moves one existing dot from each old route; none appear. The experiment ends
-before an inline result chapter compares the same 4,000 drivers at **65 → 80 minutes**;
-closing the shortcut reverses it. The key explanation is earned: at the town's
+step moves one existing dot from each old route; none appear. An endpoint card beside
+the slider opens a named result chapter comparing the same 4,000 drivers at **65 → 80**;
+closing the shortcut reverses it. The explanation is earned: at the town's
 best balance it is still **22.5 minutes** quicker, so sensible switching continues
 until the group is worse. Browser tests cover the dot invariant, non-overlap, reveal,
 reversal, both marking viewports, keyboard and reduced motion
-([`5977880...f7c0688`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-SharmaKunal14/compare/5977880...f7c0688)).
+([`5977880...b1dbad5`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-SharmaKunal14/compare/5977880...b1dbad5)).
 
 Rules are in `CLAUDE.md`, prior commitments in `PLAN.md`, and the unedited working
 record is in `notes/log.md`.

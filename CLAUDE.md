@@ -240,6 +240,8 @@ equations from the pure calculation in `src/braess.ts`.
 **One controlled comparison.** Reaching the endpoint must not move the viewport
 or open the result automatically. It offers one compact comparison action; only
 that deliberate action reveals an inline result chapter after the experiment.
+The action belongs inside the slider panel, where the endpoint is reached. The
+chapter must introduce **Braess's paradox** as its dominant heading before explaining it.
 The sticky map must end before this chapter begins; the two surfaces may never
 overlap. The chapter shows that the same 4,000 drivers take 65 minutes with the
 shortcut closed and 80 with it open, then explains why the bad state persists:
@@ -320,8 +322,9 @@ make an equation look simpler.
   `PROCESS.md`, the reflection or commit citations.
 - Test the whole interaction at **1920×1080** and **390×844**, including the
   slider midpoint and endpoint, deliberate reveal and horizontal overflow.
-- The public contract is one range input, one comparison action, five always-visible
-  equations and one causal road toggle. There is no prediction survey and no staged
+- The public contract is one range input, one endpoint comparison action attached to
+  that input, five always-visible equations and one causal road toggle. There is no
+  prediction survey and no staged
   Continue-button sequence. `spec/page.test.ts` makes that scope explicit.
 - All displayed numbers must come from `calculateBraess`; browser tests check the
   start, midpoint and endpoint equations rather than only checking that values

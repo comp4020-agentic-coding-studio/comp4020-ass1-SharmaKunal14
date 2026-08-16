@@ -428,3 +428,17 @@ changes the map, ledger, route times, town average and five equations together. 
 result chapter uses the recovered space for the causal sentence the interaction earned:
 each driver followed the route that looked quicker, and together they crowded both
 narrow roads. Static and browser contracts now fail if the prediction control returns.
+
+## Mon 17 Aug — the next action moved to the point of completion
+
+At 4,000 shortcut users, the visitor's attention was still inside the dark slider panel,
+but the comparison action appeared after the town summary and all five equations. The
+control was deliberate but visually disconnected from the action that unlocked it. I
+moved the endpoint card into the slider panel and hide its ordinary guidance once the
+card arrives, so the new action replaces information instead of adding more.
+
+The result also treated the paradox's name as a small eyebrow. I made “Braess's paradox”
+the result chapter's dominant heading, then separated the plain-language meaning—one
+extra road made the same crowd slower—from the causal explanation below it. A browser
+geometry assertion now requires the endpoint card to remain inside the slider surface;
+phone, keyboard, focus, reduced-motion and no-overlap paths remain unchanged.
