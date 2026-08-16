@@ -229,11 +229,26 @@ describe("transparent desktop experiment", () => {
     expect(await page.locator("[data-reveal]").isHidden()).toBe(true);
     expect(await page.locator("[data-toggle-road]").isHidden()).toBe(true);
     expect(Number.parseFloat(await page.locator("[data-endpoint-prompt]").evaluate((element) => getComputedStyle(element).animationDuration))).toBeGreaterThan(0.3);
+    const promptPlacement = await page.locator("[data-endpoint-prompt]").evaluate((prompt) => {
+      const slider = prompt.closest(".slider-block");
+      if (slider === null) throw new Error("completion prompt is not attached to the slider");
+      const promptBox = prompt.getBoundingClientRect();
+      const sliderBox = slider.getBoundingClientRect();
+      return {
+        promptTop: promptBox.top,
+        promptBottom: promptBox.bottom,
+        sliderTop: sliderBox.top,
+        sliderBottom: sliderBox.bottom,
+      };
+    });
+    expect(promptPlacement.promptTop).toBeGreaterThanOrEqual(promptPlacement.sliderTop);
+    expect(promptPlacement.promptBottom).toBeLessThanOrEqual(promptPlacement.sliderBottom + 1);
+    expect(await text(page, "[data-show-result]")).toBe("Reveal the paradox →");
 
     await page.locator("[data-show-result]").click();
     expect(await page.locator("[data-reveal]").isVisible()).toBe(true);
     expect(await text(page, "[data-reveal]")).toContain("Braess’s paradox");
-    expect(await text(page, "[data-reveal]")).toContain("Same crowd. One extra road. 15 minutes slower");
+    expect(await text(page, "[data-reveal]")).toContain("One extra road made the same crowd slower");
     expect(await text(page, "[data-reveal]")).toContain("Shortcut closed 65 min 4,000 drivers split evenly");
     expect(await text(page, "[data-reveal]")).toContain("Shortcut open 80 min The same 4,000 use both narrow roads");
     expect(await text(page, "[data-reveal]")).toContain("Only the shortcut changed");

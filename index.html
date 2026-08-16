@@ -147,6 +147,17 @@
               <p id="slider-help" class="decision" data-decision>
                 The shortcut takes 40 minutes, so the first driver wants to switch.
               </p>
+
+              <section class="endpoint-prompt" data-endpoint-prompt hidden aria-labelledby="endpoint-title">
+                <div>
+                  <p class="step-label">You reached the strange result</p>
+                  <h4 id="endpoint-title">The same drivers are now 15 minutes slower.</h4>
+                  <p>Keep the 4,000 drivers fixed and compare only the road network.</p>
+                </div>
+                <button type="button" data-show-result>
+                  Reveal the paradox <span aria-hidden="true">→</span>
+                </button>
+              </section>
             </div>
 
             <section class="town-comparison" data-town-comparison data-state="same" aria-label="Town average compared with before">
@@ -177,14 +188,6 @@
               </ol>
             </section>
 
-            <section class="endpoint-prompt" data-endpoint-prompt hidden aria-labelledby="endpoint-title">
-              <div>
-                <p class="step-label">The slider is complete</p>
-                <h4 id="endpoint-title">Everyone chose the route that looked quicker.</h4>
-                <p>Now hold the same 4,000 drivers still and change only the road network.</p>
-              </div>
-              <button type="button" data-show-result>Compare the two networks</button>
-            </section>
           </section>
         </div>
 
@@ -193,14 +196,17 @@
 
       <section class="reveal" data-reveal hidden tabindex="-1" aria-labelledby="reveal-title">
         <header class="reveal__header">
-          <div>
-            <p class="eyebrow">Your action revealed Braess’s paradox</p>
-            <h3 id="reveal-title">Same crowd. One extra road. 15 minutes slower.</h3>
+          <div class="reveal__identity">
+            <p class="eyebrow">The pattern has a name</p>
+            <h3 id="reveal-title">Braess’s paradox</h3>
           </div>
-          <p class="reveal-summary">
-            Every driver followed the route that looked quicker. Together, they made both
-            narrow roads busier.
-          </p>
+          <div class="reveal__meaning">
+            <p class="reveal-statement">One extra road made the same crowd slower.</p>
+            <p class="reveal-summary">
+              Every driver followed the route that looked quicker. Together, they made both
+              narrow roads busier.
+            </p>
+          </div>
         </header>
 
         <div class="result-score" aria-label="Same-driver controlled comparison">

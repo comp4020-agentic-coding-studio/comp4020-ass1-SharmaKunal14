@@ -61,13 +61,15 @@ describe("transparent direct interactions", () => {
     expect(copy).toContain("Only the shortcut changed");
     expect(copy).toContain("Every driver followed the route that looked quicker");
     expect(copy).toContain("Together, they made both narrow roads busier");
-    expect(copy).toContain("Your action revealed Braess’s paradox");
-    expect(copy).toContain("Compare the two networks");
+    expect(copy).toContain("The pattern has a name Braess’s paradox");
+    expect(copy).toContain("Reveal the paradox");
     expect(copy).toContain("Prove it backwards");
     expect(copy).toContain("Close the shortcut");
     expect(doc.querySelector(".experiment > [data-reveal]")).toBeNull();
     expect(doc.querySelector("main > [data-reveal]")).not.toBeNull();
     expect(doc.querySelector("[data-reveal] > [data-road-control]")).not.toBeNull();
+    expect(doc.querySelector(".slider-block > [data-endpoint-prompt]")).not.toBeNull();
+    expect(doc.querySelector(".live-math ~ [data-endpoint-prompt]")).toBeNull();
   });
 
   it("contains the complete initial arithmetic and withholds the reveal", () => {
@@ -82,6 +84,7 @@ describe("transparent direct interactions", () => {
     const copy = (doc.body.textContent ?? "").replace(/\s+/g, " ");
     expect(copy).toContain("Shortcut closed 65 min 4,000 drivers split evenly");
     expect(copy).toContain("Shortcut open 80 min The same 4,000 use both narrow roads");
+    expect(copy).toContain("One extra road made the same crowd slower");
     expect(copy).toContain("80 minutes still beats 85 alone");
     expect(copy).not.toContain("Each driver saved time by switching");
   });

@@ -527,6 +527,11 @@ input[type="range"] {
   line-height: 1.5;
 }
 
+body[data-complete="true"] .discovery,
+body[data-complete="true"] .decision {
+  display: none;
+}
+
 .town-comparison {
   padding: var(--space-4);
   border-top: 1px solid var(--rule);
@@ -640,13 +645,17 @@ h3 {
 /* stylelint-disable no-descending-specificity -- endpoint and result components
    intentionally override the page's shared text/button primitives. */
 .endpoint-prompt {
+  margin-top: var(--space-4);
   padding: var(--space-4);
-  border-top: 1px solid var(--rule);
-  background: var(--paper-deep);
+  border: 1px solid var(--gold);
+  border-left-width: 7px;
+  background: var(--paper);
+  color: var(--ink);
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: var(--space-4);
+  gap: var(--space-3);
   align-items: center;
+  box-shadow: 0.45rem 0.45rem 0 rgb(243 174 43 / 24%);
   animation: endpoint-arrival 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
@@ -666,9 +675,9 @@ h3 {
 
 .endpoint-prompt button {
   min-height: 3rem;
-  padding: 0.8rem 1rem;
+  padding: 0.8rem 1.1rem;
   border: 0;
-  background: var(--rust);
+  background: var(--ink);
   color: var(--paper);
   font-size: 0.66rem;
   font-weight: 800;
@@ -678,7 +687,7 @@ h3 {
 }
 
 .endpoint-prompt button:hover {
-  background: var(--ink);
+  background: var(--rust);
 }
 
 .reveal {
@@ -704,27 +713,46 @@ h3 {
 
 .reveal__header {
   padding: clamp(1.75rem, 4vw, 3.5rem);
-  border-top: 7px solid var(--gold);
+  border-top: 10px solid var(--gold);
   border-bottom: 1px solid var(--rule);
   background: var(--paper-deep);
   display: grid;
-  grid-template-columns: minmax(0, 1.35fr) minmax(14rem, 0.65fr);
+  grid-template-columns: minmax(17rem, 0.85fr) minmax(0, 1.15fr);
   gap: var(--space-5);
-  align-items: end;
+  align-items: center;
 }
 
 .reveal h3 {
-  max-width: 21ch;
-  color: var(--ink);
-  font-size: clamp(2.3rem, 5vw, 4.6rem);
+  max-width: 9ch;
+  color: var(--rust);
+  font-size: clamp(3.6rem, 7vw, 7rem);
+  letter-spacing: -0.055em;
+  line-height: 0.82;
 }
 
 .reveal .eyebrow {
   color: var(--rust);
 }
 
-.reveal-summary {
+.reveal__identity {
+  padding-right: var(--space-4);
+  border-right: 1px solid var(--rule);
+}
+
+.reveal-statement {
+  max-width: 18ch;
   margin: 0;
+  color: var(--ink);
+  font-family: Newsreader, Georgia, serif;
+  font-size: clamp(2rem, 3.6vw, 3.6rem);
+  font-weight: 500;
+  letter-spacing: -0.035em;
+  line-height: 0.95;
+}
+
+.reveal-summary {
+  max-width: 40rem;
+  margin: var(--space-3) 0 0;
   padding-left: var(--space-3);
   border-left: 4px solid var(--teal);
   color: var(--ink-soft);
@@ -1086,6 +1114,16 @@ footer {
   .reveal__header,
   .result-reasons {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .reveal__identity {
+    padding: 0 0 var(--space-3);
+    border-right: 0;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .reveal h3 {
+    font-size: clamp(3.3rem, 16vw, 5.4rem);
   }
 
   .result-score {

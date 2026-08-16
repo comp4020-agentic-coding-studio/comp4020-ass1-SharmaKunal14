@@ -225,7 +225,9 @@ function render(result: BraessResult): void {
     : "Keep the same 4,000 drivers and watch the two old routes clear.";
   liveSummary.textContent = roadClosed
     ? "The shortcut is closed. Drivers split evenly. Every trip and the town average are 65 minutes."
-    : `${drivers(shortcutUsers)} drivers use the shortcut. ` +
+    : reachedEndpoint
+      ? "All 4,000 drivers use the shortcut. The town average is 80 minutes. The paradox comparison is ready beside the slider."
+      : `${drivers(shortcutUsers)} drivers use the shortcut. ` +
       `Old route ${minutes(oldRouteMinutes)} minutes, shortcut ${minutes(shortcutRouteMinutes)} minutes, ` +
       `town average ${minutes(averageMinutes)} minutes.`;
 
