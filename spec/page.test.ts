@@ -69,7 +69,7 @@ describe("transparent direct interactions", () => {
     expect(doc.querySelector(".intro__setup")?.getAttribute("aria-labelledby")).toBe("setup-title");
     expect(doc.querySelector(".setup-summary")?.getAttribute("aria-label")).toBe("Experiment setup");
     expect(copy).toContain("4,000 unique drivers = 80 dots throughout");
-    expect(copy).toContain("Road labels count who passes there, so do not add those road loads");
+    expect(copy).toContain("Road labels count who passes there, so do not add those overlapping road loads");
     expect(copy).toContain("These three groups add to 4,000");
     expect(copy).toContain("Road loads overlap: every shortcut driver passes through both narrow roads");
     expect(doc.querySelector(".route-ledger")?.getAttribute("aria-label")).toBe("Inspect where all 80 dots are now");
@@ -115,6 +115,15 @@ describe("transparent direct interactions", () => {
     expect(doc.querySelector("[data-shortcut-math]")?.textContent).toContain("20 + 0 + 20 = 40 min");
     expect(doc.querySelector("[data-reveal]")?.hasAttribute("hidden")).toBe(true);
     expect(doc.querySelector("[data-endpoint-prompt]")?.hasAttribute("hidden")).toBe(true);
+  });
+
+  it("makes the one-way topology and overlapping road loads explicit", () => {
+    const copy = (doc.querySelector("[data-network-wrap]")?.textContent ?? "").replace(/\s+/g, " ");
+    expect(copy).toContain("All roads are one-way: Home → Work");
+    expect(copy).toContain("connector goes top → bottom");
+    expect(copy).toContain("only shortcut path is top narrow → connector → bottom narrow");
+    expect(doc.querySelectorAll("[data-direction-arrow]")).toHaveLength(5);
+    expect(doc.querySelectorAll("[data-narrow-breakdown]")).toHaveLength(2);
   });
 
   it("makes the controlled comparison explicit in the reveal", () => {

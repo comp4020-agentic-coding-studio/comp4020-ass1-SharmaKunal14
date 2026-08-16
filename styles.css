@@ -474,6 +474,29 @@ h2 {
     transform 520ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+.direction-layer {
+  pointer-events: none;
+}
+
+.direction-arrow {
+  fill: none;
+  stroke: var(--gold);
+  stroke-linecap: round;
+  stroke-width: 3;
+  marker-end: url("#direction-marker");
+  paint-order: stroke;
+}
+
+#direction-marker path {
+  fill: var(--gold);
+  stroke: var(--ink);
+  stroke-width: 0.75;
+}
+
+.direction-arrow--connector {
+  stroke: var(--paper);
+}
+
 body[data-road-closed="true"] .road--shortcut {
   opacity: 0.08;
   transform: scaleY(0.02);
@@ -556,11 +579,11 @@ body[data-road-closed="true"] .shortcut-label {
   font-size: 17px;
 }
 
-.road-label .road-value,
+.road-label :is(.road-breakdown, .road-value),
 .shortcut-label text:not(:first-child) {
   fill: var(--ink-soft);
   font-family: "DM Mono", monospace;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 500;
 }
 
@@ -1616,9 +1639,9 @@ footer {
     font-size: 20px;
   }
 
-  .road-label .road-value,
+  .road-label :is(.road-breakdown, .road-value),
   .shortcut-label text:last-child {
-    font-size: 18px;
+    font-size: 16px;
   }
 
   .slider-heading {

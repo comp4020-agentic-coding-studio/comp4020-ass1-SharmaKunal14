@@ -23,6 +23,7 @@ const averageChange = need<HTMLElement>("[data-average-change]");
 const decision = need<HTMLElement>("[data-decision]");
 const shortcutCount = need<SVGTextElement>("[data-shortcut-count]");
 const shortcutOverlap = need<SVGTextElement>("[data-shortcut-overlap]");
+const narrowBreakdowns = [...document.querySelectorAll<SVGTextElement>("[data-narrow-breakdown]")];
 const narrowLabels = [...document.querySelectorAll<SVGTextElement>("[data-narrow-label]")];
 const narrowMath = need<HTMLElement>("[data-narrow-math]");
 const narrowTimeMath = need<HTMLElement>("[data-narrow-time-math]");
@@ -318,10 +319,13 @@ function render(result: BraessResult): void {
   averageTime.value = minutes(averageMinutes);
   shortcutCount.textContent = `${drivers(shortcutUsers)} shortcut drivers`;
   shortcutOverlap.textContent = shortcutUsers === 0
-    ? "No one uses both narrow roads yet"
-    : `The same ${drivers(shortcutUsers)} also use both narrow roads`;
+    ? "No shortcut driver uses"
+    : `Same ${drivers(shortcutUsers)} also use`;
+  for (const breakdown of narrowBreakdowns) {
+    breakdown.textContent = `${drivers(usersPerOldRoute)} old + same ${drivers(shortcutUsers)} shortcut`;
+  }
   for (const label of narrowLabels) {
-    label.textContent = `${drivers(narrowRoadUsers)} pass here · ${minutes(narrowRoadMinutes)} min`;
+    label.textContent = `= ${drivers(narrowRoadUsers)} passing · ${minutes(narrowRoadMinutes)} min`;
   }
   renderDriverDots(shortcutUsers, usersPerOldRoute);
   renderDiscovery(result);

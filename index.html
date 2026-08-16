@@ -99,18 +99,41 @@
           >
             <title id="network-title">A four-road network with one central shortcut</title>
             <desc id="network-description">
-              Start is on the left and work is on the right. Two old routes pass through one
-              narrow road and one fixed forty-five-minute road. A new vertical shortcut joins
-              the two middle junctions. Driver dots are unique route groups. Road labels show
-              how many of those drivers pass through each road, so the road loads are not totals
-              to add together.
+              All roads are one-way from Home on the left to Work on the right. Two old routes
+              pass through one narrow road and one fixed forty-five-minute road. The vertical
+              connector runs from the top junction to the bottom junction, so the only shortcut
+              route uses the top narrow road, the connector, then the bottom narrow road. Driver
+              dots are unique route groups. Road labels show overlapping pass-through loads, not
+              separate groups to add together.
             </desc>
+
+            <defs>
+              <marker
+                id="direction-marker"
+                markerWidth="8"
+                markerHeight="8"
+                refX="6"
+                refY="4"
+                orient="auto"
+                markerUnits="strokeWidth"
+              >
+                <path d="M 0 0 L 8 4 L 0 8 Z" />
+              </marker>
+            </defs>
 
             <line class="road road--narrow road--top road--shortcut-leg" x1="90" y1="260" x2="430" y2="90" />
             <line class="road road--fixed road--top" x1="430" y1="90" x2="810" y2="260" />
             <line class="road road--fixed road--bottom" x1="90" y1="260" x2="430" y2="430" />
             <line class="road road--narrow road--bottom road--shortcut-leg" x1="430" y1="430" x2="810" y2="260" />
             <line class="road road--shortcut road--connector" x1="430" y1="90" x2="430" y2="430" />
+
+            <g class="direction-layer" aria-hidden="true">
+              <path class="direction-arrow" data-direction-arrow d="M 230 190 L 275 167" />
+              <path class="direction-arrow" data-direction-arrow d="M 585 159 L 630 179" />
+              <path class="direction-arrow" data-direction-arrow d="M 230 330 L 275 353" />
+              <path class="direction-arrow" data-direction-arrow d="M 585 361 L 630 341" />
+              <path class="direction-arrow direction-arrow--connector" data-direction-arrow d="M 430 205 L 430 255" />
+            </g>
 
             <path id="top-flow" class="flow-path" d="M 90 260 L 430 90 L 810 260" />
             <path id="bottom-flow" class="flow-path" d="M 90 260 L 430 430 L 810 260" />
@@ -124,23 +147,37 @@
 
             <g class="road-label">
               <text x="120" y="72">Top narrow road</text>
-              <text class="road-value" data-narrow-label x="120" y="99">2,000 pass here · 20 min</text>
+              <text class="road-breakdown" data-narrow-breakdown x="120" y="96">
+                2,000 old + same 0 shortcut
+              </text>
+              <text class="road-value" data-narrow-label x="120" y="120">
+                = 2,000 passing · 20 min
+              </text>
             </g>
             <g class="road-label"><text x="610" y="82">Top fixed road · always 45 min</text></g>
             <g class="road-label"><text x="120" y="476">Bottom fixed road · always 45 min</text></g>
             <g class="road-label road-label--bottom">
-              <text x="790" y="454" text-anchor="end">Bottom narrow road</text>
-              <text class="road-value" data-narrow-label x="790" y="481" text-anchor="end">2,000 pass here · 20 min</text>
+              <text x="790" y="430" text-anchor="end">Bottom narrow road</text>
+              <text class="road-breakdown" data-narrow-breakdown x="790" y="454" text-anchor="end">
+                2,000 old + same 0 shortcut
+              </text>
+              <text class="road-value" data-narrow-label x="790" y="478" text-anchor="end">
+                = 2,000 passing · 20 min
+              </text>
             </g>
             <g class="shortcut-label">
               <text x="450" y="234">Middle connector · 0 min</text>
               <text data-shortcut-count x="450" y="263">0 shortcut drivers</text>
-              <text data-shortcut-overlap x="450" y="290">No one uses both narrow roads yet</text>
+              <text data-shortcut-overlap x="450" y="290">No shortcut driver uses</text>
+              <text x="450" y="315">both narrow roads</text>
             </g>
           </svg>
           <p class="network-note">
-            <strong>4,000 unique drivers = 80 dots throughout.</strong> Each dot belongs to one
-            chosen route. Road labels count who passes there, so do not add those road loads.
+            <strong>All roads are one-way: Home → Work.</strong> The connector goes top → bottom,
+            so the only shortcut path is top narrow → connector → bottom narrow.
+            <span><strong>4,000 unique drivers = 80 dots throughout.</strong> Each dot belongs to
+            one chosen route. Road labels count who passes there, so do not add those overlapping
+            road loads.</span>
           </p>
         </div>
 

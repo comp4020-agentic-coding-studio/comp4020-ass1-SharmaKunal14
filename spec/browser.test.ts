@@ -254,15 +254,20 @@ describe("transparent desktop experiment", () => {
     expect(await text(page, "[data-top-route-ledger]")).toBe("1,700 drivers · 34 dots");
     expect(await text(page, "[data-shortcut-route-ledger]")).toBe("600 drivers · 12 dots");
     expect(await text(page, "[data-bottom-route-ledger]")).toBe("1,700 drivers · 34 dots");
+    expect(await page.locator("[data-narrow-breakdown]").allTextContents()).toEqual([
+      "1,700 old + same 600 shortcut",
+      "1,700 old + same 600 shortcut",
+    ]);
     expect(await page.locator("[data-narrow-label]").allTextContents()).toEqual([
-      "2,300 pass here · 23 min",
-      "2,300 pass here · 23 min",
+      "= 2,300 passing · 23 min",
+      "= 2,300 passing · 23 min",
     ]);
     expect(await text(page, "[data-shortcut-count]")).toBe("600 shortcut drivers");
-    expect(await text(page, "[data-shortcut-overlap]")).toBe(
-      "The same 600 also use both narrow roads",
-    );
-    expect(await text(page, ".network-note")).toContain("do not add those road loads");
+    expect(await text(page, "[data-shortcut-overlap]")).toBe("Same 600 also use");
+    expect(await text(page, ".network-note")).toContain("All roads are one-way: Home → Work");
+    expect(await text(page, ".network-note")).toContain("only shortcut path is top narrow → connector → bottom narrow");
+    expect(await text(page, ".network-note")).toContain("do not add those overlapping road loads");
+    expect(await page.locator("[data-direction-arrow]").count()).toBe(5);
     const labelBounds = await page.locator(".road-label, .shortcut-label").evaluateAll((labels) =>
       labels.map((label) => {
         const box = (label as SVGGraphicsElement).getBBox();
@@ -273,6 +278,12 @@ describe("transparent desktop experiment", () => {
       expect(bounds.left).toBeGreaterThanOrEqual(0);
       expect(bounds.right).toBeLessThanOrEqual(900);
     }
+    const connectorLabelBounds = await page.locator(".shortcut-label").evaluate((label) => {
+      const box = (label as SVGGraphicsElement).getBBox();
+      return { right: box.x + box.width, bottom: box.y + box.height };
+    });
+    expect(connectorLabelBounds.right).toBeLessThan(700);
+    expect(connectorLabelBounds.bottom).toBeLessThan(330);
     await noOverflow(page);
     healthy(observed);
     await page.close();
