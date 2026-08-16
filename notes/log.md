@@ -489,3 +489,16 @@ control obvious. I replaced it with a labelled open/closed switch beside a perma
 80 dots; its new shape makes the single changed variable visible. Browser tests require
 both switch states, the fixed driver badge and the same-map result. No playback or animate
 control was added.
+
+## Mon 17 Aug — the map became the centre of the work
+
+The two-column experiment made the map compete with a long combined controls-and-math
+card. I separated the three jobs on wide screens: the slider investigation is a compact
+left rail, the existing map is the dominant centre surface, and the five equations form
+a right inspection rail. The route and equation buttons still spotlight that one map;
+no state or calculation changed.
+
+Keeping three columns on a phone would only recreate the overload at a smaller scale, so
+the layout collapses to map, controls and arithmetic below the wide-screen breakpoint.
+A browser geometry assertion now checks the left-to-right desktop order, while the full
+phone path continues to guard horizontal overflow.

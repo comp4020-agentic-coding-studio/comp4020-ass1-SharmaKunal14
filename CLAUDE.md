@@ -237,6 +237,11 @@ every 100-driver slider step transfers one from each origin to the shortcut.
 Dragging the slider updates the route ledger, town average, map and five visible
 equations from the pure calculation in `src/braess.ts`.
 
+On wide screens, keep those three jobs spatially distinct: slider investigation on
+the left, the persistent road map as the dominant centre surface, and live arithmetic
+on the right. Below the wide-screen breakpoint they return to one column in the order
+map, controls, arithmetic. Never shrink three columns until labels or equations collide.
+
 The slider is a guided investigation, not a staged sequence. Its milestone rail
 unlocks the exact **64.7-minute minimum at 500 shortcut users**, the **65-minute
 break-even at 1,000**, and the paradox at 4,000. After the endpoint, the same slider

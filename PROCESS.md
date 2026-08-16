@@ -51,9 +51,10 @@ paradox. Moving back to 3,900 then reveals the trap: the town improves to **79.1
 returning drivers face **84.5** while staying takes **79**. Route and equation controls
 spotlight the same map without changing it. The endpoint action names the paradox, and
 an open/closed switch visibly locks the crowd at 4,000 while the original map reverses
-**80 → 65**. Browser tests cover arithmetic, persistent dots, focus, both marking
-viewports and reduced motion
-([`5977880...5630ee6`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-SharmaKunal14/compare/5977880...5630ee6)).
+**80 → 65**. Wide screens separate controls, map and calculations into three readable
+columns; phones return them to one. Browser tests cover arithmetic, persistent dots,
+focus, both marking viewports and reduced motion
+([`5977880...d2790ce`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-SharmaKunal14/compare/5977880...d2790ce)).
 
 Rules are in `CLAUDE.md`, prior commitments in `PLAN.md`, and the unedited working
 record is in `notes/log.md`.
