@@ -73,7 +73,7 @@ describe("transparent direct interactions", () => {
     expect(copy).toContain("The pattern has a name Braess’s paradox");
     expect(copy).toContain("Reveal the paradox");
     expect(copy).toContain("Prove it backwards");
-    expect(copy).toContain("Drivers locked4,000 Shortcut Open");
+    expect(copy).toContain("Drivers locked 4,000 Shortcut Open");
     expect(copy).toContain("Shortcut closed · same experiment 80 → 65 min");
     expect(copy).toContain("One road removed. The same 4,000 drivers are now 15 minutes faster");
     expect(copy).toContain("Return to the explanation");
