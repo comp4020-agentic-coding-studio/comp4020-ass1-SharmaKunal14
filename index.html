@@ -198,65 +198,65 @@
           </section>
         </div>
 
-          <section class="reveal" data-reveal hidden aria-labelledby="reveal-title">
-            <header class="reveal__header">
-              <div>
-                <p class="eyebrow">Braess’s paradox revealed</p>
-                <h3 id="reveal-title">One extra road made the same crowd slower.</h3>
-              </div>
-              <p class="prediction-result" data-prediction-feedback>
-                You can now compare your prediction with what the numbers showed.
-              </p>
-            </header>
+        <p class="sr-only" aria-live="polite" data-live-summary></p>
+      </section>
 
-            <div class="result-score" aria-label="Same-driver controlled comparison">
-              <article>
-                <span>Shortcut closed</span>
-                <strong>65 <small>min</small></strong>
-                <p>4,000 drivers split evenly.</p>
-              </article>
-              <div class="result-score__change" aria-label="15 minutes slower">
-                <span aria-hidden="true">→</span>
-                <strong>+15 min</strong>
-                <small>slower</small>
-              </div>
-              <article>
-                <span>Shortcut open</span>
-                <strong>80 <small>min</small></strong>
-                <p>The same 4,000 use both narrow roads.</p>
-              </article>
-            </div>
+      <section class="reveal" data-reveal hidden tabindex="-1" aria-labelledby="reveal-title">
+        <header class="reveal__header">
+          <div>
+            <p class="eyebrow">Your action revealed Braess’s paradox</p>
+            <h3 id="reveal-title">Same crowd. One extra road. 15 minutes slower.</h3>
+          </div>
+          <p class="prediction-result" data-prediction-feedback>
+            You can now compare your prediction with what the numbers showed.
+          </p>
+        </header>
 
-            <div class="result-reasons">
-              <article>
-                <span>What changed?</span>
-                <strong>Only the shortcut.</strong>
-                <p>The driver count stayed exactly 4,000.</p>
-              </article>
-              <article>
-                <span>Why does nobody switch back?</span>
-                <strong>80 minutes still beats 85 alone.</strong>
-                <p>Each driver’s sensible choice keeps the worse group result in place.</p>
-              </article>
-            </div>
+        <div class="result-score" aria-label="Same-driver controlled comparison">
+          <article>
+            <span>Shortcut closed</span>
+            <strong>65 <small>min</small></strong>
+            <p>4,000 drivers split evenly.</p>
+          </article>
+          <div class="result-score__change" aria-label="15 minutes slower">
+            <span aria-hidden="true">→</span>
+            <strong>+15 min</strong>
+            <small>slower</small>
+          </div>
+          <article>
+            <span>Shortcut open</span>
+            <strong>80 <small>min</small></strong>
+            <p>The same 4,000 use both narrow roads.</p>
+          </article>
+        </div>
 
-            <p class="unstable-best" data-best-explanation></p>
-          </section>
+        <div class="result-reasons">
+          <article>
+            <span>1 · The fair comparison</span>
+            <strong>Only the shortcut changed.</strong>
+            <p>The driver count stayed locked at exactly 4,000.</p>
+          </article>
+          <article>
+            <span>2 · The trap</span>
+            <strong>80 minutes still beats 85 alone.</strong>
+            <p>Each driver’s sensible choice keeps the worse group result in place.</p>
+          </article>
+        </div>
 
-          <section class="road-control" data-road-control hidden aria-labelledby="road-control-title">
-            <div>
-              <p class="eyebrow">Reverse the experiment</p>
-              <h3 id="road-control-title" data-road-control-title>What happens if the shortcut closes?</h3>
-              <p data-road-control-copy>Remove the tempting option and watch all 4,000 drivers redistribute.</p>
-              <p class="closure-result" data-closure-result hidden>
-                <strong class="closure-result__value">80 min with the shortcut → 65 min without it</strong>
-                One road disappeared, but both narrow roads became clearer.
-              </p>
-            </div>
-            <button type="button" data-toggle-road>Close the shortcut</button>
-          </section>
+        <p class="unstable-best" data-best-explanation></p>
 
-          <p class="sr-only" aria-live="polite" data-live-summary></p>
+        <section class="road-control" data-road-control hidden aria-labelledby="road-control-title">
+          <div>
+            <p class="eyebrow">Prove it backwards</p>
+            <h3 id="road-control-title" data-road-control-title>Now remove the shortcut.</h3>
+            <p data-road-control-copy>Keep the same 4,000 drivers and watch the two old routes clear.</p>
+            <p class="closure-result" data-closure-result hidden>
+              <strong class="closure-result__value">80 min with the shortcut → 65 min without it</strong>
+              One road disappeared, but both narrow roads became clearer.
+            </p>
+          </div>
+          <button type="button" data-toggle-road>Close the shortcut</button>
+        </section>
       </section>
     </main>
 

@@ -241,10 +241,10 @@ describe("transparent desktop experiment", () => {
     await page.locator("[data-show-result]").click();
     expect(await page.locator("[data-reveal]").isVisible()).toBe(true);
     expect(await text(page, "[data-reveal]")).toContain("Braess’s paradox");
-    expect(await text(page, "[data-reveal]")).toContain("One extra road made the same crowd slower");
+    expect(await text(page, "[data-reveal]")).toContain("Same crowd. One extra road. 15 minutes slower");
     expect(await text(page, "[data-reveal]")).toContain("Shortcut closed 65 min 4,000 drivers split evenly");
     expect(await text(page, "[data-reveal]")).toContain("Shortcut open 80 min The same 4,000 use both narrow roads");
-    expect(await text(page, "[data-reveal]")).toContain("Only the shortcut");
+    expect(await text(page, "[data-reveal]")).toContain("Only the shortcut changed");
     expect(await text(page, "[data-best-explanation]")).toContain(
       "best balance was 500 shortcut users at 64.7 minutes",
     );
@@ -255,6 +255,26 @@ describe("transparent desktop experiment", () => {
     expect(await page.locator('.driver-dot[data-route="shortcut"]').count()).toBe(80);
     expect(await text(page, "[data-prediction-feedback]")).toContain("You predicted the shortcut would make trips faster");
     expect(await page.locator("[data-toggle-road]").isVisible()).toBe(true);
+    expect(await page.locator("[data-reveal]").evaluate((element) => element === document.activeElement)).toBe(true);
+    expect(await page.locator("[data-reveal] > [data-road-control]").count()).toBe(1);
+    const revealLayout = await page.evaluate(() => {
+      const experiment = document.querySelector<HTMLElement>(".experiment");
+      const map = document.querySelector<HTMLElement>(".network-wrap");
+      const reveal = document.querySelector<HTMLElement>("[data-reveal]");
+      if (experiment === null || map === null || reveal === null) throw new Error("missing result layout");
+      const experimentBox = experiment.getBoundingClientRect();
+      const mapBox = map.getBoundingClientRect();
+      const revealBox = reveal.getBoundingClientRect();
+      return {
+        experimentBottom: experimentBox.bottom,
+        mapBottom: mapBox.bottom,
+        revealTop: revealBox.top,
+        revealPosition: getComputedStyle(reveal).position,
+      };
+    });
+    expect(revealLayout.revealTop).toBeGreaterThanOrEqual(revealLayout.experimentBottom - 1);
+    expect(revealLayout.revealTop).toBeGreaterThanOrEqual(revealLayout.mapBottom - 1);
+    expect(revealLayout.revealPosition).toBe("static");
     await noOverflow(page);
     healthy(observed);
     await page.close();
@@ -278,6 +298,7 @@ describe("transparent desktop experiment", () => {
     expect(await page.locator('.driver-dot[data-route="top"]').count()).toBe(40);
     expect(await page.locator('.driver-dot[data-route="bottom"]').count()).toBe(40);
     expect(await page.locator('.driver-dot[data-route="shortcut"]').count()).toBe(0);
+    expect(await page.locator("[data-reveal]").isVisible()).toBe(true);
     await page.waitForFunction(() => Number.parseFloat(getComputedStyle(document.querySelector(".road--narrow")!).strokeWidth) < 9.01);
     const clearedRoadWidth = Number.parseFloat(await page.locator(".road--narrow").first().evaluate((element) => getComputedStyle(element).strokeWidth));
     expect(clearedRoadWidth).toBeCloseTo(initialRoadWidth, 1);

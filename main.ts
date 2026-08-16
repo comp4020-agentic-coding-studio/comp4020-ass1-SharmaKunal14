@@ -233,17 +233,18 @@ function render(result: BraessResult): void {
     `${drivers(TOTAL_DRIVERS)} = ${minutes(averageMinutes)} min`;
 
   const reachedEndpoint = shortcutUsers === TOTAL_DRIVERS && !roadClosed;
+  const showResultChapter = resultRevealed && (reachedEndpoint || roadClosed);
   endpointPrompt.hidden = !reachedEndpoint || resultRevealed;
-  reveal.hidden = !reachedEndpoint || !resultRevealed;
-  roadControl.hidden = (!reachedEndpoint || !resultRevealed) && !roadClosed;
+  reveal.hidden = !showResultChapter;
+  roadControl.hidden = !showResultChapter;
   closureResult.hidden = !roadClosed;
   toggleRoad.textContent = roadClosed ? "Reopen the shortcut" : "Close the shortcut";
   roadControlTitle.textContent = roadClosed
     ? "Removing a road made every trip faster."
-    : "What happens if the shortcut closes?";
+    : "Now remove the shortcut.";
   roadControlCopy.textContent = roadClosed
     ? "Without the tempting middle route, drivers split evenly and stop crowding both narrow roads."
-    : "Remove the tempting option and watch all 4,000 drivers redistribute.";
+    : "Keep the same 4,000 drivers and watch the two old routes clear.";
   liveSummary.textContent = roadClosed
     ? "The shortcut is closed. Drivers split evenly. Every trip and the town average are 65 minutes."
     : `${drivers(shortcutUsers)} drivers use the shortcut. ` +
@@ -263,6 +264,7 @@ input.addEventListener("input", () => {
 showResult.addEventListener("click", () => {
   resultRevealed = true;
   render(calculateBraess(Number(input.value)));
+  reveal.focus({ preventScroll: true });
   reveal.scrollIntoView({
     behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
     block: "start",

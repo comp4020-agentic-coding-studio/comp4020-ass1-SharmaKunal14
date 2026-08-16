@@ -56,11 +56,14 @@ describe("transparent direct interactions", () => {
     expect(copy).toContain("find the lowest town average");
     expect(copy).toContain("Before the shortcut 65 min");
     expect(copy).toContain("Where the current times come from");
-    expect(copy).toContain("Only the shortcut");
-    expect(copy).toContain("Braess’s paradox revealed");
+    expect(copy).toContain("Only the shortcut changed");
+    expect(copy).toContain("Your action revealed Braess’s paradox");
     expect(copy).toContain("Compare the two networks");
-    expect(copy).toContain("Reverse the experiment");
+    expect(copy).toContain("Prove it backwards");
     expect(copy).toContain("Close the shortcut");
+    expect(doc.querySelector(".experiment > [data-reveal]")).toBeNull();
+    expect(doc.querySelector("main > [data-reveal]")).not.toBeNull();
+    expect(doc.querySelector("[data-reveal] > [data-road-control]")).not.toBeNull();
   });
 
   it("contains the complete initial arithmetic and withholds the reveal", () => {
@@ -108,6 +111,7 @@ describe("accessible and responsive presentation", () => {
     expect(doc.querySelector("svg title")?.textContent).toContain("four-road network");
     expect(doc.querySelector("svg desc")?.textContent).toContain("narrow road");
     expect(doc.querySelector("[data-reveal]")?.getAttribute("aria-labelledby")).toBe("reveal-title");
+    expect(doc.querySelector("[data-reveal]")?.getAttribute("tabindex")).toBe("-1");
   });
 
   it("has one h1, ordered headings and a reliable skip target", () => {
