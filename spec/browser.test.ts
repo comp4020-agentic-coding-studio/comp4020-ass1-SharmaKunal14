@@ -104,6 +104,33 @@ async function noOverflow(page: Page): Promise<void> {
   expect(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1)).toBe(false);
 }
 
+async function endpointStacksCleanly(page: Page): Promise<void> {
+  const geometry = await page.locator("[data-endpoint-prompt]").evaluate((prompt) => {
+    const heading = prompt.querySelector<HTMLElement>("h4");
+    const body = prompt.querySelector<HTMLElement>("p:not(.step-label)");
+    const button = prompt.querySelector<HTMLElement>("button");
+    if (heading === null || body === null || button === null) throw new Error("incomplete endpoint prompt");
+    const promptBox = prompt.getBoundingClientRect();
+    const headingBox = heading.getBoundingClientRect();
+    const bodyBox = body.getBoundingClientRect();
+    const buttonBox = button.getBoundingClientRect();
+    return {
+      promptLeft: promptBox.left,
+      promptRight: promptBox.right,
+      promptWidth: promptBox.width,
+      headingWidth: headingBox.width,
+      bodyBottom: bodyBox.bottom,
+      buttonTop: buttonBox.top,
+      buttonLeft: buttonBox.left,
+      buttonRight: buttonBox.right,
+    };
+  });
+  expect(geometry.headingWidth).toBeGreaterThan(geometry.promptWidth * 0.7);
+  expect(geometry.buttonTop).toBeGreaterThan(geometry.bodyBottom);
+  expect(geometry.buttonLeft).toBeGreaterThan(geometry.promptLeft);
+  expect(geometry.buttonRight).toBeLessThan(geometry.promptRight);
+}
+
 describe("transparent desktop experiment", () => {
   it("places controls, map and calculations in three readable columns", async () => {
     const observed = await open(DESKTOP);
@@ -343,6 +370,7 @@ describe("transparent desktop experiment", () => {
     expect(await page.locator("[data-reveal]").isHidden()).toBe(true);
     expect(await page.locator("[data-toggle-road]").isHidden()).toBe(true);
     expect(Number.parseFloat(await page.locator("[data-endpoint-prompt]").evaluate((element) => getComputedStyle(element).animationDuration))).toBeGreaterThan(0.3);
+    await endpointStacksCleanly(page);
     const promptPlacement = await page.locator("[data-endpoint-prompt]").evaluate((prompt) => {
       const slider = prompt.closest(".slider-block");
       if (slider === null) throw new Error("completion prompt is not attached to the slider");
@@ -461,6 +489,7 @@ describe("phone and keyboard", () => {
     await setUsers(page, 4_000);
     await noOverflow(page);
     expect(await page.locator("[data-reveal]").isHidden()).toBe(true);
+    await endpointStacksCleanly(page);
     await page.locator("[data-show-result]").click();
     await noOverflow(page);
     expect(await page.locator("[data-reveal]").isVisible()).toBe(true);

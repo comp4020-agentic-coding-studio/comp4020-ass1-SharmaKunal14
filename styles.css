@@ -905,9 +905,9 @@ h3 {
   background: var(--paper);
   color: var(--ink);
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-3);
-  align-items: center;
+  align-items: start;
   box-shadow: 0.45rem 0.45rem 0 rgb(243 174 43 / 24%);
   animation: endpoint-arrival 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
@@ -927,6 +927,7 @@ h3 {
 }
 
 .endpoint-prompt button {
+  width: 100%;
   min-height: 3rem;
   padding: 0.8rem 1.1rem;
   border: 0;
@@ -1551,10 +1552,6 @@ footer {
     text-align: right;
   }
 
-  .endpoint-prompt {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
   .rescue-result,
   .rescue-invitation {
     grid-template-columns: minmax(0, 1fr);
@@ -1567,10 +1564,6 @@ footer {
   }
 
   .rescue-invitation button {
-    width: 100%;
-  }
-
-  .endpoint-prompt button {
     width: 100%;
   }
 
