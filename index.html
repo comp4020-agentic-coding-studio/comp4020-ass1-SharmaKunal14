@@ -81,13 +81,13 @@
             <p class="baseline"><span>Before the shortcut</span><strong>65 min average</strong></p>
           </div>
 
-          <aside class="map-proof" data-map-proof hidden tabindex="-1" aria-live="polite">
+          <aside class="map-proof" data-map-proof data-next-action="false" hidden tabindex="-1" aria-live="polite">
             <div class="map-proof__metric">
               <span class="map-proof__label">Shortcut closed · same experiment</span>
               <strong class="map-proof__result">80 → 65 min</strong>
             </div>
             <p>One road removed. The same 4,000 drivers are now 15 minutes faster.</p>
-            <a href="#reveal">Return to the explanation <span aria-hidden="true">↓</span></a>
+            <a href="#reveal" data-return-explanation>Return to the explanation <span aria-hidden="true">↓</span></a>
           </aside>
 
           <svg
@@ -202,20 +202,23 @@
             </ol>
 
             <div class="slider-block">
-              <div class="slider-heading">
-                <label for="shortcut-users">Drivers using the shortcut</label>
-                <output for="shortcut-users" data-shortcut-output>0 of 4,000</output>
+              <div class="slider-action" data-slider-action data-next-action="false">
+                <p class="action-cue" data-slider-cue hidden>Next action · move this slider one step left</p>
+                <div class="slider-heading">
+                  <label for="shortcut-users">Drivers using the shortcut</label>
+                  <output for="shortcut-users" data-shortcut-output>0 of 4,000</output>
+                </div>
+                <input
+                  id="shortcut-users"
+                  type="range"
+                  min="0"
+                  max="4000"
+                  step="100"
+                  value="0"
+                  aria-describedby="slider-help"
+                />
+                <div class="range-labels" aria-hidden="true"><span>none</span><span>half</span><span>all</span></div>
               </div>
-              <input
-                id="shortcut-users"
-                type="range"
-                min="0"
-                max="4000"
-                step="100"
-                value="0"
-                aria-describedby="slider-help"
-              />
-              <div class="range-labels" aria-hidden="true"><span>none</span><span>half</span><span>all</span></div>
               <output class="discovery" data-discovery>Start moving drivers onto the shortcut.</output>
               <p id="slider-help" class="decision" data-decision>
                 The shortcut takes 40 minutes, so the first driver wants to switch.
@@ -235,13 +238,13 @@
               <section class="rescue-prompt" data-rescue-prompt hidden aria-labelledby="rescue-prompt-title">
                 <p class="step-label">Step 4 · Attempt a rescue</p>
                 <h4 id="rescue-prompt-title">Move exactly 100 drivers back.</h4>
-                <p data-rescue-instruction>Move the slider one step left: 4,000 → 3,900.</p>
+                <p id="rescue-instruction" data-rescue-instruction>Move the slider one step left: 4,000 → 3,900.</p>
                 <div class="rescue-result" data-rescue-result hidden>
                   <div><span>Town average</span><strong data-rescue-average>79.1 min</strong><small>0.9 min better</small></div>
                   <div><span>Drivers who leave</span><strong data-rescue-old>84.5 min</strong><small data-rescue-loss>5.5 min worse for them</small></div>
                   <p>Moving back helps the town, but it hurts the drivers who move. They would choose the shortcut again.</p>
                 </div>
-                <button type="button" data-finish-rescue hidden>Return to the paradox result</button>
+                <button type="button" data-finish-rescue data-next-action="false" hidden>Return to the paradox result</button>
               </section>
             </div>
           </section>
@@ -354,7 +357,7 @@
           </article>
         </div>
 
-        <section class="rescue-invitation" aria-labelledby="rescue-title">
+        <section class="rescue-invitation" data-rescue-invitation data-next-action="false" aria-labelledby="rescue-title">
           <div>
             <p class="eyebrow">Test the trap yourself</p>
             <h3 id="rescue-title">Can 100 drivers rescue the town?</h3>
@@ -371,7 +374,7 @@
             <h3 id="road-control-title" data-road-control-title>Now remove the shortcut.</h3>
             <p data-road-control-copy>Keep the same 4,000 drivers and watch the two old routes clear.</p>
           </div>
-          <div class="network-switch">
+          <div class="network-switch" data-network-switch data-next-action="false">
             <p class="driver-lock"><span>Drivers locked</span> <strong>4,000</strong></p>
             <button
               class="network-toggle"

@@ -60,6 +60,11 @@ const rescueOld = need<HTMLElement>("[data-rescue-old]");
 const rescueLoss = need<HTMLElement>("[data-rescue-loss]");
 const startRescue = need<HTMLButtonElement>("[data-start-rescue]");
 const finishRescue = need<HTMLButtonElement>("[data-finish-rescue]");
+const rescueInvitation = need<HTMLElement>("[data-rescue-invitation]");
+const sliderAction = need<HTMLElement>("[data-slider-action]");
+const sliderCue = need<HTMLElement>("[data-slider-cue]");
+const networkSwitch = need<HTMLElement>("[data-network-switch]");
+const returnExplanation = need<HTMLAnchorElement>("[data-return-explanation]");
 const driverLayer = need<SVGGElement>("[data-driver-layer]");
 const topFlow = need<SVGPathElement>("#top-flow");
 const bottomFlow = need<SVGPathElement>("#bottom-flow");
@@ -224,11 +229,25 @@ function renderMilestones(result: BraessResult): void {
 function renderRescue(result: BraessResult): void {
   document.body.dataset.rescue = String(rescueMode);
   rescuePrompt.hidden = !rescueMode;
-  if (!rescueMode) return;
+  if (!rescueMode) {
+    sliderAction.dataset.nextAction = "false";
+    sliderCue.hidden = true;
+    finishRescue.dataset.nextAction = "false";
+    input.setAttribute("aria-describedby", "slider-help");
+    return;
+  }
 
   const targetReached = result.shortcutUsers === RESCUE_SHORTCUT_USERS;
+  const sliderIsNext = !targetReached;
   rescueResult.hidden = !targetReached;
   finishRescue.hidden = !targetReached;
+  sliderAction.dataset.nextAction = String(sliderIsNext);
+  sliderCue.hidden = !sliderIsNext;
+  finishRescue.dataset.nextAction = String(targetReached);
+  input.setAttribute(
+    "aria-describedby",
+    sliderIsNext ? "slider-help rescue-instruction" : "slider-help",
+  );
   rescueInstruction.textContent = targetReached
     ? "You moved one 100-driver group back. Now compare the two consequences."
     : `Set the slider to ${drivers(RESCUE_SHORTCUT_USERS)}: exactly one step left from ${drivers(TOTAL_DRIVERS)}.`;
@@ -376,6 +395,10 @@ function render(result: BraessResult): void {
   reveal.hidden = !showResultChapter;
   roadControl.hidden = !showResultChapter;
   mapProof.hidden = !roadClosed;
+  const offerResultActions = showResultChapter && !roadClosed && !rescueMode;
+  rescueInvitation.dataset.nextAction = String(offerResultActions);
+  networkSwitch.dataset.nextAction = String(offerResultActions);
+  mapProof.dataset.nextAction = String(showResultChapter && roadClosed);
   toggleRoad.setAttribute("aria-checked", String(!roadClosed));
   toggleRoad.setAttribute(
     "aria-label",
@@ -466,6 +489,11 @@ toggleRoad.addEventListener("click", () => {
     behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
     block: "start",
   });
+});
+
+returnExplanation.addEventListener("click", () => {
+  mapProof.dataset.nextAction = "false";
+  reveal.focus({ preventScroll: true });
 });
 
 render(calculateBraess(Number(input.value)));

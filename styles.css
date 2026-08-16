@@ -706,6 +706,19 @@ body[data-road-closed="true"] .shortcut-label {
   color: var(--paper);
 }
 
+.slider-action {
+  position: relative;
+}
+
+.action-cue {
+  margin: 0 0 var(--space-2);
+  color: var(--gold);
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
 .slider-heading {
   display: flex;
   justify-content: space-between;
@@ -1486,6 +1499,35 @@ h3 {
   font-family: "DM Mono", monospace;
   font-size: 0.7rem;
   text-align: right;
+}
+
+.slider-action[data-next-action="true"],
+.network-switch[data-next-action="true"],
+.map-proof[data-next-action="true"] a,
+.rescue-invitation[data-next-action="true"] button,
+.rescue-prompt button[data-next-action="true"] {
+  outline: 3px solid var(--gold);
+  outline-offset: 5px;
+  box-shadow:
+    0 0 0 8px rgb(243 174 43 / 14%),
+    0 0 1.25rem rgb(243 174 43 / 34%);
+  animation: action-beacon 1.7s ease-in-out infinite;
+}
+
+.slider-action[data-next-action="true"] {
+  outline-offset: 9px;
+}
+
+.map-proof[data-next-action="true"] a {
+  text-decoration: none;
+}
+
+@keyframes action-beacon {
+  50% {
+    box-shadow:
+      0 0 0 11px rgb(243 174 43 / 8%),
+      0 0 1.7rem rgb(243 174 43 / 44%);
+  }
 }
 
 /* stylelint-enable no-descending-specificity */
