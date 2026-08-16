@@ -232,8 +232,10 @@ locally and 404s on the deployed URL.
 **One More Road** — an interactive explainer of Braess's paradox. The visitor
 uses one transparent classroom network, one range slider, a prediction, one
 deliberate comparison action and one causal close/reopen action. Eighty dots
-represent 4,000 drivers. Dragging the slider updates the town average, map and
-five visible equations from the pure calculation in `src/braess.ts`.
+represent 4,000 drivers. Forty dots permanently originate on each old route;
+every 100-driver slider step transfers one from each origin to the shortcut.
+Dragging the slider updates the route ledger, town average, map and five visible
+equations from the pure calculation in `src/braess.ts`.
 
 **One controlled comparison.** Reaching the endpoint must not move the viewport
 or open the result automatically. It offers one compact comparison action; only
@@ -322,8 +324,11 @@ make an equation look simpler.
 - All displayed numbers must come from `calculateBraess`; browser tests check the
   start, midpoint and endpoint equations rather than only checking that values
   changed.
-- The eighty decorative driver dots stay `aria-hidden`. The meaningful counts and
-  times remain text and are announced through the polite live region.
+- The eighty decorative driver dots stay `aria-hidden` and are never created or
+  removed during interaction. Their permanent `data-origin` and changing
+  `data-route` make every two-dot transfer testable. The equivalent driver and dot
+  counts remain visible in the route ledger; the summary is announced through the
+  polite live region.
 - Reduced motion shortens transitions without changing values or interaction.
 - Built assets remain relative for the GitHub Pages subpath, and the page loads
   no third-party runtime resources.

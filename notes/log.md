@@ -387,3 +387,16 @@ experiment feel managed rather than directly explored. The user rejected it. I r
 the control, timer, playback state, responsive styling and dedicated browser path rather
 than merely hiding the button. The range input is again the only mechanism that changes
 driver allocation; the deliberate comparison and close-road actions remain distinct.
+
+## Mon 17 Aug — the dots needed bookkeeping, not another explanation
+
+The total dot count was already constant, but array slicing changed dot identities in a
+way that could look arbitrary: a dot could appear to move from the top road to the bottom
+while other dots joined the shortcut. I gave every dot a permanent top or bottom origin.
+Each 100-driver slider step now moves one 50-driver dot from each origin onto the shortcut,
+so exactly two existing dots move and the total stays 80.
+
+A compact route ledger beside the slider exposes the same invariant in text: drivers and
+dots on the top route, shortcut and bottom route always sum to 4,000 and 80. The browser
+test checks the first 100-driver move directly, including permanent origins, current routes
+and the unchanged DOM dot count.
