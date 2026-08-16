@@ -462,7 +462,7 @@ toggleRoad.addEventListener("click", () => {
   render(calculateBraess(Number(input.value)));
   const destination = roadClosed ? mapProof : networkWrap;
   destination.focus({ preventScroll: true });
-  networkWrap.scrollIntoView({
+  destination.scrollIntoView({
     behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
     block: "start",
   });
