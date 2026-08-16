@@ -1502,10 +1502,8 @@ h3 {
 }
 
 .slider-action[data-next-action="true"],
-.network-switch[data-next-action="true"],
-.map-proof[data-next-action="true"] a,
-.rescue-invitation[data-next-action="true"] button,
-.rescue-prompt button[data-next-action="true"] {
+.map-proof[data-result-highlight="true"],
+.rescue-result[data-result-highlight="true"] {
   outline: 3px solid var(--gold);
   outline-offset: 5px;
   box-shadow:
@@ -1516,10 +1514,6 @@ h3 {
 
 .slider-action[data-next-action="true"] {
   outline-offset: 9px;
-}
-
-.map-proof[data-next-action="true"] a {
-  text-decoration: none;
 }
 
 @keyframes action-beacon {

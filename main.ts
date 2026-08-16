@@ -60,10 +60,8 @@ const rescueOld = need<HTMLElement>("[data-rescue-old]");
 const rescueLoss = need<HTMLElement>("[data-rescue-loss]");
 const startRescue = need<HTMLButtonElement>("[data-start-rescue]");
 const finishRescue = need<HTMLButtonElement>("[data-finish-rescue]");
-const rescueInvitation = need<HTMLElement>("[data-rescue-invitation]");
 const sliderAction = need<HTMLElement>("[data-slider-action]");
 const sliderCue = need<HTMLElement>("[data-slider-cue]");
-const networkSwitch = need<HTMLElement>("[data-network-switch]");
 const returnExplanation = need<HTMLAnchorElement>("[data-return-explanation]");
 const driverLayer = need<SVGGElement>("[data-driver-layer]");
 const topFlow = need<SVGPathElement>("#top-flow");
@@ -232,7 +230,7 @@ function renderRescue(result: BraessResult): void {
   if (!rescueMode) {
     sliderAction.dataset.nextAction = "false";
     sliderCue.hidden = true;
-    finishRescue.dataset.nextAction = "false";
+    rescueResult.dataset.resultHighlight = "false";
     input.setAttribute("aria-describedby", "slider-help");
     return;
   }
@@ -243,7 +241,7 @@ function renderRescue(result: BraessResult): void {
   finishRescue.hidden = !targetReached;
   sliderAction.dataset.nextAction = String(sliderIsNext);
   sliderCue.hidden = !sliderIsNext;
-  finishRescue.dataset.nextAction = String(targetReached);
+  rescueResult.dataset.resultHighlight = String(targetReached);
   input.setAttribute(
     "aria-describedby",
     sliderIsNext ? "slider-help rescue-instruction" : "slider-help",
@@ -395,10 +393,7 @@ function render(result: BraessResult): void {
   reveal.hidden = !showResultChapter;
   roadControl.hidden = !showResultChapter;
   mapProof.hidden = !roadClosed;
-  const offerResultActions = showResultChapter && !roadClosed && !rescueMode;
-  rescueInvitation.dataset.nextAction = String(offerResultActions);
-  networkSwitch.dataset.nextAction = String(offerResultActions);
-  mapProof.dataset.nextAction = String(showResultChapter && roadClosed);
+  mapProof.dataset.resultHighlight = String(showResultChapter && roadClosed);
   toggleRoad.setAttribute("aria-checked", String(!roadClosed));
   toggleRoad.setAttribute(
     "aria-label",
@@ -492,7 +487,7 @@ toggleRoad.addEventListener("click", () => {
 });
 
 returnExplanation.addEventListener("click", () => {
-  mapProof.dataset.nextAction = "false";
+  mapProof.dataset.resultHighlight = "false";
   reveal.focus({ preventScroll: true });
 });
 

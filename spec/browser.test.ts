@@ -430,7 +430,8 @@ describe("transparent desktop experiment", () => {
 
     await setUsers(page, 3_900);
     expect(await page.locator("[data-slider-action]").getAttribute("data-next-action")).toBe("false");
-    expect(await page.locator("[data-finish-rescue]").getAttribute("data-next-action")).toBe("true");
+    expect(await page.locator("[data-rescue-result]").getAttribute("data-result-highlight")).toBe("true");
+    expect(Number.parseFloat(await page.locator("[data-rescue-result]").evaluate((element) => getComputedStyle(element).outlineWidth))).toBe(3);
     expect(await text(page, "[data-average-time]")).toBe("79.1");
     expect(await page.locator("[data-rescue-result]").isVisible()).toBe(true);
     expect(await text(page, "[data-rescue-average]")).toBe("79.1 min");
@@ -494,10 +495,8 @@ describe("transparent desktop experiment", () => {
       "Every driver followed the route that looked quicker. Together, they made both narrow roads busier.",
     );
     expect(await page.locator("[data-toggle-road]").isVisible()).toBe(true);
-    expect(await page.locator("[data-rescue-invitation]").getAttribute("data-next-action")).toBe("true");
-    expect(await page.locator("[data-network-switch]").getAttribute("data-next-action")).toBe("true");
-    expect(Number.parseFloat(await page.locator("[data-start-rescue]").evaluate((element) => getComputedStyle(element).outlineWidth))).toBe(3);
-    expect(Number.parseFloat(await page.locator("[data-network-switch]").evaluate((element) => getComputedStyle(element).outlineWidth))).toBe(3);
+    expect(await page.locator("[data-start-rescue]").evaluate((element) => getComputedStyle(element).outlineStyle)).toBe("none");
+    expect(await page.locator(".network-switch").evaluate((element) => getComputedStyle(element).outlineStyle)).toBe("none");
     expect(await page.locator("[data-toggle-road]").getAttribute("role")).toBe("switch");
     expect(await page.locator("[data-toggle-road]").getAttribute("aria-checked")).toBe("true");
     expect(await text(page, ".driver-lock")).toBe("Drivers locked 4,000");
@@ -547,9 +546,9 @@ describe("transparent desktop experiment", () => {
     expect(await page.locator("#shortcut-users").inputValue()).toBe("0");
     expect(await text(page, "[data-average-time]")).toBe("65");
     expect(await page.locator("[data-map-proof]").isVisible()).toBe(true);
-    expect(await page.locator("[data-map-proof]").getAttribute("data-next-action")).toBe("true");
-    expect(await page.locator("[data-network-switch]").getAttribute("data-next-action")).toBe("false");
-    expect(Number.parseFloat(await page.locator("[data-return-explanation]").evaluate((element) => getComputedStyle(element).outlineWidth))).toBe(3);
+    expect(await page.locator("[data-map-proof]").getAttribute("data-result-highlight")).toBe("true");
+    expect(Number.parseFloat(await page.locator("[data-map-proof]").evaluate((element) => getComputedStyle(element).outlineWidth))).toBe(3);
+    expect(await page.locator("[data-return-explanation]").evaluate((element) => getComputedStyle(element).outlineStyle)).toBe("none");
     expect(await text(page, "[data-map-proof]")).toContain("80 → 65 min");
     expect(await text(page, "[data-map-proof]")).toContain(
       "One road removed. The same 4,000 drivers are now 15 minutes faster.",

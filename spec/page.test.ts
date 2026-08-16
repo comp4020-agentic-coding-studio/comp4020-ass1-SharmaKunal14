@@ -102,9 +102,10 @@ describe("transparent direct interactions", () => {
     expect(doc.querySelector("[data-toggle-road]")?.getAttribute("role")).toBe("switch");
     expect(doc.querySelector("[data-toggle-road]")?.getAttribute("aria-checked")).toBe("true");
     expect(doc.querySelector("[data-slider-action]")?.getAttribute("data-next-action")).toBe("false");
-    expect(doc.querySelector("[data-rescue-invitation]")?.getAttribute("data-next-action")).toBe("false");
-    expect(doc.querySelector("[data-network-switch]")?.getAttribute("data-next-action")).toBe("false");
-    expect(doc.querySelector("[data-map-proof]")?.getAttribute("data-next-action")).toBe("false");
+    expect(doc.querySelector("[data-rescue-invitation]")).toBeNull();
+    expect(doc.querySelector("[data-network-switch]")).toBeNull();
+    expect(doc.querySelector("[data-map-proof]")?.getAttribute("data-result-highlight")).toBe("false");
+    expect(doc.querySelector("[data-rescue-result]")?.getAttribute("data-result-highlight")).toBe("false");
     expect(doc.querySelector("[data-return-explanation]")).not.toBeNull();
     expect(doc.querySelector("[data-closure-result]")).toBeNull();
     expect(doc.querySelector("[data-play], [data-animate]")).toBeNull();
