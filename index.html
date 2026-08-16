@@ -291,7 +291,21 @@
             <h3 id="road-control-title" data-road-control-title>Now remove the shortcut.</h3>
             <p data-road-control-copy>Keep the same 4,000 drivers and watch the two old routes clear.</p>
           </div>
-          <button type="button" data-toggle-road>Close the shortcut and watch the map</button>
+          <div class="network-switch">
+            <p class="driver-lock"><span>Drivers locked</span> <strong>4,000</strong></p>
+            <button
+              class="network-toggle"
+              type="button"
+              role="switch"
+              aria-checked="true"
+              aria-label="Shortcut is open. Select to close it and watch the map."
+              data-toggle-road
+            >
+              <span>Shortcut</span>
+              <span class="network-toggle__track" aria-hidden="true"><i></i></span>
+              <strong data-network-state>Open</strong>
+            </button>
+          </div>
         </section>
       </section>
     </main>

@@ -73,7 +73,7 @@ describe("transparent direct interactions", () => {
     expect(copy).toContain("The pattern has a name Braess’s paradox");
     expect(copy).toContain("Reveal the paradox");
     expect(copy).toContain("Prove it backwards");
-    expect(copy).toContain("Close the shortcut and watch the map");
+    expect(copy).toContain("Drivers locked4,000 Shortcut Open");
     expect(copy).toContain("Shortcut closed · same experiment 80 → 65 min");
     expect(copy).toContain("One road removed. The same 4,000 drivers are now 15 minutes faster");
     expect(copy).toContain("Return to the explanation");
@@ -81,6 +81,8 @@ describe("transparent direct interactions", () => {
     expect(doc.querySelector("main > [data-reveal]")).not.toBeNull();
     expect(doc.querySelector("[data-reveal] > [data-road-control]")).not.toBeNull();
     expect(doc.querySelector("[data-map-proof]")?.closest("[data-network-wrap]")).not.toBeNull();
+    expect(doc.querySelector("[data-toggle-road]")?.getAttribute("role")).toBe("switch");
+    expect(doc.querySelector("[data-toggle-road]")?.getAttribute("aria-checked")).toBe("true");
     expect(doc.querySelector("[data-closure-result]")).toBeNull();
     expect(doc.querySelector("[data-play], [data-animate]")).toBeNull();
     expect(doc.querySelector(".slider-block > [data-endpoint-prompt]")).not.toBeNull();

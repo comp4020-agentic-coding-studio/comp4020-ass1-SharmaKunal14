@@ -1261,6 +1261,84 @@ h3 {
   background: var(--teal);
 }
 
+.network-switch {
+  min-width: 18rem;
+  border: 1px solid var(--rule);
+  background: var(--paper);
+}
+
+.driver-lock {
+  margin: 0;
+  padding: 0.65rem 0.85rem;
+  border-bottom: 1px solid var(--rule);
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: baseline;
+}
+
+.driver-lock span {
+  color: var(--ink-soft);
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.driver-lock strong {
+  color: var(--teal);
+  font-family: "DM Mono", monospace;
+  font-size: 0.8rem;
+}
+
+.road-control .network-toggle {
+  width: 100%;
+  min-height: 3.6rem;
+  padding: 0.75rem 0.85rem;
+  background: var(--ink);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 0.7rem;
+  align-items: center;
+  text-align: left;
+}
+
+.network-toggle__track {
+  width: 2.7rem;
+  height: 1.35rem;
+  padding: 0.15rem;
+  border-radius: 1rem;
+  background: var(--teal);
+  display: block;
+  transition: background 220ms ease;
+}
+
+.network-toggle__track i {
+  display: block;
+  width: 1.05rem;
+  height: 1.05rem;
+  border-radius: 50%;
+  background: var(--paper);
+  transform: translateX(1.35rem);
+  transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.network-toggle[aria-checked="false"] .network-toggle__track {
+  background: #66726e;
+}
+
+.network-toggle[aria-checked="false"] .network-toggle__track i {
+  transform: translateX(0);
+}
+
+.network-toggle strong {
+  min-width: 3.2rem;
+  color: var(--gold);
+  font-family: "DM Mono", monospace;
+  font-size: 0.7rem;
+  text-align: right;
+}
+
 /* stylelint-enable no-descending-specificity */
 
 @keyframes reveal {
@@ -1453,6 +1531,10 @@ footer {
 
   .road-control button {
     width: 100%;
+  }
+
+  .network-switch {
+    min-width: 0;
   }
 
   .live-math button {

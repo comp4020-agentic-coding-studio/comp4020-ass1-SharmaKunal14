@@ -44,6 +44,7 @@ const roadControl = need<HTMLElement>("[data-road-control]");
 const roadControlTitle = need<HTMLElement>("[data-road-control-title]");
 const roadControlCopy = need<HTMLElement>("[data-road-control-copy]");
 const toggleRoad = need<HTMLButtonElement>("[data-toggle-road]");
+const networkState = need<HTMLElement>("[data-network-state]");
 const networkWrap = need<HTMLElement>("[data-network-wrap]");
 const mapProof = need<HTMLElement>("[data-map-proof]");
 const network = need<SVGSVGElement>("[data-network]");
@@ -366,9 +367,14 @@ function render(result: BraessResult): void {
   reveal.hidden = !showResultChapter;
   roadControl.hidden = !showResultChapter;
   mapProof.hidden = !roadClosed;
-  toggleRoad.textContent = roadClosed
-    ? "Reopen the shortcut and watch the map"
-    : "Close the shortcut and watch the map";
+  toggleRoad.setAttribute("aria-checked", String(!roadClosed));
+  toggleRoad.setAttribute(
+    "aria-label",
+    roadClosed
+      ? "Shortcut is closed. Select to reopen it and watch the map."
+      : "Shortcut is open. Select to close it and watch the map.",
+  );
+  networkState.textContent = roadClosed ? "Closed" : "Open";
   roadControlTitle.textContent = roadClosed
     ? "You proved it backwards."
     : "Now remove the shortcut.";

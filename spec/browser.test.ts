@@ -191,6 +191,7 @@ describe("transparent desktop experiment", () => {
     expect(await text(page, "[data-spotlight-copy]")).toBe(
       "These shortcut drivers use both narrow roads and the 0-minute connector.",
     );
+    await page.waitForTimeout(220);
     const shortcutOpacity = Number.parseFloat(
       await page.locator('.driver-dot[data-route="shortcut"]').first().evaluate((element) => getComputedStyle(element).opacity),
     );
@@ -338,6 +339,9 @@ describe("transparent desktop experiment", () => {
       "Every driver followed the route that looked quicker. Together, they made both narrow roads busier.",
     );
     expect(await page.locator("[data-toggle-road]").isVisible()).toBe(true);
+    expect(await page.locator("[data-toggle-road]").getAttribute("role")).toBe("switch");
+    expect(await page.locator("[data-toggle-road]").getAttribute("aria-checked")).toBe("true");
+    expect(await text(page, ".driver-lock")).toBe("Drivers locked 4,000");
     expect(await page.locator("[data-reveal]").evaluate((element) => element === document.activeElement)).toBe(true);
     expect(await page.locator("[data-reveal] > [data-road-control]").count()).toBe(1);
     const revealLayout = await page.evaluate(() => {
@@ -374,6 +378,8 @@ describe("transparent desktop experiment", () => {
     expect(crowdedRoadWidth).toBeGreaterThan(initialRoadWidth);
     await page.locator("[data-toggle-road]").click();
     expect(await page.locator("body").getAttribute("data-road-closed")).toBe("true");
+    expect(await page.locator("[data-toggle-road]").getAttribute("aria-checked")).toBe("false");
+    expect(await text(page, "[data-network-state]")).toBe("Closed");
     expect(await page.locator("#shortcut-users").isDisabled()).toBe(true);
     expect(await page.locator("#shortcut-users").inputValue()).toBe("0");
     expect(await text(page, "[data-average-time]")).toBe("65");
@@ -394,6 +400,8 @@ describe("transparent desktop experiment", () => {
 
     await page.locator("[data-toggle-road]").click();
     expect(await page.locator("body").getAttribute("data-road-closed")).toBe("false");
+    expect(await page.locator("[data-toggle-road]").getAttribute("aria-checked")).toBe("true");
+    expect(await text(page, "[data-network-state]")).toBe("Open");
     expect(await page.locator("#shortcut-users").isEnabled()).toBe(true);
     expect(await page.locator("#shortcut-users").inputValue()).toBe("4000");
     expect(await text(page, "[data-average-time]")).toBe("80");
