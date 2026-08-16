@@ -521,15 +521,21 @@ describe("transparent desktop experiment", () => {
     // instantly: this test asserts on the post-toggle DOM state, not the scroll
     // animation, and headless Chromium in CI doesn't reliably finish a smooth-scroll
     // animation, which otherwise hangs the waitForFunction below to the timeout.
+    const step = (label: string): void => console.log(`[reversal-test] ${Date.now()} ${label}`);
     const observed = await open(DESKTOP, true);
     const { page } = observed;
+    step("opened");
     const initialRoadWidth = Number.parseFloat(await page.locator(".road--narrow").first().evaluate((element) => getComputedStyle(element).strokeWidth));
     await setUsers(page, 4_000);
+    step("users set");
     await page.locator("[data-show-result]").click();
-    await page.waitForFunction(() => Number.parseFloat(getComputedStyle(document.querySelector(".road--narrow")!).strokeWidth) > 19);
+    step("show-result clicked");
+    await page.waitForFunction(() => Number.parseFloat(getComputedStyle(document.querySelector(".road--narrow")!).strokeWidth) > 19, undefined, { timeout: 8000 });
+    step("crowded width reached");
     const crowdedRoadWidth = Number.parseFloat(await page.locator(".road--narrow").first().evaluate((element) => getComputedStyle(element).strokeWidth));
     expect(crowdedRoadWidth).toBeGreaterThan(initialRoadWidth);
     await page.locator("[data-toggle-road]").click();
+    step("toggle-road clicked (close)");
     expect(await page.locator("body").getAttribute("data-road-closed")).toBe("true");
     expect(await page.locator("[data-toggle-road]").getAttribute("aria-checked")).toBe("false");
     expect(await text(page, "[data-network-state]")).toBe("Closed");
@@ -542,17 +548,22 @@ describe("transparent desktop experiment", () => {
       "One road removed. The same 4,000 drivers are now 15 minutes faster.",
     );
     expect(await page.locator("[data-map-proof]").evaluate((element) => element === document.activeElement)).toBe(true);
+    step("post-close assertions passed");
     await reversalLinkStaysOnOneLine(page);
-    await page.waitForFunction(() => document.querySelector("[data-network-wrap]")!.getBoundingClientRect().top >= 0);
+    step("reversal link geometry passed");
+    await page.waitForFunction(() => document.querySelector("[data-network-wrap]")!.getBoundingClientRect().top >= 0, undefined, { timeout: 8000 });
+    step("network-wrap onscreen");
     expect(await page.locator('.driver-dot[data-route="top"]').count()).toBe(40);
     expect(await page.locator('.driver-dot[data-route="bottom"]').count()).toBe(40);
     expect(await page.locator('.driver-dot[data-route="shortcut"]').count()).toBe(0);
     expect(await page.locator("[data-reveal]").isVisible()).toBe(true);
-    await page.waitForFunction(() => Number.parseFloat(getComputedStyle(document.querySelector(".road--narrow")!).strokeWidth) < 9.01);
+    await page.waitForFunction(() => Number.parseFloat(getComputedStyle(document.querySelector(".road--narrow")!).strokeWidth) < 9.01, undefined, { timeout: 8000 });
+    step("cleared width reached");
     const clearedRoadWidth = Number.parseFloat(await page.locator(".road--narrow").first().evaluate((element) => getComputedStyle(element).strokeWidth));
     expect(clearedRoadWidth).toBeCloseTo(initialRoadWidth, 1);
 
     await page.locator("[data-toggle-road]").click();
+    step("toggle-road clicked (reopen)");
     expect(await page.locator("body").getAttribute("data-road-closed")).toBe("false");
     expect(await page.locator("[data-toggle-road]").getAttribute("aria-checked")).toBe("true");
     expect(await text(page, "[data-network-state]")).toBe("Open");
@@ -560,6 +571,7 @@ describe("transparent desktop experiment", () => {
     expect(await page.locator("#shortcut-users").inputValue()).toBe("4000");
     expect(await text(page, "[data-average-time]")).toBe("80");
     expect(await page.locator("[data-reveal]").isVisible()).toBe(true);
+    step("done");
     healthy(observed);
     await page.close();
   });
