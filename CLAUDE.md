@@ -234,8 +234,10 @@ uses one transparent classroom network, one range slider, a prediction, one
 personal route choice and one causal close/reopen action. Eighty dots represent
 4,000 drivers. Moving the slider visibly transfers drivers to the shortcut while
 the old-route time, shortcut time and town average update from the same pure
-calculation in `src/braess.ts`. The five equations remain available in one native
-disclosure instead of competing with the main result.
+calculation in `src/braess.ts`. The interface has three zones: move the crowd,
+choose as one driver, then optionally check the arithmetic. Each metric appears
+once; the five equations remain in one native disclosure instead of competing
+with the main result.
 
 **One idea, two viewpoints.** The route radio answers “what should I do now?”;
 the before/after comparison answers “what happened to everyone?”. Do not merge
@@ -302,10 +304,15 @@ The network is made up and its numbers are an exact classroom calculation, not
 a measurement of a real place and not a prediction about road building. “More
 roads always make traffic worse” is false. The supported claim is narrower:
 *in this stated network, a shortcut makes the quickest individual choice produce
-a slower result for the whole group.* Keep the two visible rules beside the
+a slower result for the whole group.* Keep all three visible rules beside the
 experiment and keep every arithmetic step inspectable. Never describe 80 minutes as a
 five-minute saving from the original 65-minute network; it is five minutes
 better only than one driver leaving alone after the congested state exists.
+
+The connector's zero-minute travel time is a simplifying classroom assumption,
+not a discovered result. It must be stated in the rule card, labelled on the map
+and included as `+ 0` in the shortcut equation. Never hide a model assumption to
+make an equation look simpler.
 
 ## Assignment 1: verification that actually counts
 

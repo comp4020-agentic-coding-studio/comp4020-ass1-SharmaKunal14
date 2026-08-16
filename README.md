@@ -4,18 +4,19 @@ One More Road is a transparent, interactive explanation of Braess's paradox. The
 visitor predicts an outcome, moves 4,000 drivers onto a shortcut, watches eighty
 driver groups change route, searches for the town's best balance and compares one
 personal route with the result for everyone. Closing the shortcut reverses the same
-experiment. Every travel time comes from the two visible rules; the complete arithmetic
+experiment. Every travel time comes from the three visible rules; the complete arithmetic
 is available on demand.
 
-The presented network uses two explicit classroom rules:
+The presented network uses three explicit classroom rules:
 
 1. A fixed road always takes 45 minutes.
 2. A narrow road takes one minute per 100 cars using it.
+3. The short middle connector adds zero minutes in this simplified model.
 
 Drivers who avoid the shortcut split evenly between two identical old routes. Every
 shortcut driver uses both narrow roads. With no shortcut users, each old route takes
 `20 + 45 = 65` minutes. When all 4,000 drivers choose the individually quicker
-shortcut, both narrow roads take 40 minutes and the shortcut takes `40 + 40 = 80`.
+shortcut, both narrow roads take 40 minutes and the shortcut takes `40 + 0 + 40 = 80`.
 An individual driver would still prefer that 80-minute shortcut to leaving alone on an
 85-minute old route, so nobody changes course by themselves. Removing the shortcut
 changes the choices for everyone, restores the even split and returns every trip to 65

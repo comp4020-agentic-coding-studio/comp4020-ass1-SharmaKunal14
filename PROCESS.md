@@ -4,7 +4,7 @@
 
 **One More Road** is a transparent, one-slider explainer of Braess's paradox. The
 visitor moves 4,000 drivers onto a shortcut and watches both individual travel times
-and the town average change. Two road rules and every arithmetic step stay visible;
+and the town average change. Three road rules and every arithmetic step stay visible;
 there is no random or hidden calculation in the presented model.
 
 ## The moments that mattered
@@ -47,14 +47,14 @@ interface as buttons causing unexplained events. I first responded by adding cha
 predictions, route tracing and evidence cards. That made the mechanism more defensible
 but also made the visitor learn the simulator before learning the paradox. I finally
 separated realism from clarity and deleted the staged interface. The delivered page has
-two rules and direct manipulation: predict, move eighty driver groups, find the derived
+three explicit rules and direct manipulation: predict, move eighty driver groups, find the derived
 **64.7-minute** best balance and **65-minute** break-even, choose one highlighted route,
 then close the shortcut to reverse **80 → 65 minutes**. Equations remain inspectable but
-collapsed. The key explanation is now earned: at the town's best balance the shortcut is
+collapsed, and repeated metrics were removed into three clear zones. The key explanation is now earned: at the town's best balance the shortcut is
 still **22.5 minutes** quicker, so individually sensible switching continues until the
 group is worse. Browser tests cover the landmarks, route trace, reversal, phone layout,
 keyboard and reduced motion
-([`5977880...35df5b6`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-SharmaKunal14/compare/5977880...35df5b6)).
+([`5977880...65f301a`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-SharmaKunal14/compare/5977880...65f301a)).
 
 Rules are in `CLAUDE.md`, prior commitments in `PLAN.md`, and the unedited working
 record is in `notes/log.md`.

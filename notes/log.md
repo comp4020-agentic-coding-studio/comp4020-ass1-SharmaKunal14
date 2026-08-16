@@ -339,3 +339,17 @@ the town's best balance cannot hold because the shortcut is still 22.5 minutes q
 for the next individual. Each implementation slice was tested and committed separately;
 the final browser contract covers both marking viewports, keyboard use, reduced motion,
 landmarks, route highlighting, congestion and the reversible comparison.
+
+## Mon 17 Aug — the layout stopped repeating itself
+
+The latest layout pass began with a correctness problem, not a spacing token: the
+shortcut equation silently treated the middle connector as a zero-minute road while
+the page claimed the model had only two rules. I made that simplifying assumption an
+exported constant, a third rule, a map label and an explicit `+ 0` in the equation.
+
+I then removed the three-card time summary because it repeated values already shown in
+the town comparison and personal route choice. The right column now has three jobs in
+order: move the crowd, choose as one driver, and optionally inspect the arithmetic.
+Shared spacing tokens and a bordered map surface make those groups readable without
+adding another staged flow. The required desktop, phone, keyboard and reduced-motion
+paths still use the same controls and calculation.
