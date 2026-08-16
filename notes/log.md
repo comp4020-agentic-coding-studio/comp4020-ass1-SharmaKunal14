@@ -502,3 +502,16 @@ Keeping three columns on a phone would only recreate the overload at a smaller s
 the layout collapses to map, controls and arithmetic below the wide-screen breakpoint.
 A browser geometry assertion now checks the left-to-right desktop order, while the full
 phone path continues to guard horizontal overflow.
+
+## Mon 17 Aug — the evidence filled the evidence rail
+
+Equal-height columns exposed that the right calculation rail had too little content while
+the left action rail carried the route ledger and town comparison. Adding a chart or more
+copy would have hidden that structural mistake. I moved the existing comparison and ledger
+instead. The right rail now reads in one causal order: current result, where the same 4,000
+drivers are, then the equations producing that result.
+
+The left rail now contains only the challenge, discoveries, slider and immediate feedback.
+Its dark slider surface flexes to the shared column height rather than ending above an empty
+strip. The controls kept their original selectors and semantics, so the browser suite could
+verify that route and equation spotlights still affect the same centre map.

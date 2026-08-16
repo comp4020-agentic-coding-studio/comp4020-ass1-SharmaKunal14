@@ -239,8 +239,10 @@ equations from the pure calculation in `src/braess.ts`.
 
 On wide screens, keep those three jobs spatially distinct: slider investigation on
 the left, the persistent road map as the dominant centre surface, and live arithmetic
-on the right. Below the wide-screen breakpoint they return to one column in the order
-map, controls, arithmetic. Never shrink three columns until labels or equations collide.
+on the right. The right rail owns the current town comparison, route ledger and five
+equations; the left rail owns only the task, milestones, slider and immediate guidance.
+Below the wide-screen breakpoint they return to one column in the order map, controls,
+arithmetic. Never shrink three columns until labels or equations collide.
 
 The slider is a guided investigation, not a staged sequence. Its milestone rail
 unlocks the exact **64.7-minute minimum at 500 shortcut users**, the **65-minute
