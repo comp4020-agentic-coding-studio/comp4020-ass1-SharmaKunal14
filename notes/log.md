@@ -457,3 +457,35 @@ links back to the explanation. The reverse section no longer duplicates that res
 inherits the oversized paradox heading. No Play or Animate control was added; reduced
 motion applies the identical state without the visual transition. Browser tests require
 the banner, focus transfer, unchanged dot count and original map reuse.
+
+## Mon 17 Aug — the slider became an investigation
+
+The continuous curve contained three useful discoveries, but the interface only made
+the endpoint feel consequential. I added a small milestone trail derived from the same
+pure calculation: 500 shortcut users unlock the 64.7-minute minimum, 1,000 unlocks the
+65-minute break-even, and 4,000 unlocks the paradox. The prompts change as those points
+are found; they do not block the slider or introduce Continue buttons.
+
+The endpoint now reuses that slider for a 3,900-driver rescue attempt. Moving 100 drivers
+back improves the town from 80 to 79.1 minutes, yet those drivers would face 84.5 minutes
+while the shortcut takes 79. This is the missing conflict between a better group result
+and a worse individual move. A model test fixes the exact arithmetic and a browser test
+requires the milestone and rescue sequence.
+
+## Mon 17 Aug — inspection became spatial
+
+The route ledger and five equations were transparent but disconnected from the diagram.
+I changed their existing rows into semantic buttons. Selecting a route dims other dots;
+selecting a calculation highlights the roads used by that expression. One nearby sentence
+states what the selection means. These spotlights only set presentation attributes, so
+they cannot mutate the slider, dot allocation or calculated result. Pointer, touch and
+keyboard paths use the same controls.
+
+## Mon 17 Aug — the comparison locked its only variable
+
+The close/reopen button performed the right reversal but did not make the experiment's
+control obvious. I replaced it with a labelled open/closed switch beside a permanent
+`Drivers locked: 4,000` badge. The switch still returns to the original map and reuses all
+80 dots; its new shape makes the single changed variable visible. Browser tests require
+both switch states, the fixed driver badge and the same-map result. No playback or animate
+control was added.

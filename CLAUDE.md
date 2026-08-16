@@ -231,11 +231,19 @@ locally and 404s on the deployed URL.
 
 **One More Road** — an interactive explainer of Braess's paradox. The visitor
 uses one transparent classroom network, one range slider, one deliberate
-comparison action and one causal close/reopen action. Eighty dots
+comparison action and one causal open/closed switch. Eighty dots
 represent 4,000 drivers. Forty dots permanently originate on each old route;
 every 100-driver slider step transfers one from each origin to the shortcut.
 Dragging the slider updates the route ledger, town average, map and five visible
 equations from the pure calculation in `src/braess.ts`.
+
+The slider is a guided investigation, not a staged sequence. Its milestone rail
+unlocks the exact **64.7-minute minimum at 500 shortcut users**, the **65-minute
+break-even at 1,000**, and the paradox at 4,000. After the endpoint, the same slider
+may move to 3,900 for one rescue attempt: the town improves to 79.1 minutes, while
+the returning drivers face 84.5 minutes instead of the shortcut's 79. Route-ledger
+and equation buttons may spotlight their corresponding roads and dots; these are
+presentation filters only and must never change a calculation or driver allocation.
 
 **One controlled comparison.** Reaching the endpoint must not move the viewport
 or open the result automatically. It offers one compact comparison action; only
@@ -248,10 +256,11 @@ shortcut closed and 80 with it open, then explains why the bad state persists:
 staying takes 80 minutes while leaving alone takes 85. Do not present `80 vs 85`
 without the controlling `65 vs 80` comparison.
 
-The close-road action must return to this same map; never render a second simulation.
-Retract the connector, redistribute the existing 80 dots, and show `80 → 65` beside
-the map. Do not add Play, Animate or replay controls. Preserve focus and provide a
-link back to the result chapter after the reversal.
+The open/closed switch must keep **Drivers locked: 4,000** visible and return to this
+same map; never render a second simulation. Retract the connector, redistribute the
+existing 80 dots, and show `80 → 65` beside the map. Do not add Play, Animate or
+replay controls. Preserve focus and provide a link back to the result chapter after
+the reversal.
 
 Before adding anything, the question is *does this make the visitor understand
 the central idea more strongly?* If not, delete it. Prefer deleting UI over
@@ -327,10 +336,11 @@ make an equation look simpler.
   `PROCESS.md`, the reflection or commit citations.
 - Test the whole interaction at **1920×1080** and **390×844**, including the
   slider midpoint and endpoint, deliberate reveal and horizontal overflow.
-- The public contract is one range input, one endpoint comparison action attached to
-  that input, five equations and one causal road toggle returning to the original map. There is no
-  prediction survey and no staged
-  Continue-button sequence. `spec/page.test.ts` makes that scope explicit.
+- The public contract is one range input, three derived milestone unlocks, one rescue
+  attempt on that same range, one endpoint comparison action, five focusable equations,
+  three focusable route groups and one causal open/closed switch returning to the
+  original map. There is no prediction survey and no staged Continue-button sequence.
+  `spec/page.test.ts` makes that scope explicit.
 - All displayed numbers must come from `calculateBraess`; browser tests check the
   start, midpoint and endpoint equations rather than only checking that values
   changed.
@@ -387,9 +397,9 @@ not the contract of the delivered calculator.
   schedule — so a browser test watches the same 900 simulated seconds in 14
   seconds instead of 142.
 - **Scope is guarded by a test, not by good intentions.** The current
-  `spec/page.test.ts` permits one range slider and one personal-route radio group,
-  while rejecting a staged button sequence. Adding a control means changing that
-  contract deliberately.
+  `spec/page.test.ts` permits one range slider plus route/equation spotlights and the
+  deliberate comparison controls, while rejecting a prediction survey and staged
+  button sequence. Adding a control means changing that contract deliberately.
 - **Browser-level facts need a browser.** jsdom has no layout, so it reports a
   page as fine while it scrolls sideways at 390 px. The viewport, keyboard,
   resize-mid-interaction and payload checks run Playwright against `dist/`.
@@ -455,10 +465,10 @@ Two rules of judgement from the same pass:
   vehicles came and went, so its shade jumped for no reason and nothing on screen
   had a stable identity.
 - **Every checkpoint must earn its controls.** The discarded page once showed the
-  network, traffic, four metrics, a chart, a route table and the model note at
-  once. Its generic progression clicks hid causes instead of exposing them. That
-  failure is why the current page uses direct manipulation and only two actions:
-  the deliberate network comparison and the causal close/reopen reversal.
+  network, traffic, four metrics, a chart, a route table and the model note at once.
+  Its generic progression clicks hid causes instead of exposing them. The current
+  page uses direct manipulation; its extra controls only inspect the same map, compare
+  the endpoint or reverse the road while the driver count stays locked.
 - **A visual explanation still needs a textual equivalent.** Decorative movement
   may be hidden from assistive technology only when the meaningful counts, route
   times and conclusion remain available as ordinary text.

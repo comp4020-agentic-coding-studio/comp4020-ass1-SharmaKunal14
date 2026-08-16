@@ -1,15 +1,17 @@
 # One More Road
 
 One More Road is a transparent, interactive explanation of Braess's paradox. The
-visitor moves 4,000 drivers onto a shortcut, watches eighty driver groups change
-route and searches for the town's best balance by dragging the
-slider. No groups appear or disappear: every 100-driver step moves one 50-driver dot
-from each old route, while a live ledger accounts for all 80 dots. At the endpoint, a
-comparison card appears inside the slider panel and deliberately opens a full-width
-result chapter comparing the same 4,000 drivers with the shortcut closed and open.
-Closing it returns to the original map, where the same dots redistribute and the result
-reverses. Every travel time comes from the three visible rules,
-and the complete arithmetic stays visible while the slider moves.
+visitor moves 4,000 drivers onto a shortcut and searches for three landmarks with one
+slider: the town's best balance, the point where its benefit disappears and the final
+paradox. No groups appear or disappear: every 100-driver step moves one 50-driver dot
+from each old route, while a live ledger accounts for all 80 dots. At the endpoint, the
+same slider offers a 3,900-driver rescue attempt: it helps the town but disadvantages
+the drivers who move back. Route-ledger and calculation buttons spotlight the roads
+behind each number without changing the model. A deliberate result chapter then
+compares the same crowd with the shortcut open and closed. Its locked-driver switch
+returns to the original map, where the same dots redistribute and the result reverses.
+Every travel time comes from the three visible rules and the complete arithmetic
+updates while the slider moves.
 
 The presented network uses three explicit classroom rules:
 
@@ -58,9 +60,9 @@ mise exec -- pnpm check:evidence
 
 | Area | Responsibility |
 | --- | --- |
-| `index.html` | Semantic experiment, live arithmetic, reversal and reveal |
-| `styles.css` | Responsive layout, congestion cues, moving driver groups and reduced motion |
-| `main.ts` | Transfers persistent driver groups and updates every visible result from the slider |
+| `index.html` | Semantic investigation, milestones, live arithmetic, reversal and reveal |
+| `styles.css` | Responsive layout, spotlights, congestion cues, driver groups and reduced motion |
+| `main.ts` | Transfers persistent groups, unlocks landmarks and controls the same-map comparison |
 | `src/braess.ts` | Pure calculation plus derived best and break-even landmarks |
 | `spec/braess.test.ts` | Exact arithmetic, bounds and individual-choice invariant |
 | `spec/page.test.ts` | Scope, copy, accessibility, delivery and assignment contracts |

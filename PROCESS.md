@@ -42,21 +42,18 @@ the adjustment-period transient from the settled effect, and a test requires bot
 protocols to agree at equilibrium
 ([`c70f164`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-SharmaKunal14/commit/c70f164)).
 
-**4. More explanation made the explanation worse.** The user repeatedly described the
-interface as buttons causing unexplained events. I first responded by adding chapters,
-predictions, route tracing and evidence cards. That made the mechanism more defensible
-but also made the visitor learn the simulator before learning the paradox. I finally
-separated realism from clarity and deleted the staged interface. The delivered page has
-three explicit rules and direct manipulation: drag eighty driver groups,
-and find the derived **64.7-minute** best balance and **65-minute** break-even. The five
-equations and an 80-dot route ledger now update beside the slider. Every 100-driver
-step moves one existing dot from each old route; none appear. An endpoint card beside
-the slider opens a named result chapter comparing the same 4,000 drivers at **65 → 80**;
-closing it returns those dots to the original map at **65**. The explanation is earned: at the town's
-best balance it is still **22.5 minutes** quicker, so sensible switching continues
-until the group is worse. Browser tests cover the dot invariant, non-overlap, reveal,
-reversal, both marking viewports, keyboard and reduced motion
-([`5977880...d40714d`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-SharmaKunal14/compare/5977880...d40714d)).
+**4. More explanation made the explanation worse.** The user described buttons causing
+unexplained events. Chapters, predictions and evidence cards made the visitor learn a
+simulator before learning the paradox, so I deleted that staged interface. The delivered
+page uses three rules and one slider. Eighty persistent dots expose every transfer; three
+landmarks unlock the **64.7-minute** minimum, **65-minute** break-even and **80-minute**
+paradox. Moving back to 3,900 then reveals the trap: the town improves to **79.1**, but
+returning drivers face **84.5** while staying takes **79**. Route and equation controls
+spotlight the same map without changing it. The endpoint action names the paradox, and
+an open/closed switch visibly locks the crowd at 4,000 while the original map reverses
+**80 → 65**. Browser tests cover arithmetic, persistent dots, focus, both marking
+viewports and reduced motion
+([`5977880...5630ee6`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-SharmaKunal14/compare/5977880...5630ee6)).
 
 Rules are in `CLAUDE.md`, prior commitments in `PLAN.md`, and the unedited working
 record is in `notes/log.md`.
