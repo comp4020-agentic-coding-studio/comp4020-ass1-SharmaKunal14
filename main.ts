@@ -256,6 +256,7 @@ function renderRescue(result: BraessResult): void {
 }
 
 const defaultCalculationCopy = calculationCopy.textContent;
+const defaultSpotlightCopy = spotlightCopy.textContent;
 
 const SPOTLIGHTS: Record<string, { map: string; dots: string; copy: string }> = {
   top: {
@@ -307,12 +308,13 @@ function renderSpotlight(): void {
   }
   network.dataset.focus = spotlight?.map ?? "";
   driverLayer.dataset.focus = spotlight?.dots ?? "";
-  spotlightCopy.textContent = spotlight?.copy ??
-    "Road loads overlap: every shortcut driver passes through both narrow roads.";
-  const selectedCalculation = spotlightButtons.find(
+  const selectedButton = spotlightButtons.find(
     (button) => button.dataset.spotlight === activeSpotlight,
   );
-  calculationCopy.textContent = selectedCalculation?.dataset.calculationExplanation ?? defaultCalculationCopy;
+  const calculationExplanation = selectedButton?.dataset.calculationExplanation;
+  spotlightCopy.textContent =
+    calculationExplanation === undefined ? spotlight?.copy ?? defaultSpotlightCopy : defaultSpotlightCopy;
+  calculationCopy.textContent = calculationExplanation ?? defaultCalculationCopy;
   for (const button of spotlightButtons) {
     button.setAttribute("aria-pressed", String(button.dataset.spotlight === activeSpotlight));
   }

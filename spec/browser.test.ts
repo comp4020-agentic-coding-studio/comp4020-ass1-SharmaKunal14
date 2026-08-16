@@ -339,6 +339,9 @@ describe("transparent desktop experiment", () => {
     expect(await text(page, "[data-spotlight-copy]")).toBe(
       "These shortcut drivers use both narrow roads and the 0-minute connector.",
     );
+    expect(await text(page, "[data-calculation-copy]")).toBe(
+      "Select a row to highlight those roads on the map.",
+    );
     await page.waitForTimeout(220);
     const shortcutOpacity = Number.parseFloat(
       await page.locator('.driver-dot[data-route="shortcut"]').first().evaluate((element) => getComputedStyle(element).opacity),
@@ -355,7 +358,7 @@ describe("transparent desktop experiment", () => {
     expect(await oldRouteMath.getAttribute("aria-pressed")).toBe("true");
     expect(await page.locator("[data-network]").getAttribute("data-focus")).toBe("top");
     expect(await text(page, "[data-spotlight-copy]")).toBe(
-      "One old route combines one narrow road with one fixed 45-minute road.",
+      "Road loads overlap: every shortcut driver passes through both narrow roads.",
     );
     expect(await text(page, "[data-calculation-copy]")).toBe(
       "An old route uses one narrow road and one fixed 45-minute road.",
