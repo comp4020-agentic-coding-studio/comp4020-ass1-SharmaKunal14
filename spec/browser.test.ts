@@ -108,7 +108,8 @@ describe("transparent desktop experiment", () => {
   it("shows the rules and initial calculation before interaction", async () => {
     const observed = await open(DESKTOP);
     const { page } = observed;
-    expect(await page.locator("button").count()).toBe(0);
+    expect(await page.locator("button").count()).toBe(1);
+    expect(await page.locator("[data-toggle-road]").isHidden()).toBe(true);
     expect(await page.locator('input[type="range"]').count()).toBe(1);
     expect(await page.locator(".driver-dot").count()).toBe(80);
     expect(await page.locator('.driver-dot[data-route="top"]').count()).toBe(40);
@@ -189,7 +190,33 @@ describe("transparent desktop experiment", () => {
     expect(await text(page, "[data-decision]")).toContain("nobody leaves");
     expect(await page.locator('.driver-dot[data-route="shortcut"]').count()).toBe(80);
     expect(await text(page, "[data-prediction-feedback]")).toContain("You predicted the shortcut would make trips faster");
+    expect(await page.locator("[data-toggle-road]").isVisible()).toBe(true);
     await noOverflow(page);
+    healthy(observed);
+    await page.close();
+  });
+
+  it("closes and reopens the shortcut as a visible reversal", async () => {
+    const observed = await open(DESKTOP);
+    const { page } = observed;
+    await setUsers(page, 4_000);
+    await page.locator("[data-toggle-road]").click();
+    expect(await page.locator("body").getAttribute("data-road-closed")).toBe("true");
+    expect(await page.locator("#shortcut-users").isDisabled()).toBe(true);
+    expect(await page.locator("#shortcut-users").inputValue()).toBe("0");
+    expect(await text(page, "[data-average-time]")).toBe("65");
+    expect(await text(page, "[data-closure-result]")).toContain("80 min with the shortcut → 65 min without it");
+    expect(await page.locator('.driver-dot[data-route="top"]').count()).toBe(40);
+    expect(await page.locator('.driver-dot[data-route="bottom"]').count()).toBe(40);
+    expect(await page.locator('.driver-dot[data-route="shortcut"]').count()).toBe(0);
+    expect(await page.locator(".times__shortcut").isHidden()).toBe(true);
+
+    await page.locator("[data-toggle-road]").click();
+    expect(await page.locator("body").getAttribute("data-road-closed")).toBe("false");
+    expect(await page.locator("#shortcut-users").isEnabled()).toBe(true);
+    expect(await page.locator("#shortcut-users").inputValue()).toBe("4000");
+    expect(await text(page, "[data-average-time]")).toBe("80");
+    expect(await page.locator("[data-reveal]").isVisible()).toBe(true);
     healthy(observed);
     await page.close();
   });
@@ -218,6 +245,10 @@ describe("phone and keyboard", () => {
     expect(await slider.inputValue()).toBe("4000");
     expect(await page.locator("[data-reveal]").isVisible()).toBe(true);
     expect(await page.evaluate(() => document.activeElement?.id)).toBe("shortcut-users");
+    await page.locator("[data-toggle-road]").focus();
+    await page.keyboard.press("Enter");
+    expect(await text(page, "[data-average-time]")).toBe("65");
+    expect(await page.locator("[data-toggle-road]").evaluate((element) => element === document.activeElement)).toBe(true);
     healthy(observed);
     await page.close();
   });

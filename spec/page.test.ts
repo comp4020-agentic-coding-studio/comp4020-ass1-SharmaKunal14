@@ -17,12 +17,13 @@ function prose(markdown: string): string[] {
 }
 
 describe("transparent direct interactions", () => {
-  it("uses one slider, one personal route choice and no sequence of buttons", () => {
+  it("uses direct controls rather than a sequence of continue buttons", () => {
     const sliders = doc.querySelectorAll<HTMLInputElement>('input[type="range"]');
     expect(sliders).toHaveLength(1);
     expect(doc.querySelectorAll<HTMLInputElement>('input[name="personal-route"]')).toHaveLength(2);
     expect(doc.querySelectorAll<HTMLInputElement>('input[name="prediction"]')).toHaveLength(3);
-    expect(doc.querySelectorAll("button")).toHaveLength(0);
+    expect(doc.querySelectorAll("button")).toHaveLength(1);
+    expect(doc.querySelector("button")?.hasAttribute("data-toggle-road")).toBe(true);
     expect(sliders[0]).toMatchObject({ min: "0", max: "4000", step: "100", value: "0" });
   });
 
@@ -38,6 +39,8 @@ describe("transparent direct interactions", () => {
     expect(copy).toContain("Find the lowest town average");
     expect(copy).toContain("Before the shortcut 65 min");
     expect(copy).toContain("highlighted YOU marker trace your option");
+    expect(copy).toContain("Reverse the experiment");
+    expect(copy).toContain("Close the shortcut");
   });
 
   it("contains the complete initial arithmetic and withholds the reveal", () => {

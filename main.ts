@@ -42,6 +42,11 @@ const townComparison = need<HTMLElement>("[data-town-comparison]");
 const comparisonAverage = need<HTMLOutputElement>("[data-comparison-average]");
 const comparisonVerdict = need<HTMLOutputElement>("[data-comparison-verdict]");
 const predictionFeedback = need<HTMLElement>("[data-prediction-feedback]");
+const roadControl = need<HTMLElement>("[data-road-control]");
+const roadControlTitle = need<HTMLElement>("[data-road-control-title]");
+const roadControlCopy = need<HTMLElement>("[data-road-control-copy]");
+const closureResult = need<HTMLElement>("[data-closure-result]");
+const toggleRoad = need<HTMLButtonElement>("[data-toggle-road]");
 const driverLayer = need<SVGGElement>("[data-driver-layer]");
 const youTrace = need<SVGPathElement>("[data-you-trace]");
 const youDriver = need<SVGGElement>("[data-you-driver]");
@@ -62,6 +67,7 @@ const driverDots = Array.from({ length: DOTS }, () => {
 });
 let selectedPersonalRoute: "old" | "shortcut" | null = null;
 let selectedPrediction: "faster" | "same" | "slower" | null = null;
+let roadClosed = false;
 
 function minutes(value: number): string {
   return number.format(value);
@@ -124,6 +130,13 @@ function renderDiscovery(result: BraessResult): void {
   const { bestShortcutUsers, bestAverageMinutes, breakEvenShortcutUsers } = BRAESS_LANDMARKS;
   comparisonAverage.value = minutes(averageMinutes);
 
+  if (roadClosed) {
+    townComparison.dataset.state = "same";
+    comparisonVerdict.value = "Back to the original 65 min";
+    discovery.value = "The shortcut is closed. Drivers split evenly again, so every trip returns to 65 minutes.";
+    return;
+  }
+
   if (averageChangeMinutes < 0) {
     townComparison.dataset.state = "better";
     comparisonVerdict.value = `${minutes(Math.abs(averageChangeMinutes))} min faster`;
@@ -150,6 +163,14 @@ function renderDiscovery(result: BraessResult): void {
   } else {
     discovery.value = "Everyone followed the quicker route. The town average is now 15 minutes worse.";
   }
+}
+
+function clearPersonalRoute(): void {
+  selectedPersonalRoute = null;
+  for (const routeInput of personalRouteInputs) routeInput.checked = false;
+  youTrace.setAttribute("hidden", "");
+  youDriver.setAttribute("hidden", "");
+  driverLayer.classList.remove("driver-layer--muted");
 }
 
 function renderPredictionFeedback(): void {
@@ -204,7 +225,8 @@ function render(result: BraessResult): void {
   } = result;
 
   document.documentElement.style.setProperty("--shortcut-share", String(shortcutUsers / TOTAL_DRIVERS));
-  document.body.dataset.complete = String(shortcutUsers === TOTAL_DRIVERS);
+  document.body.dataset.complete = String(shortcutUsers === TOTAL_DRIVERS && !roadClosed);
+  document.body.dataset.roadClosed = String(roadClosed);
   shortcutOutput.value = `${drivers(shortcutUsers)} of ${drivers(TOTAL_DRIVERS)}`;
   oldTime.value = minutes(oldRouteMinutes);
   shortcutTime.value = minutes(shortcutRouteMinutes);
@@ -226,7 +248,9 @@ function render(result: BraessResult): void {
     averageChange.textContent = "same as before";
   }
 
-  if (shortcutUsers === 0) {
+  if (roadClosed) {
+    decision.textContent = "The shortcut is closed. Drivers must split between the two old routes.";
+  } else if (shortcutUsers === 0) {
     decision.textContent =
       `Shortcut: ${minutes(shortcutRouteMinutes)} minutes. Old route: ${minutes(oldRouteMinutes)}. ` +
       `The first driver sees a ${minutes(individualSavingMinutes)}-minute advantage.`;
@@ -249,17 +273,36 @@ function render(result: BraessResult): void {
     `${drivers(shortcutUsers)} × ${minutes(shortcutRouteMinutes)}) ÷ ` +
     `${drivers(TOTAL_DRIVERS)} = ${minutes(averageMinutes)} min`;
 
-  reveal.hidden = shortcutUsers !== TOTAL_DRIVERS;
-  liveSummary.textContent =
-    `${drivers(shortcutUsers)} drivers use the shortcut. ` +
-    `Old route ${minutes(oldRouteMinutes)} minutes, shortcut ${minutes(shortcutRouteMinutes)} minutes, ` +
-    `town average ${minutes(averageMinutes)} minutes.`;
+  reveal.hidden = shortcutUsers !== TOTAL_DRIVERS || roadClosed;
+  roadControl.hidden = shortcutUsers !== TOTAL_DRIVERS && !roadClosed;
+  closureResult.hidden = !roadClosed;
+  toggleRoad.textContent = roadClosed ? "Reopen the shortcut" : "Close the shortcut";
+  roadControlTitle.textContent = roadClosed
+    ? "Removing a road made every trip faster."
+    : "What happens if the shortcut closes?";
+  roadControlCopy.textContent = roadClosed
+    ? "Without the tempting middle route, drivers split evenly and stop crowding both narrow roads."
+    : "Remove the tempting option and watch all 4,000 drivers redistribute.";
+  liveSummary.textContent = roadClosed
+    ? "The shortcut is closed. Drivers split evenly. Every trip and the town average are 65 minutes."
+    : `${drivers(shortcutUsers)} drivers use the shortcut. ` +
+      `Old route ${minutes(oldRouteMinutes)} minutes, shortcut ${minutes(shortcutRouteMinutes)} minutes, ` +
+      `town average ${minutes(averageMinutes)} minutes.`;
 }
 
 input.addEventListener("input", () => {
+  roadClosed = false;
   const result = calculateBraess(Number(input.value));
   input.value = String(result.shortcutUsers);
   render(result);
+});
+
+toggleRoad.addEventListener("click", () => {
+  roadClosed = !roadClosed;
+  input.disabled = roadClosed;
+  input.value = roadClosed ? "0" : String(TOTAL_DRIVERS);
+  if (roadClosed) clearPersonalRoute();
+  render(calculateBraess(Number(input.value)));
 });
 
 for (const routeInput of personalRouteInputs) {
