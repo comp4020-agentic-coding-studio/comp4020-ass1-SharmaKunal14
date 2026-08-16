@@ -5,8 +5,9 @@ visitor predicts an outcome, moves 4,000 drivers onto a shortcut, watches eighty
 driver groups change route and searches for the town's best balance by dragging the
 slider. No groups appear or disappear: every 100-driver step moves one 50-driver dot
 from each old route, while a live ledger accounts for all 80 dots. At the endpoint, a
-deliberate comparison action reveals the same 4,000 drivers with the shortcut closed
-and open; closing the shortcut reverses the result. Every travel time comes from the three visible rules,
+deliberate comparison action ends the experiment and opens a full-width result chapter
+comparing the same 4,000 drivers with the shortcut closed and open. Closing the shortcut
+reverses the result. Every travel time comes from the three visible rules,
 and the complete arithmetic stays visible while the slider moves.
 
 The presented network uses three explicit classroom rules:

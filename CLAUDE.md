@@ -239,8 +239,10 @@ equations from the pure calculation in `src/braess.ts`.
 
 **One controlled comparison.** Reaching the endpoint must not move the viewport
 or open the result automatically. It offers one compact comparison action; only
-that deliberate action reveals that the same 4,000 drivers take 65 minutes with
-the shortcut closed and 80 with it open. Then explain why the bad state persists:
+that deliberate action reveals an inline result chapter after the experiment.
+The sticky map must end before this chapter begins; the two surfaces may never
+overlap. The chapter shows that the same 4,000 drivers take 65 minutes with the
+shortcut closed and 80 with it open, then explains why the bad state persists:
 staying takes 80 minutes while leaving alone takes 85. Do not present `80 vs 85`
 without the controlling `65 vs 80` comparison.
 

@@ -400,3 +400,17 @@ A compact route ledger beside the slider exposes the same invariant in text: dri
 dots on the top route, shortcut and bottom route always sum to 4,000 and 80. The browser
 test checks the first 100-driver move directly, including permanent origins, current routes
 and the unchanged DOM dot count.
+
+## Mon 17 Aug — the reveal stopped fighting the sticky map
+
+The deliberate reveal was in the experiment's two-column grid while the road map stayed
+sticky. On a wide screen the dark result surface therefore appeared over the map and read
+like a badly positioned modal, even though it was technically in normal document flow.
+I moved the result outside the experiment's sticky boundary rather than compensating with
+z-index or margins.
+
+The new result is a full-width editorial chapter. Its hierarchy is the controlled
+`65 → 80` comparison, two numbered reasons, the best-balance note and the reverse-road
+action. The map now ends before the chapter starts. A browser assertion measures both
+rectangles after the deliberate reveal and fails if the map or experiment overlaps it;
+the same suite checks phone flow, focus transfer and reduced motion.
