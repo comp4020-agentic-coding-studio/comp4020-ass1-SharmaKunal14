@@ -142,10 +142,16 @@ describe("transparent desktop experiment", () => {
     expect(await text(page, "[data-personal-result]")).toContain(
       "You chose the old route: 75 minutes. The shortcut is 15 minutes quicker",
     );
+    expect(await page.locator("[data-you-trace]").getAttribute("data-route")).toBe("old");
+    expect(await page.locator("[data-you-driver]").getAttribute("data-route")).toBe("old");
+    expect(await page.locator("[data-you-driver]").isVisible()).toBe(true);
+    expect(Number(await page.locator("[data-driver-layer]").evaluate((element) => getComputedStyle(element).opacity))).toBeLessThan(1);
     await page.locator('input[name="personal-route"][value="shortcut"]').check();
     expect(await text(page, "[data-personal-result]")).toContain(
       "You chose the shortcut: 60 minutes. That is 15 minutes quicker",
     );
+    expect(await page.locator("[data-you-trace]").getAttribute("data-route")).toBe("shortcut");
+    expect(await page.locator("[data-you-driver]").getAttribute("data-route")).toBe("shortcut");
     healthy(observed);
     await page.close();
   });
@@ -220,10 +226,12 @@ describe("phone and keyboard", () => {
     const observed = await open(PHONE, true);
     const { page } = observed;
     await setUsers(page, 4_000);
+    await page.locator('input[name="personal-route"][value="shortcut"]').check();
     const duration = await page.locator("[data-reveal]").evaluate((element) =>
       getComputedStyle(element).animationDuration,
     );
     expect(Number.parseFloat(duration)).toBeLessThanOrEqual(0.00001);
+    expect(await page.locator("[data-you-trace]").evaluate((element) => element.getAnimations().length)).toBe(0);
     healthy(observed);
     await page.close();
   });

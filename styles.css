@@ -334,6 +334,11 @@ h2 {
 
 .driver-layer {
   pointer-events: none;
+  transition: opacity 180ms ease;
+}
+
+.driver-layer--muted {
+  opacity: 0.28;
 }
 
 .driver-dot {
@@ -348,6 +353,45 @@ h2 {
 .driver-dot--shortcut {
   fill: var(--gold);
   stroke: var(--ink);
+}
+
+.you-trace {
+  fill: none;
+  stroke: var(--gold);
+  stroke-dasharray: 12 9;
+  stroke-linecap: round;
+  stroke-width: 13;
+  pointer-events: none;
+}
+
+.you-trace[data-route="old"] {
+  stroke: var(--teal);
+}
+
+.you-driver {
+  pointer-events: none;
+  transition: transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.you-driver__marker {
+  fill: var(--gold);
+  stroke: var(--ink);
+  stroke-width: 4;
+}
+
+.you-driver[data-route="old"] .you-driver__marker {
+  fill: var(--teal);
+  stroke: var(--paper);
+}
+
+.you-driver text {
+  fill: var(--ink);
+  font-family: "DM Mono", monospace;
+  font-size: 18px;
+  font-weight: 800;
+  paint-order: stroke;
+  stroke: var(--paper);
+  stroke-width: 5px;
 }
 
 .node circle {

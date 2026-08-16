@@ -85,7 +85,12 @@
             <path id="top-flow" class="flow-path" d="M 90 260 L 430 90 L 810 260" />
             <path id="bottom-flow" class="flow-path" d="M 90 260 L 430 430 L 810 260" />
             <path id="shortcut-flow" class="flow-path" d="M 90 260 L 430 90 L 430 430 L 810 260" />
+            <path class="you-trace" data-you-trace hidden />
             <g class="driver-layer" data-driver-layer aria-hidden="true"></g>
+            <g class="you-driver" data-you-driver hidden aria-hidden="true">
+              <circle class="you-driver__marker" r="10" />
+              <text x="15" y="-12">YOU</text>
+            </g>
 
             <g class="node"><circle cx="90" cy="260" r="14" /><text x="50" y="225">Home</text></g>
             <g class="node"><circle cx="430" cy="90" r="14" /></g>
@@ -173,7 +178,7 @@
 
           <fieldset class="personal-choice">
             <legend>You are one driver. Which route would you take right now?</legend>
-            <p>Your single choice does not change the 4,000-driver totals. It lets you compare your options.</p>
+            <p>Your single choice does not change the totals. Watch the highlighted YOU marker trace your option.</p>
             <div class="personal-choice__options">
               <label>
                 <input type="radio" name="personal-route" value="old" />
@@ -184,7 +189,7 @@
                 <span>Shortcut <strong><output data-personal-shortcut>40</output> min</strong></span>
               </label>
             </div>
-            <output class="personal-choice__result" data-personal-result>
+            <output class="personal-choice__result" data-personal-result aria-live="polite">
               Choose a route to compare the two options.
             </output>
           </fieldset>

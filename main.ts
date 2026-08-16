@@ -43,6 +43,8 @@ const comparisonAverage = need<HTMLOutputElement>("[data-comparison-average]");
 const comparisonVerdict = need<HTMLOutputElement>("[data-comparison-verdict]");
 const predictionFeedback = need<HTMLElement>("[data-prediction-feedback]");
 const driverLayer = need<SVGGElement>("[data-driver-layer]");
+const youTrace = need<SVGPathElement>("[data-you-trace]");
+const youDriver = need<SVGGElement>("[data-you-driver]");
 const topFlow = need<SVGPathElement>("#top-flow");
 const bottomFlow = need<SVGPathElement>("#bottom-flow");
 const shortcutFlow = need<SVGPathElement>("#shortcut-flow");
@@ -91,6 +93,30 @@ function renderDriverDots(shortcutUsers: number): void {
   placeDots(driverDots.slice(0, topEnd), topFlow, "top");
   placeDots(driverDots.slice(topEnd, bottomEnd), bottomFlow, "bottom");
   placeDots(driverDots.slice(bottomEnd), shortcutFlow, "shortcut");
+}
+
+function renderPersonalRoute(route: "old" | "shortcut"): void {
+  const path = route === "old" ? topFlow : shortcutFlow;
+  const routeData = path.getAttribute("d");
+  if (routeData === null) throw new Error(`Missing route geometry for ${route}`);
+
+  const length = path.getTotalLength();
+  const point = path.getPointAtLength(length * 0.58);
+  youTrace.setAttribute("d", routeData);
+  youTrace.dataset.route = route;
+  youTrace.removeAttribute("hidden");
+  youDriver.dataset.route = route;
+  youDriver.style.transform = `translate(${point.x}px, ${point.y}px)`;
+  youDriver.removeAttribute("hidden");
+  driverLayer.classList.add("driver-layer--muted");
+
+  for (const animation of youTrace.getAnimations()) animation.cancel();
+  if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    youTrace.animate(
+      [{ strokeDashoffset: String(length) }, { strokeDashoffset: "0" }],
+      { duration: 420, easing: "cubic-bezier(0.22, 1, 0.36, 1)" },
+    );
+  }
 }
 
 function renderDiscovery(result: BraessResult): void {
@@ -149,6 +175,8 @@ function renderPersonalChoice(result: BraessResult): void {
     personalResult.value = "Choose a route to compare the two options.";
     return;
   }
+
+  renderPersonalRoute(selectedPersonalRoute);
 
   const choseShortcut = selectedPersonalRoute === "shortcut";
   const chosen = choseShortcut ? result.shortcutRouteMinutes : result.oldRouteMinutes;

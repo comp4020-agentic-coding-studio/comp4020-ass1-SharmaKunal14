@@ -37,6 +37,7 @@ describe("transparent direct interactions", () => {
     expect(copy).toContain("Each moving dot represents 50 drivers");
     expect(copy).toContain("Find the lowest town average");
     expect(copy).toContain("Before the shortcut 65 min");
+    expect(copy).toContain("highlighted YOU marker trace your option");
   });
 
   it("contains the complete initial arithmetic and withholds the reveal", () => {
@@ -62,6 +63,7 @@ describe("transparent direct interactions", () => {
     expect(mainSource).toContain("const DRIVERS_PER_DOT = 50");
     expect(mainSource).toContain("BRAESS_LANDMARKS");
     expect(mainSource).toContain("renderPersonalChoice(result)");
+    expect(mainSource).toContain("renderPersonalRoute(selectedPersonalRoute)");
   });
 
   it("keeps the primary copy free of the discarded process jargon", () => {
