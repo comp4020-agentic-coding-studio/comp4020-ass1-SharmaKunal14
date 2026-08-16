@@ -108,7 +108,7 @@ describe("transparent desktop experiment", () => {
   it("shows the rules and initial calculation before interaction", async () => {
     const observed = await open(DESKTOP);
     const { page } = observed;
-    expect(await page.locator("button").count()).toBe(2);
+    expect(await page.locator("button").count()).toBe(4);
     expect(await page.locator("[data-play]").count()).toBe(0);
     expect(await page.locator("[data-endpoint-prompt]").isHidden()).toBe(true);
     expect(await page.locator("[data-toggle-road]").isHidden()).toBe(true);
@@ -210,11 +210,51 @@ describe("transparent desktop experiment", () => {
     expect(await text(page, "[data-discovery]")).toContain("You found the best balance");
     expect(await page.locator("[data-town-comparison]").getAttribute("data-state")).toBe("better");
     expect(await text(page, "[data-comparison-verdict]")).toBe("0.3 min faster");
+    expect(await page.locator('[data-milestone="best"]').getAttribute("data-state")).toBe("complete");
+    expect(await text(page, '[data-milestone="best"] [data-milestone-status]')).toBe("64.7 min found");
+    expect(await page.locator('[data-milestone="break-even"]').getAttribute("data-state")).toBe("active");
+    expect(await text(page, "[data-challenge-title]")).toBe("When does the shortcut stop helping?");
 
     await setUsers(page, 1_000);
     expect(await text(page, "[data-average-time]")).toBe("65");
     expect(await text(page, "[data-discovery]")).toContain("Break-even");
     expect(await page.locator("[data-town-comparison]").getAttribute("data-state")).toBe("same");
+    expect(await page.locator('[data-milestone="break-even"]').getAttribute("data-state")).toBe("complete");
+    expect(await page.locator('[data-milestone="paradox"]').getAttribute("data-state")).toBe("active");
+    expect(await text(page, "[data-challenge-title]")).toBe(
+      "What happens if drivers keep choosing for themselves?",
+    );
+    healthy(observed);
+    await page.close();
+  });
+
+  it("lets one driver group attempt and reject a rescue", async () => {
+    const observed = await open(DESKTOP);
+    const { page } = observed;
+    await setUsers(page, 4_000);
+    await page.locator("[data-show-result]").click();
+    expect(await page.locator('[data-milestone="paradox"]').getAttribute("data-state")).toBe("complete");
+
+    await page.locator("[data-start-rescue]").click();
+    expect(await page.locator("[data-rescue-prompt]").isVisible()).toBe(true);
+    expect(await page.locator("#shortcut-users").evaluate((element) => element === document.activeElement)).toBe(true);
+    expect(await text(page, "[data-challenge-title]")).toBe("Can 100 drivers improve things for everyone?");
+    expect(await page.locator("[data-rescue-result]").isHidden()).toBe(true);
+
+    await setUsers(page, 3_900);
+    expect(await text(page, "[data-average-time]")).toBe("79.1");
+    expect(await page.locator("[data-rescue-result]").isVisible()).toBe(true);
+    expect(await text(page, "[data-rescue-average]")).toBe("79.1 min");
+    expect(await text(page, "[data-rescue-old]")).toBe("84.5 min");
+    expect(await text(page, "[data-rescue-loss]")).toBe("5.5 min worse for them");
+    expect(await text(page, "[data-rescue-result]")).toContain(
+      "Moving back helps the town, but it hurts the drivers who move",
+    );
+
+    await page.locator("[data-finish-rescue]").click();
+    expect(await page.locator("#shortcut-users").inputValue()).toBe("4000");
+    expect(await page.locator("[data-reveal]").isVisible()).toBe(true);
+    expect(await page.locator("[data-reveal]").evaluate((element) => element === document.activeElement)).toBe(true);
     healthy(observed);
     await page.close();
   });

@@ -115,10 +115,22 @@
         <div class="calculator">
           <section class="explore-card" aria-labelledby="challenge-title">
             <header class="challenge">
-              <p class="step-label">Step 1 · Move the crowd</p>
-              <h3 id="challenge-title">Can you find the lowest town average?</h3>
-              <p>Drag slowly. First the shortcut helps. Then popularity changes the result.</p>
+              <p class="step-label" data-challenge-step>Step 1 · Find the best point</p>
+              <h3 id="challenge-title" data-challenge-title>Can you make the town as fast as possible?</h3>
+              <p data-challenge-copy>Drag slowly and watch the town average. Stop when it reaches its lowest value.</p>
             </header>
+
+            <ol class="milestone-trail" aria-label="Discovery progress">
+              <li class="milestone" data-milestone="best" data-state="active" aria-current="step">
+                <span class="milestone__number">1</span><strong class="milestone__label">Best point</strong><small class="milestone__status" data-milestone-status>Find it</small>
+              </li>
+              <li class="milestone" data-milestone="break-even" data-state="locked">
+                <span class="milestone__number">2</span><strong class="milestone__label">Break-even</strong><small class="milestone__status" data-milestone-status>Locked</small>
+              </li>
+              <li class="milestone" data-milestone="paradox" data-state="locked">
+                <span class="milestone__number">3</span><strong class="milestone__label">The paradox</strong><small class="milestone__status" data-milestone-status>Locked</small>
+              </li>
+            </ol>
 
             <div class="slider-block">
               <div class="slider-heading">
@@ -166,6 +178,18 @@
                 <button type="button" data-show-result>
                   Reveal the paradox <span aria-hidden="true">→</span>
                 </button>
+              </section>
+
+              <section class="rescue-prompt" data-rescue-prompt hidden aria-labelledby="rescue-prompt-title">
+                <p class="step-label">Step 4 · Attempt a rescue</p>
+                <h4 id="rescue-prompt-title">Move exactly 100 drivers back.</h4>
+                <p data-rescue-instruction>Move the slider one step left: 4,000 → 3,900.</p>
+                <div class="rescue-result" data-rescue-result hidden>
+                  <div><span>Town average</span><strong data-rescue-average>79.1 min</strong><small>0.9 min better</small></div>
+                  <div><span>Drivers who leave</span><strong data-rescue-old>84.5 min</strong><small data-rescue-loss>5.5 min worse for them</small></div>
+                  <p>Moving back helps the town, but it hurts the drivers who move. They would choose the shortcut again.</p>
+                </div>
+                <button type="button" data-finish-rescue hidden>Return to the paradox result</button>
               </section>
             </div>
 
@@ -248,6 +272,15 @@
             <p>Each driver’s sensible choice keeps the worse group result in place.</p>
           </article>
         </div>
+
+        <section class="rescue-invitation" aria-labelledby="rescue-title">
+          <div>
+            <p class="eyebrow">Test the trap yourself</p>
+            <h3 id="rescue-title">Can 100 drivers rescue the town?</h3>
+            <p>Move one group off the shortcut and compare what helps everyone with what helps that group.</p>
+          </div>
+          <button type="button" data-start-rescue>Try moving 100 drivers back</button>
+        </section>
 
         <p class="unstable-best" data-best-explanation></p>
 

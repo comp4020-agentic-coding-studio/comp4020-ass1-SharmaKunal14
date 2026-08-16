@@ -24,7 +24,7 @@ describe("transparent direct interactions", () => {
     expect(doc.querySelectorAll<HTMLInputElement>('input[name="prediction"]')).toHaveLength(0);
     expect(doc.querySelector(".prediction")).toBeNull();
     expect(doc.querySelector("[data-prediction-feedback]")).toBeNull();
-    expect(doc.querySelectorAll("button")).toHaveLength(2);
+    expect(doc.querySelectorAll("button")).toHaveLength(4);
     expect(doc.querySelector("[data-play]")).toBeNull();
     expect(doc.querySelector("[data-show-result]")).not.toBeNull();
     expect(doc.querySelector("[data-toggle-road]")).not.toBeNull();
@@ -55,7 +55,13 @@ describe("transparent direct interactions", () => {
     expect(copy).toContain("No dots are added or removed");
     expect(copy).toContain("Each 100-driver slider step moves two existing dots");
     expect(doc.querySelector(".route-ledger")?.getAttribute("aria-label")).toBe("Where all 80 dots are now");
-    expect(copy).toContain("find the lowest town average");
+    expect(copy).toContain("make the town as fast as possible");
+    expect(copy).toContain("1Best pointFind it");
+    expect(copy).toContain("2Break-evenLocked");
+    expect(copy).toContain("3The paradoxLocked");
+    expect(copy).toContain("Can 100 drivers rescue the town");
+    expect(copy).toContain("Move exactly 100 drivers back");
+    expect(copy).toContain("Moving back helps the town, but it hurts the drivers who move");
     expect(copy).toContain("Before the shortcut 65 min");
     expect(copy).toContain("Where the current times come from");
     expect(copy).toContain("Only the shortcut changed");

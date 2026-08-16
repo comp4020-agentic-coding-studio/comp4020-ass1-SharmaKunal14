@@ -7,8 +7,8 @@ import {
   type BraessResult,
 } from "./src/braess";
 
-function need<T extends Element>(selector: string): T {
-  const element = document.querySelector<T>(selector);
+function need<T extends Element>(selector: string, root: ParentNode = document): T {
+  const element = root.querySelector<T>(selector);
   if (element === null) throw new Error(`Missing required element: ${selector}`);
   return element;
 }
@@ -31,6 +31,10 @@ const averageMath = need<HTMLElement>("[data-average-math]");
 const reveal = need<HTMLElement>("[data-reveal]");
 const endpointPrompt = need<HTMLElement>("[data-endpoint-prompt]");
 const showResult = need<HTMLButtonElement>("[data-show-result]");
+const challengeStep = need<HTMLElement>("[data-challenge-step]");
+const challengeTitle = need<HTMLElement>("[data-challenge-title]");
+const challengeCopy = need<HTMLElement>("[data-challenge-copy]");
+const milestones = [...document.querySelectorAll<HTMLElement>("[data-milestone]")];
 const liveSummary = need<HTMLElement>("[data-live-summary]");
 const discovery = need<HTMLOutputElement>("[data-discovery]");
 const townComparison = need<HTMLElement>("[data-town-comparison]");
@@ -42,6 +46,14 @@ const roadControlCopy = need<HTMLElement>("[data-road-control-copy]");
 const toggleRoad = need<HTMLButtonElement>("[data-toggle-road]");
 const networkWrap = need<HTMLElement>("[data-network-wrap]");
 const mapProof = need<HTMLElement>("[data-map-proof]");
+const rescuePrompt = need<HTMLElement>("[data-rescue-prompt]");
+const rescueInstruction = need<HTMLElement>("[data-rescue-instruction]");
+const rescueResult = need<HTMLElement>("[data-rescue-result]");
+const rescueAverage = need<HTMLElement>("[data-rescue-average]");
+const rescueOld = need<HTMLElement>("[data-rescue-old]");
+const rescueLoss = need<HTMLElement>("[data-rescue-loss]");
+const startRescue = need<HTMLButtonElement>("[data-start-rescue]");
+const finishRescue = need<HTMLButtonElement>("[data-finish-rescue]");
 const driverLayer = need<SVGGElement>("[data-driver-layer]");
 const topFlow = need<SVGPathElement>("#top-flow");
 const bottomFlow = need<SVGPathElement>("#bottom-flow");
@@ -53,6 +65,8 @@ const DRIVERS_PER_DOT = 50;
 const DOTS = TOTAL_DRIVERS / DRIVERS_PER_DOT;
 const DOTS_PER_OLD_ROUTE = DOTS / 2;
 const BEST_RESULT = calculateBraess(BRAESS_LANDMARKS.bestShortcutUsers);
+const RESCUE_SHORTCUT_USERS = TOTAL_DRIVERS - 100;
+const RESCUE_RESULT = calculateBraess(RESCUE_SHORTCUT_USERS);
 const driverDots = Array.from({ length: DOTS }, (_, index) => {
   const dot = document.createElementNS(SVG_NAMESPACE, "circle");
   dot.setAttribute("r", "5");
@@ -65,6 +79,8 @@ const topOriginDots = driverDots.slice(0, DOTS_PER_OLD_ROUTE);
 const bottomOriginDots = driverDots.slice(DOTS_PER_OLD_ROUTE);
 let roadClosed = false;
 let resultRevealed = false;
+let rescueMode = false;
+let furthestShortcutUsers = 0;
 
 function minutes(value: number): string {
   return number.format(value);
@@ -145,6 +161,75 @@ function renderDiscovery(result: BraessResult): void {
   }
 }
 
+function renderMilestones(result: BraessResult): void {
+  const definitions = [
+    {
+      id: "best",
+      threshold: BRAESS_LANDMARKS.bestShortcutUsers,
+      complete: `${minutes(BEST_RESULT.averageMinutes)} min found`,
+    },
+    {
+      id: "break-even",
+      threshold: BRAESS_LANDMARKS.breakEvenShortcutUsers,
+      complete: "65 min found",
+    },
+    { id: "paradox", threshold: TOTAL_DRIVERS, complete: "80 min created" },
+  ];
+
+  let nextFound = false;
+  for (const definition of definitions) {
+    const milestone = milestones.find((item) => item.dataset.milestone === definition.id);
+    if (milestone === undefined) throw new Error(`Missing milestone: ${definition.id}`);
+    const completed = furthestShortcutUsers >= definition.threshold;
+    const active = !completed && !nextFound;
+    if (active) nextFound = true;
+    milestone.dataset.state = completed ? "complete" : active ? "active" : "locked";
+    milestone.toggleAttribute("aria-current", active);
+    const status = need<HTMLElement>("[data-milestone-status]", milestone);
+    status.textContent = completed ? definition.complete : active ? "Find it" : "Locked";
+  }
+
+  if (rescueMode) {
+    challengeStep.textContent = "Step 4 · Attempt a rescue";
+    challengeTitle.textContent = "Can 100 drivers improve things for everyone?";
+    challengeCopy.textContent = "Move the slider one step left and compare the town’s result with those drivers’ result.";
+  } else if (furthestShortcutUsers < BRAESS_LANDMARKS.bestShortcutUsers) {
+    challengeStep.textContent = "Step 1 · Find the best point";
+    challengeTitle.textContent = "Can you make the town as fast as possible?";
+    challengeCopy.textContent = "Drag slowly and watch the town average. Stop when it reaches its lowest value.";
+  } else if (furthestShortcutUsers < BRAESS_LANDMARKS.breakEvenShortcutUsers) {
+    challengeStep.textContent = "Step 2 · Find break-even";
+    challengeTitle.textContent = "When does the shortcut stop helping?";
+    challengeCopy.textContent = "Keep moving drivers until the town average returns to its original 65 minutes.";
+  } else if (furthestShortcutUsers < TOTAL_DRIVERS) {
+    challengeStep.textContent = "Step 3 · Follow the quicker route";
+    challengeTitle.textContent = "What happens if drivers keep choosing for themselves?";
+    challengeCopy.textContent = "The shortcut still looks quicker to each driver. Keep following that incentive.";
+  } else {
+    challengeStep.textContent = "Step 3 · Paradox created";
+    challengeTitle.textContent = "You followed the quicker route—and made the town slower.";
+    challengeCopy.textContent = result.shortcutUsers === TOTAL_DRIVERS
+      ? "The same 4,000 drivers now take 80 minutes instead of 65."
+      : "Return the slider to 4,000 to reveal the controlled comparison.";
+  }
+}
+
+function renderRescue(result: BraessResult): void {
+  document.body.dataset.rescue = String(rescueMode);
+  rescuePrompt.hidden = !rescueMode;
+  if (!rescueMode) return;
+
+  const targetReached = result.shortcutUsers === RESCUE_SHORTCUT_USERS;
+  rescueResult.hidden = !targetReached;
+  finishRescue.hidden = !targetReached;
+  rescueInstruction.textContent = targetReached
+    ? "You moved one 100-driver group back. Now compare the two consequences."
+    : `Set the slider to ${drivers(RESCUE_SHORTCUT_USERS)}: exactly one step left from ${drivers(TOTAL_DRIVERS)}.`;
+  rescueAverage.textContent = `${minutes(RESCUE_RESULT.averageMinutes)} min`;
+  rescueOld.textContent = `${minutes(RESCUE_RESULT.oldRouteMinutes)} min`;
+  rescueLoss.textContent = `${minutes(RESCUE_RESULT.individualSavingMinutes)} min worse for them`;
+}
+
 bestExplanation.textContent =
   `The town’s best balance was ${drivers(BRAESS_LANDMARKS.bestShortcutUsers)} shortcut users at ${minutes(BEST_RESULT.averageMinutes)} minutes. ` +
   `It could not last: the shortcut was still ${minutes(BEST_RESULT.individualSavingMinutes)} minutes quicker than an old route, so each next driver had a reason to join it.`;
@@ -174,6 +259,8 @@ function render(result: BraessResult): void {
   }
   renderDriverDots(shortcutUsers, usersPerOldRoute);
   renderDiscovery(result);
+  renderMilestones(result);
+  renderRescue(result);
 
   if (averageChangeMinutes > 0) {
     averageChange.textContent = `${minutes(averageChangeMinutes)} min slower than without the shortcut`;
@@ -213,7 +300,7 @@ function render(result: BraessResult): void {
 
   const reachedEndpoint = shortcutUsers === TOTAL_DRIVERS && !roadClosed;
   const showResultChapter = resultRevealed && (reachedEndpoint || roadClosed);
-  endpointPrompt.hidden = !reachedEndpoint || resultRevealed;
+  endpointPrompt.hidden = !reachedEndpoint || resultRevealed || rescueMode;
   reveal.hidden = !showResultChapter;
   roadControl.hidden = !showResultChapter;
   mapProof.hidden = !roadClosed;
@@ -240,8 +327,35 @@ input.addEventListener("input", () => {
   roadClosed = false;
   const result = calculateBraess(Number(input.value));
   input.value = String(result.shortcutUsers);
+  furthestShortcutUsers = Math.max(furthestShortcutUsers, result.shortcutUsers);
   if (result.shortcutUsers < TOTAL_DRIVERS) resultRevealed = false;
   render(result);
+});
+
+startRescue.addEventListener("click", () => {
+  roadClosed = false;
+  rescueMode = true;
+  resultRevealed = false;
+  input.disabled = false;
+  input.value = String(TOTAL_DRIVERS);
+  render(calculateBraess(TOTAL_DRIVERS));
+  input.focus({ preventScroll: true });
+  input.scrollIntoView({
+    behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+    block: "center",
+  });
+});
+
+finishRescue.addEventListener("click", () => {
+  rescueMode = false;
+  resultRevealed = true;
+  input.value = String(TOTAL_DRIVERS);
+  render(calculateBraess(TOTAL_DRIVERS));
+  reveal.focus({ preventScroll: true });
+  reveal.scrollIntoView({
+    behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+    block: "start",
+  });
 });
 
 showResult.addEventListener("click", () => {

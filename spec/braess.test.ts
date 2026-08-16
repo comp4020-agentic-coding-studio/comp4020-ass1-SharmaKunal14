@@ -59,6 +59,18 @@ describe("the transparent Braess calculation", () => {
     expect(calculateBraess(TOTAL_DRIVERS).averageMinutes).toBeGreaterThan(BASELINE_MINUTES);
   });
 
+  it("shows why one 100-driver group cannot maintain a rescue", () => {
+    expect(calculateBraess(3_900)).toMatchObject({
+      shortcutUsers: 3_900,
+      oldRouteUsers: 100,
+      narrowRoadUsers: 3_950,
+      oldRouteMinutes: 84.5,
+      shortcutRouteMinutes: 79,
+      averageMinutes: 79.1375,
+      individualSavingMinutes: 5.5,
+    });
+  });
+
   it("derives the discovery landmarks from the same arithmetic", () => {
     expect(BRAESS_LANDMARKS).toEqual({
       bestShortcutUsers: 500,
