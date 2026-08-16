@@ -42,6 +42,7 @@ const townComparison = need<HTMLElement>("[data-town-comparison]");
 const comparisonAverage = need<HTMLOutputElement>("[data-comparison-average]");
 const comparisonVerdict = need<HTMLOutputElement>("[data-comparison-verdict]");
 const predictionFeedback = need<HTMLElement>("[data-prediction-feedback]");
+const bestExplanation = need<HTMLElement>("[data-best-explanation]");
 const roadControl = need<HTMLElement>("[data-road-control]");
 const roadControlTitle = need<HTMLElement>("[data-road-control-title]");
 const roadControlCopy = need<HTMLElement>("[data-road-control-copy]");
@@ -58,6 +59,7 @@ const number = new Intl.NumberFormat("en-AU", { maximumFractionDigits: 1 });
 const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
 const DRIVERS_PER_DOT = 50;
 const DOTS = TOTAL_DRIVERS / DRIVERS_PER_DOT;
+const BEST_RESULT = calculateBraess(BRAESS_LANDMARKS.bestShortcutUsers);
 const driverDots = Array.from({ length: DOTS }, () => {
   const dot = document.createElementNS(SVG_NAMESPACE, "circle");
   dot.setAttribute("r", "5");
@@ -153,7 +155,9 @@ function renderDiscovery(result: BraessResult): void {
   } else if (shortcutUsers < bestShortcutUsers) {
     discovery.value = "The town average is falling. Keep looking for the lowest point.";
   } else if (shortcutUsers === bestShortcutUsers) {
-    discovery.value = `You found the best balance: ${drivers(bestShortcutUsers)} shortcut users and a ${minutes(bestAverageMinutes)}-minute average.`;
+    discovery.value =
+      `You found the best balance: ${drivers(bestShortcutUsers)} shortcut users and a ${minutes(bestAverageMinutes)}-minute average. ` +
+      `But the shortcut is still ${minutes(BEST_RESULT.individualSavingMinutes)} minutes quicker, so more drivers will switch.`;
   } else if (shortcutUsers < breakEvenShortcutUsers) {
     discovery.value = `You passed the best point. The town is still faster than 65 minutes, but the benefit is shrinking.`;
   } else if (shortcutUsers === breakEvenShortcutUsers) {
@@ -188,6 +192,10 @@ function renderPredictionFeedback(): void {
     `You predicted the shortcut would ${prediction}. ` +
     "It helped while lightly used, but after everyone followed the quicker route the town became slower.";
 }
+
+bestExplanation.textContent =
+  `The town’s best balance was ${drivers(BRAESS_LANDMARKS.bestShortcutUsers)} shortcut users at ${minutes(BEST_RESULT.averageMinutes)} minutes. ` +
+  `It could not last: the shortcut was still ${minutes(BEST_RESULT.individualSavingMinutes)} minutes quicker than an old route, so each next driver had a reason to join it.`;
 
 function renderPersonalChoice(result: BraessResult): void {
   personalOld.value = minutes(result.oldRouteMinutes);

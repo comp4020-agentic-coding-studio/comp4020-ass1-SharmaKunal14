@@ -70,6 +70,7 @@ describe("transparent direct interactions", () => {
     expect(mainSource).toContain('from "./src/braess"');
     expect(mainSource).toContain("const DRIVERS_PER_DOT = 50");
     expect(mainSource).toContain("BRAESS_LANDMARKS");
+    expect(mainSource).toContain("BEST_RESULT.individualSavingMinutes");
     expect(mainSource).toContain("renderPersonalChoice(result)");
     expect(mainSource).toContain("renderPersonalRoute(selectedPersonalRoute)");
   });

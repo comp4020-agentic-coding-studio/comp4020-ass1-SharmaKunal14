@@ -191,6 +191,12 @@ describe("transparent desktop experiment", () => {
     expect(await text(page, "[data-reveal]")).toContain("Braess’s paradox");
     expect(await text(page, "[data-reveal]")).toContain("Stay: 80 min · Leave alone: 85 min");
     expect(await text(page, "[data-reveal]")).toContain("Before road: 65 min · After choices: 80 min");
+    expect(await text(page, "[data-best-explanation]")).toContain(
+      "best balance was 500 shortcut users at 64.7 minutes",
+    );
+    expect(await text(page, "[data-best-explanation]")).toContain(
+      "shortcut was still 22.5 minutes quicker",
+    );
     expect(await text(page, "[data-decision]")).toContain("nobody leaves");
     expect(await page.locator('.driver-dot[data-route="shortcut"]').count()).toBe(80);
     expect(await text(page, "[data-prediction-feedback]")).toContain("You predicted the shortcut would make trips faster");
