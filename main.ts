@@ -39,8 +39,9 @@ const bestExplanation = need<HTMLElement>("[data-best-explanation]");
 const roadControl = need<HTMLElement>("[data-road-control]");
 const roadControlTitle = need<HTMLElement>("[data-road-control-title]");
 const roadControlCopy = need<HTMLElement>("[data-road-control-copy]");
-const closureResult = need<HTMLElement>("[data-closure-result]");
 const toggleRoad = need<HTMLButtonElement>("[data-toggle-road]");
+const networkWrap = need<HTMLElement>("[data-network-wrap]");
+const mapProof = need<HTMLElement>("[data-map-proof]");
 const driverLayer = need<SVGGElement>("[data-driver-layer]");
 const topFlow = need<SVGPathElement>("#top-flow");
 const bottomFlow = need<SVGPathElement>("#bottom-flow");
@@ -215,13 +216,15 @@ function render(result: BraessResult): void {
   endpointPrompt.hidden = !reachedEndpoint || resultRevealed;
   reveal.hidden = !showResultChapter;
   roadControl.hidden = !showResultChapter;
-  closureResult.hidden = !roadClosed;
-  toggleRoad.textContent = roadClosed ? "Reopen the shortcut" : "Close the shortcut";
+  mapProof.hidden = !roadClosed;
+  toggleRoad.textContent = roadClosed
+    ? "Reopen the shortcut and watch the map"
+    : "Close the shortcut and watch the map";
   roadControlTitle.textContent = roadClosed
-    ? "Removing a road made every trip faster."
+    ? "You proved it backwards."
     : "Now remove the shortcut.";
   roadControlCopy.textContent = roadClosed
-    ? "Without the tempting middle route, drivers split evenly and stop crowding both narrow roads."
+    ? "The same drivers returned to 65 minutes when the shortcut disappeared."
     : "Keep the same 4,000 drivers and watch the two old routes clear.";
   liveSummary.textContent = roadClosed
     ? "The shortcut is closed. Drivers split evenly. Every trip and the town average are 65 minutes."
@@ -256,6 +259,12 @@ toggleRoad.addEventListener("click", () => {
   input.disabled = roadClosed;
   input.value = roadClosed ? "0" : String(TOTAL_DRIVERS);
   render(calculateBraess(Number(input.value)));
+  const destination = roadClosed ? mapProof : networkWrap;
+  destination.focus({ preventScroll: true });
+  networkWrap.scrollIntoView({
+    behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+    block: "start",
+  });
 });
 
 render(calculateBraess(Number(input.value)));

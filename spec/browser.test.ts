@@ -303,7 +303,13 @@ describe("transparent desktop experiment", () => {
     expect(await page.locator("#shortcut-users").isDisabled()).toBe(true);
     expect(await page.locator("#shortcut-users").inputValue()).toBe("0");
     expect(await text(page, "[data-average-time]")).toBe("65");
-    expect(await text(page, "[data-closure-result]")).toContain("80 min with the shortcut → 65 min without it");
+    expect(await page.locator("[data-map-proof]").isVisible()).toBe(true);
+    expect(await text(page, "[data-map-proof]")).toContain("80 → 65 min");
+    expect(await text(page, "[data-map-proof]")).toContain(
+      "One road removed. The same 4,000 drivers are now 15 minutes faster.",
+    );
+    expect(await page.locator("[data-map-proof]").evaluate((element) => element === document.activeElement)).toBe(true);
+    await page.waitForFunction(() => document.querySelector("[data-network-wrap]")!.getBoundingClientRect().top >= 0);
     expect(await page.locator('.driver-dot[data-route="top"]').count()).toBe(40);
     expect(await page.locator('.driver-dot[data-route="bottom"]').count()).toBe(40);
     expect(await page.locator('.driver-dot[data-route="shortcut"]').count()).toBe(0);
@@ -356,7 +362,7 @@ describe("phone and keyboard", () => {
     await page.locator("[data-toggle-road]").focus();
     await page.keyboard.press("Enter");
     expect(await text(page, "[data-average-time]")).toBe("65");
-    expect(await page.locator("[data-toggle-road]").evaluate((element) => element === document.activeElement)).toBe(true);
+    expect(await page.locator("[data-map-proof]").evaluate((element) => element === document.activeElement)).toBe(true);
     healthy(observed);
     await page.close();
   });

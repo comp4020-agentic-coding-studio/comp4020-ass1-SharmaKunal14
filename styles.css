@@ -228,6 +228,70 @@ h1 {
   align-items: end;
 }
 
+.map-proof {
+  margin-top: var(--space-3);
+  padding: var(--space-3);
+  border-left: 7px solid var(--gold);
+  background: var(--ink);
+  color: var(--paper);
+  display: grid;
+  grid-template-columns: auto minmax(12rem, 1fr) auto;
+  gap: var(--space-3);
+  align-items: center;
+  animation: endpoint-arrival 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.map-proof[hidden] {
+  display: none;
+}
+
+.network-wrap:focus-visible,
+.map-proof:focus-visible {
+  outline: 3px solid var(--teal);
+  outline-offset: 4px;
+}
+
+.map-proof div {
+  min-width: 9rem;
+}
+
+.map-proof span,
+.map-proof strong {
+  display: block;
+}
+
+.map-proof span {
+  color: #c9d0cd;
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.map-proof strong {
+  margin-top: 0.25rem;
+  color: var(--gold);
+  font-family: "DM Mono", monospace;
+  font-size: 1.3rem;
+}
+
+.map-proof p {
+  margin: 0;
+  color: #e3e7e5;
+  font-size: 0.7rem;
+  line-height: 1.5;
+}
+
+.map-proof a {
+  color: var(--paper);
+  font-size: 0.64rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-decoration-color: var(--gold);
+  text-underline-offset: 0.3rem;
+  text-transform: uppercase;
+}
+
 h2 {
   font-size: clamp(2rem, 3.5vw, 3.4rem);
   line-height: 1;
@@ -314,12 +378,27 @@ h2 {
 .road--shortcut {
   stroke: var(--teal);
   stroke-width: calc(7px + var(--shortcut-share) * 12px);
-  transition: stroke-width 160ms ease;
+  opacity: 1;
+  transform: scaleY(1);
+  transform-box: fill-box;
+  transform-origin: center;
+  transition:
+    opacity 520ms ease,
+    stroke-width 520ms ease,
+    transform 520ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-body[data-road-closed="true"] .road--shortcut,
+body[data-road-closed="true"] .road--shortcut {
+  opacity: 0.08;
+  transform: scaleY(0.02);
+}
+
+.shortcut-label {
+  transition: opacity 320ms ease;
+}
+
 body[data-road-closed="true"] .shortcut-label {
-  opacity: 0.12;
+  opacity: 0;
 }
 
 .flow-path {
@@ -341,8 +420,8 @@ body[data-road-closed="true"] .shortcut-label {
   stroke: var(--paper);
   stroke-width: 2;
   transition:
-    transform 260ms cubic-bezier(0.22, 1, 0.36, 1),
-    fill 160ms ease;
+    transform 620ms cubic-bezier(0.22, 1, 0.36, 1),
+    fill 320ms ease;
 }
 
 .driver-dot--shortcut {
@@ -895,7 +974,15 @@ h3 {
   color: var(--teal);
 }
 
-.road-control p:not(.eyebrow, .closure-result) {
+.road-control h3 {
+  max-width: 18ch;
+  color: var(--ink);
+  font-size: clamp(2rem, 3.5vw, 3.6rem);
+  letter-spacing: -0.04em;
+  line-height: 0.95;
+}
+
+.road-control p:not(.eyebrow) {
   margin: 0.65rem 0 0;
   color: var(--ink-soft);
   font-size: 0.76rem;
@@ -919,22 +1006,6 @@ h3 {
   background: var(--teal);
 }
 
-.closure-result {
-  margin: 1rem 0 0;
-  padding: 0.8rem;
-  border-left: 4px solid var(--teal);
-  background: rgb(11 120 136 / 7%);
-  color: var(--ink-soft);
-  font-size: 0.72rem;
-  line-height: 1.5;
-}
-
-.closure-result__value {
-  display: block;
-  margin-bottom: 0.25rem;
-  color: var(--teal);
-  font-family: "DM Mono", monospace;
-}
 /* stylelint-enable no-descending-specificity */
 
 @keyframes reveal {
@@ -1027,6 +1098,10 @@ footer {
 
   .network-heading {
     display: block;
+  }
+
+  .map-proof {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .baseline {
