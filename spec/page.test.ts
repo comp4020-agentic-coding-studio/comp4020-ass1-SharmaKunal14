@@ -83,7 +83,8 @@ describe("transparent direct interactions", () => {
     expect(mainSource).toContain("BRAESS_LANDMARKS");
     expect(mainSource).toContain("BEST_RESULT.individualSavingMinutes");
     expect(mainSource).toContain("playNextStep");
-    expect(mainSource).toContain("window.setTimeout(playNextStep, 80)");
+    expect(mainSource).toContain("const PLAY_STEP_MS = 140");
+    expect(mainSource).toContain("window.setTimeout(playNextStep, PLAY_STEP_MS)");
   });
 
   it("keeps the primary copy free of the discarded process jargon", () => {

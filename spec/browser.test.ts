@@ -259,14 +259,14 @@ describe("transparent desktop experiment", () => {
     expect(await page.locator("#shortcut-users").inputValue()).toBe(pausedAt);
 
     await play.click();
-    await page.waitForFunction(() => document.body.dataset.complete === "true", undefined, { timeout: 6_000 });
+    await page.waitForFunction(() => document.body.dataset.complete === "true", undefined, { timeout: 8_000 });
     expect(await page.locator("#shortcut-users").inputValue()).toBe("4000");
     expect(await page.locator("[data-reveal]").isVisible()).toBe(true);
     await page.waitForFunction(() => document.querySelector("[data-play]")?.textContent?.includes("Replay"));
     expect(await text(page, "[data-play]")).toContain("Replay from the start");
     healthy(observed);
     await page.close();
-  });
+  }, 12_000);
 });
 
 describe("phone and keyboard", () => {

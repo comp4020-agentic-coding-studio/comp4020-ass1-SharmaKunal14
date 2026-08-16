@@ -49,6 +49,7 @@ const shortcutFlow = need<SVGPathElement>("#shortcut-flow");
 const number = new Intl.NumberFormat("en-AU", { maximumFractionDigits: 1 });
 const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
 const DRIVERS_PER_DOT = 50;
+const PLAY_STEP_MS = 140;
 const DOTS = TOTAL_DRIVERS / DRIVERS_PER_DOT;
 const BEST_RESULT = calculateBraess(BRAESS_LANDMARKS.bestShortcutUsers);
 const driverDots = Array.from({ length: DOTS }, () => {
@@ -282,7 +283,7 @@ function playNextStep(): void {
   }
 
   input.value = String(Math.min(TOTAL_DRIVERS, current + 100));
-  playTimer = window.setTimeout(playNextStep, 80);
+  playTimer = window.setTimeout(playNextStep, PLAY_STEP_MS);
   render(calculateBraess(Number(input.value)));
 }
 
