@@ -33,7 +33,7 @@ describe("transparent direct interactions", () => {
     expect(copy).toContain("The narrow road takes 1 minute per 100 cars");
     expect(copy).toContain("Every shortcut trip uses both narrow roads");
     expect(copy).toContain("nothing random is happening behind the scenes");
-    expect(copy).toContain("Here is every calculation");
+    expect(copy).toContain("Nothing is hidden");
     expect(copy).toContain("The quickest choice for each person can create a slower result for everyone");
     expect(copy).toContain("Each moving dot represents 50 drivers");
     expect(copy).toContain("Find the lowest town average");
@@ -41,6 +41,10 @@ describe("transparent direct interactions", () => {
     expect(copy).toContain("highlighted YOU marker trace your option");
     expect(copy).toContain("Reverse the experiment");
     expect(copy).toContain("Close the shortcut");
+    const calculations = doc.querySelector<HTMLDetailsElement>("details.math");
+    expect(calculations).not.toBeNull();
+    expect(calculations?.open).toBe(false);
+    expect(calculations?.querySelector("summary")?.textContent).toContain("Show how these numbers are calculated");
   });
 
   it("contains the complete initial arithmetic and withholds the reveal", () => {

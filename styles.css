@@ -725,13 +725,26 @@ body[data-road-closed="true"] .personal-choice {
   background: rgb(255 255 255 / 22%);
 }
 
+.math summary {
+  color: var(--ink);
+  font-size: 0.74rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.math__note {
+  margin: 0.8rem 0 0;
+  color: var(--ink-soft);
+  font-size: 0.7rem;
+}
+
 h3 {
   font-size: clamp(1.75rem, 2.6vw, 2.4rem);
   line-height: 1;
 }
 
 .math ol {
-  margin: 1.2rem 0 0;
+  margin: 0.8rem 0 0;
   padding: 0;
   list-style: none;
   counter-reset: calculation;

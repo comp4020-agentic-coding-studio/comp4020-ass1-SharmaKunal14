@@ -119,6 +119,9 @@ describe("transparent desktop experiment", () => {
     expect(await text(page, "[data-old-time]")).toBe("65");
     expect(await text(page, "[data-shortcut-time]")).toBe("40");
     expect(await text(page, "[data-average-time]")).toBe("65");
+    expect(await page.locator("details.math").getAttribute("open")).toBeNull();
+    await page.locator("details.math summary").click();
+    expect(await page.locator("[data-narrow-math]").isVisible()).toBe(true);
     expect(await page.locator("[data-reveal]").isHidden()).toBe(true);
     await noOverflow(page);
     healthy(observed);
