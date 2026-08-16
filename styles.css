@@ -7,6 +7,12 @@
   --teal: #0b7888;
   --gold: #f3ae2b;
   --rust: #9b3d2c;
+  --space-1: 0.5rem;
+  --space-2: 0.75rem;
+  --space-3: 1rem;
+  --space-4: 1.5rem;
+  --space-5: 2rem;
+  --space-6: 3rem;
   --shortcut-share: 0;
 
   color: var(--ink);
@@ -146,8 +152,8 @@ h1 {
 
 .prediction {
   max-width: 56rem;
-  margin-top: 2rem;
-  padding: 1.1rem 1.25rem;
+  margin-top: var(--space-5);
+  padding: var(--space-3) var(--space-4);
   border: 0;
   border-left: 5px solid var(--gold);
   background: var(--ink);
@@ -192,7 +198,7 @@ h1 {
 
 .rules {
   max-width: 56rem;
-  margin-top: 2.25rem;
+  margin-top: var(--space-5);
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1px;
@@ -201,7 +207,7 @@ h1 {
 }
 
 .rules article {
-  padding: 1.15rem 1.25rem;
+  padding: var(--space-4);
   background: var(--paper);
 }
 
@@ -228,8 +234,8 @@ h1 {
   padding: clamp(2rem, 5vh, 4rem) 0 5rem;
   border-top: 1px solid var(--rule);
   display: grid;
-  grid-template-columns: minmax(0, 1.35fr) minmax(20rem, 0.9fr);
-  gap: clamp(2rem, 5vw, 5rem);
+  grid-template-columns: minmax(0, 1.2fr) minmax(22rem, 0.8fr);
+  gap: clamp(2rem, 4vw, 4rem);
   align-items: start;
 }
 
@@ -237,6 +243,9 @@ h1 {
   position: sticky;
   top: 1rem;
   min-width: 0;
+  padding: clamp(1rem, 2.2vw, 2rem);
+  border: 1px solid var(--rule);
+  background: rgb(255 255 255 / 16%);
 }
 
 .network-heading {
@@ -280,7 +289,7 @@ h2 {
   display: block;
   width: 100%;
   height: auto;
-  margin-top: 1.5rem;
+  margin-top: var(--space-4);
   overflow: visible;
 }
 
@@ -444,35 +453,40 @@ body[data-road-closed="true"] .shortcut-label {
 
 .calculator {
   min-width: 0;
+  display: grid;
+  gap: var(--space-4);
 }
 
-.challenge {
-  margin-bottom: 1rem;
-  padding: 1.25rem;
+.explore-card {
   border: 1px solid var(--rule);
 }
 
+.challenge {
+  padding: var(--space-4);
+}
+
+.step-label,
+.personal-choice legend span,
+.math summary span {
+  display: block;
+  margin: 0 0 var(--space-1);
+  color: var(--teal);
+  font-family: Manrope, sans-serif;
+  font-size: 0.64rem;
+  font-weight: 800;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
 .challenge > p:not(.eyebrow) {
-  margin: 0.7rem 0 0;
+  margin: var(--space-2) 0 0;
   color: var(--ink-soft);
   font-size: 0.76rem;
   line-height: 1.5;
 }
 
-.challenge output {
-  display: block;
-  min-height: 3em;
-  margin-top: 1rem;
-  padding-top: 0.85rem;
-  border-top: 1px solid var(--rule);
-  color: var(--teal);
-  font-size: 0.76rem;
-  font-weight: 800;
-  line-height: 1.5;
-}
-
 .slider-block {
-  padding: 1.4rem;
+  padding: var(--space-4);
   background: var(--ink);
   color: var(--paper);
 }
@@ -515,81 +529,33 @@ input[type="range"] {
   text-transform: uppercase;
 }
 
+.discovery {
+  display: block;
+  min-height: 3em;
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid #66726e;
+  color: var(--gold);
+  font-size: 0.78rem;
+  font-weight: 800;
+  line-height: 1.5;
+}
+
 .decision {
   min-height: 3em;
-  margin: 1rem 0 0;
+  margin: var(--space-2) 0 0;
   color: #e3e7e5;
   font-size: 0.82rem;
   line-height: 1.5;
 }
 
-.times {
-  margin-top: 1rem;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  border: 1px solid var(--rule);
-}
-
-.times article {
-  min-width: 0;
-  padding: 1rem;
-  border-right: 1px solid var(--rule);
-}
-
-.times article:last-child {
-  border-right: 0;
-}
-
-.times span,
-.times strong,
-.times small {
-  display: block;
-}
-
-.times span {
-  color: var(--ink-soft);
-  font-size: 0.62rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.times strong {
-  margin-top: 0.35rem;
-  font-family: "DM Mono", monospace;
-  font-size: clamp(1.15rem, 2vw, 1.65rem);
-  white-space: nowrap;
-}
-
-.times small {
-  margin-top: 0.35rem;
-  color: var(--ink-soft);
-  font-size: 0.62rem;
-  line-height: 1.35;
-}
-
-.times__shortcut strong {
-  color: var(--teal);
-}
-
-body[data-complete="true"] .times__average strong,
-body[data-complete="true"] .times__average small {
-  color: var(--rust);
-}
-
-body[data-road-closed="true"] .times {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-body[data-road-closed="true"] .times__shortcut,
 body[data-road-closed="true"] .personal-choice {
   display: none;
 }
 
 .town-comparison {
-  margin-top: 1rem;
-  padding: 1rem;
-  border: 1px solid var(--rule);
+  padding: var(--space-4);
+  border-top: 1px solid var(--rule);
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   gap: 0.75rem;
@@ -603,6 +569,14 @@ body[data-road-closed="true"] .personal-choice {
 .town-comparison__label,
 .town-comparison__value {
   display: block;
+}
+
+.town-comparison small {
+  display: block;
+  margin-top: 0.25rem;
+  color: var(--ink-soft);
+  font-size: 0.62rem;
+  line-height: 1.35;
 }
 
 .town-comparison__label {
@@ -649,8 +623,8 @@ body[data-road-closed="true"] .personal-choice {
    page's shared span/strong primitives with a deliberately different hierarchy. */
 .personal-choice {
   min-width: 0;
-  margin: 1rem 0 0;
-  padding: 1.2rem;
+  margin: 0;
+  padding: var(--space-4);
   border: 1px solid var(--rule);
 }
 
@@ -659,6 +633,10 @@ body[data-road-closed="true"] .personal-choice {
   font-family: Newsreader, Georgia, serif;
   font-size: 1.25rem;
   font-weight: 500;
+}
+
+.personal-choice legend span {
+  margin-bottom: var(--space-1);
 }
 
 .personal-choice > p {
@@ -723,8 +701,8 @@ body[data-road-closed="true"] .personal-choice {
 /* stylelint-enable no-descending-specificity */
 
 .math {
-  margin-top: 1rem;
-  padding: 1.35rem;
+  margin: 0;
+  padding: var(--space-4);
   border: 1px solid var(--rule);
   background: rgb(255 255 255 / 22%);
 }
@@ -734,6 +712,10 @@ body[data-road-closed="true"] .personal-choice {
   font-size: 0.74rem;
   font-weight: 800;
   cursor: pointer;
+}
+
+.math summary span {
+  margin-bottom: var(--space-1);
 }
 
 .math__note {
@@ -783,8 +765,8 @@ h3 {
 }
 
 .reveal {
-  margin-top: 1rem;
-  padding: 1.5rem;
+  margin-top: 0;
+  padding: var(--space-4);
   border-left: 6px solid var(--rust);
   background: var(--paper-deep);
   animation: reveal 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
@@ -830,8 +812,8 @@ h3 {
 }
 
 .road-control {
-  margin-top: 1rem;
-  padding: 1.35rem;
+  margin-top: 0;
+  padding: var(--space-4);
   border: 1px solid var(--rule);
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -995,7 +977,11 @@ footer {
 
   .experiment {
     padding-top: 2rem;
-    gap: 1.5rem;
+    gap: var(--space-4);
+  }
+
+  .network-wrap {
+    padding: var(--space-3);
   }
 
   .network-heading {
@@ -1032,33 +1018,6 @@ footer {
   .slider-heading output {
     display: block;
     margin-top: 0.35rem;
-  }
-
-  .times {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .times article {
-    border-right: 0;
-    border-bottom: 1px solid var(--rule);
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 0.75rem;
-    align-items: center;
-  }
-
-  .times article:last-child {
-    border-bottom: 0;
-  }
-
-  .times strong,
-  .times small {
-    margin-top: 0;
-    text-align: right;
-  }
-
-  .times small {
-    grid-column: 1 / -1;
   }
 
   .personal-choice__options {

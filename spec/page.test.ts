@@ -27,6 +27,20 @@ describe("transparent direct interactions", () => {
     expect(sliders[0]).toMatchObject({ min: "0", max: "4000", step: "100", value: "0" });
   });
 
+  it("groups the task into three clear zones without repeating the same metrics", () => {
+    const explore = doc.querySelector(".explore-card");
+    expect(explore).not.toBeNull();
+    expect(explore?.querySelector("#shortcut-users")).not.toBeNull();
+    expect(explore?.querySelector("[data-town-comparison]")).not.toBeNull();
+    expect(doc.querySelectorAll("[data-old-time]")).toHaveLength(1);
+    expect(doc.querySelectorAll("[data-shortcut-time]")).toHaveLength(1);
+    expect(doc.querySelectorAll("[data-average-time]")).toHaveLength(1);
+    expect(doc.querySelector(".times")).toBeNull();
+    expect((doc.body.textContent ?? "").replace(/\s+/g, " ")).toContain("Step 1 · Move the crowd");
+    expect((doc.body.textContent ?? "").replace(/\s+/g, " ")).toContain("Step 2 · Choose for yourself");
+    expect((doc.body.textContent ?? "").replace(/\s+/g, " ")).toContain("Step 3 · Check the arithmetic");
+  });
+
   it("states all three rules before asking for interaction", () => {
     const copy = (doc.body.textContent ?? "").replace(/\s+/g, " ");
     expect(copy).toContain("The grey road always takes 45 minutes");
@@ -39,7 +53,7 @@ describe("transparent direct interactions", () => {
     expect(copy).toContain("The quickest choice for each person can create a slower result for everyone");
     expect(copy).toContain("Each moving dot represents 50 drivers");
     expect(copy).toContain("darker and wider means more congestion");
-    expect(copy).toContain("Find the lowest town average");
+    expect(copy).toContain("find the lowest town average");
     expect(copy).toContain("Before the shortcut 65 min");
     expect(copy).toContain("highlighted YOU marker trace your option");
     expect(copy).toContain("Reverse the experiment");

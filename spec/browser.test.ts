@@ -223,7 +223,7 @@ describe("transparent desktop experiment", () => {
     expect(await page.locator('.driver-dot[data-route="top"]').count()).toBe(40);
     expect(await page.locator('.driver-dot[data-route="bottom"]').count()).toBe(40);
     expect(await page.locator('.driver-dot[data-route="shortcut"]').count()).toBe(0);
-    expect(await page.locator(".times__shortcut").isHidden()).toBe(true);
+    expect(await page.locator(".personal-choice").isHidden()).toBe(true);
     await page.waitForFunction(() => Number.parseFloat(getComputedStyle(document.querySelector(".road--narrow")!).strokeWidth) < 9.01);
     const clearedRoadWidth = Number.parseFloat(await page.locator(".road--narrow").first().evaluate((element) => getComputedStyle(element).strokeWidth));
     expect(clearedRoadWidth).toBeCloseTo(initialRoadWidth, 1);

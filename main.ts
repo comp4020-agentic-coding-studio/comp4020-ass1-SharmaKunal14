@@ -29,8 +29,6 @@ const shortcutMath = need<HTMLElement>("[data-shortcut-math]");
 const averageMath = need<HTMLElement>("[data-average-math]");
 const reveal = need<HTMLElement>("[data-reveal]");
 const liveSummary = need<HTMLElement>("[data-live-summary]");
-const personalOld = need<HTMLOutputElement>("[data-personal-old]");
-const personalShortcut = need<HTMLOutputElement>("[data-personal-shortcut]");
 const personalResult = need<HTMLOutputElement>("[data-personal-result]");
 const personalRouteInputs = [
   ...document.querySelectorAll<HTMLInputElement>('input[name="personal-route"]'),
@@ -40,7 +38,6 @@ const predictionInputs = [
 ];
 const discovery = need<HTMLOutputElement>("[data-discovery]");
 const townComparison = need<HTMLElement>("[data-town-comparison]");
-const comparisonAverage = need<HTMLOutputElement>("[data-comparison-average]");
 const comparisonVerdict = need<HTMLOutputElement>("[data-comparison-verdict]");
 const predictionFeedback = need<HTMLElement>("[data-prediction-feedback]");
 const bestExplanation = need<HTMLElement>("[data-best-explanation]");
@@ -131,7 +128,7 @@ function renderPersonalRoute(route: "old" | "shortcut"): void {
 function renderDiscovery(result: BraessResult): void {
   const { shortcutUsers, averageMinutes, averageChangeMinutes } = result;
   const { bestShortcutUsers, bestAverageMinutes, breakEvenShortcutUsers } = BRAESS_LANDMARKS;
-  comparisonAverage.value = minutes(averageMinutes);
+  averageTime.value = minutes(averageMinutes);
 
   if (roadClosed) {
     townComparison.dataset.state = "same";
@@ -199,8 +196,6 @@ bestExplanation.textContent =
   `It could not last: the shortcut was still ${minutes(BEST_RESULT.individualSavingMinutes)} minutes quicker than an old route, so each next driver had a reason to join it.`;
 
 function renderPersonalChoice(result: BraessResult): void {
-  personalOld.value = minutes(result.oldRouteMinutes);
-  personalShortcut.value = minutes(result.shortcutRouteMinutes);
   if (selectedPersonalRoute === null) {
     personalResult.value = "Choose a route to compare the two options.";
     return;

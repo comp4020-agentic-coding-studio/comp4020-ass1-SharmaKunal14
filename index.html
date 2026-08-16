@@ -125,73 +125,60 @@
         </div>
 
         <div class="calculator">
-          <section class="challenge" aria-labelledby="challenge-title">
-            <p class="eyebrow">Your challenge</p>
-            <h3 id="challenge-title">Find the lowest town average.</h3>
-            <p>Move drivers slowly. The shortcut helps at first—but watch what happens as it becomes popular.</p>
-            <output data-discovery>Start moving drivers onto the shortcut.</output>
-          </section>
+          <section class="explore-card" aria-labelledby="challenge-title">
+            <header class="challenge">
+              <p class="step-label">Step 1 · Move the crowd</p>
+              <h3 id="challenge-title">Can you find the lowest town average?</h3>
+              <p>Drag slowly. First the shortcut helps. Then popularity changes the result.</p>
+            </header>
 
-          <div class="slider-block">
-            <div class="slider-heading">
-              <label for="shortcut-users">Move drivers onto the shortcut</label>
-              <output for="shortcut-users" data-shortcut-output>0 of 4,000</output>
+            <div class="slider-block">
+              <div class="slider-heading">
+                <label for="shortcut-users">Drivers using the shortcut</label>
+                <output for="shortcut-users" data-shortcut-output>0 of 4,000</output>
+              </div>
+              <input
+                id="shortcut-users"
+                type="range"
+                min="0"
+                max="4000"
+                step="100"
+                value="0"
+                aria-describedby="slider-help"
+              />
+              <div class="range-labels" aria-hidden="true"><span>none</span><span>half</span><span>all</span></div>
+              <output class="discovery" data-discovery>Start moving drivers onto the shortcut.</output>
+              <p id="slider-help" class="decision" data-decision>
+                The shortcut takes 40 minutes, so the first driver wants to switch.
+              </p>
             </div>
-            <input
-              id="shortcut-users"
-              type="range"
-              min="0"
-              max="4000"
-              step="100"
-              value="0"
-              aria-describedby="slider-help"
-            />
-            <div class="range-labels" aria-hidden="true"><span>none</span><span>half</span><span>all</span></div>
-            <p id="slider-help" class="decision" data-decision>
-              The shortcut takes 40 minutes, so the first driver wants to switch.
-            </p>
-          </div>
 
-          <div class="times" aria-label="Current travel times">
-            <article>
-              <span>Old route right now</span>
-              <strong><output data-old-time>65</output> min</strong>
-            </article>
-            <article class="times__shortcut">
-              <span>Shortcut right now</span>
-              <strong><output data-shortcut-time>40</output> min</strong>
-            </article>
-            <article class="times__average">
-              <span>Town average right now</span>
-              <strong><output data-average-time>65</output> min</strong>
-              <small data-average-change>same as before</small>
-            </article>
-          </div>
-
-          <section class="town-comparison" data-town-comparison data-state="same" aria-label="Town average compared with before">
-            <div>
-              <span class="town-comparison__label">Before the shortcut</span>
-              <strong class="town-comparison__value">65 min</strong>
-            </div>
-            <span class="town-comparison__arrow" aria-hidden="true">→</span>
-            <div>
-              <span class="town-comparison__label">Right now</span>
-              <strong class="town-comparison__value"><output data-comparison-average>65</output> min</strong>
-            </div>
-            <output class="town-comparison__verdict" data-comparison-verdict>No change yet</output>
+            <section class="town-comparison" data-town-comparison data-state="same" aria-label="Town average compared with before">
+              <div>
+                <span class="town-comparison__label">Before the shortcut</span>
+                <strong class="town-comparison__value">65 min</strong>
+              </div>
+              <span class="town-comparison__arrow" aria-hidden="true">→</span>
+              <div>
+                <span class="town-comparison__label">Town average now</span>
+                <strong class="town-comparison__value"><output data-average-time>65</output> min</strong>
+                <small data-average-change>same as before</small>
+              </div>
+              <output class="town-comparison__verdict" data-comparison-verdict>No change yet</output>
+            </section>
           </section>
 
           <fieldset class="personal-choice">
-            <legend>You are one driver. Which route would you take right now?</legend>
+            <legend><span>Step 2 · Choose for yourself</span>You are one driver. Which route would you take?</legend>
             <p>Your single choice does not change the totals. Watch the highlighted YOU marker trace your option.</p>
             <div class="personal-choice__options">
               <label>
                 <input type="radio" name="personal-route" value="old" />
-                <span>Old route <strong><output data-personal-old>65</output> min</strong></span>
+                <span>Old route <strong><output data-old-time>65</output> min</strong></span>
               </label>
               <label>
                 <input type="radio" name="personal-route" value="shortcut" />
-                <span>Shortcut <strong><output data-personal-shortcut>40</output> min</strong></span>
+                <span>Shortcut <strong><output data-shortcut-time>40</output> min</strong></span>
               </label>
             </div>
             <output class="personal-choice__result" data-personal-result aria-live="polite">
@@ -200,7 +187,7 @@
           </fieldset>
 
           <details class="math">
-            <summary>Show how these numbers are calculated</summary>
+            <summary><span>Step 3 · Check the arithmetic</span>Show how these numbers are calculated</summary>
             <p class="math__note">Nothing is hidden. These five lines update with the slider.</p>
             <ol>
               <li><span>Cars on each narrow road</span><code data-narrow-math>0 + (4,000 ÷ 2) = 2,000</code></li>
