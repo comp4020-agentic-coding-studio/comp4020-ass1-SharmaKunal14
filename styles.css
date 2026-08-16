@@ -613,16 +613,16 @@ body[data-road-closed="true"] .shortcut-label {
 
 .reset-simulation {
   position: absolute;
-  top: var(--space-4);
-  right: var(--space-4);
+  top: 1rem;
+  right: 1rem;
   margin: 0;
-  padding: 0;
-  border: 0;
+  padding: 0.4rem 0.55rem;
+  border: 1px solid;
   background: none;
 }
 
 .reset-simulation:disabled {
-  opacity: 0.35;
+  opacity: 0.55;
 }
 
 .step-label {

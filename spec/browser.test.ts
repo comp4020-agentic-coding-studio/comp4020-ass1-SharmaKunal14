@@ -209,7 +209,18 @@ describe("transparent desktop experiment", () => {
     const observed = await open(DESKTOP);
     const { page } = observed;
     expect(await page.locator("button").count()).toBe(13);
-    expect(await page.locator("[data-reset-simulation]").isDisabled()).toBe(true);
+    const reset = page.locator("[data-reset-simulation]");
+    expect(await reset.isDisabled()).toBe(true);
+    expect(await reset.getAttribute("aria-label")).toBe("Reset simulation");
+    const resetAppearance = await reset.evaluate((element) => {
+      const style = getComputedStyle(element);
+      const box = element.getBoundingClientRect();
+      return { border: style.borderTopWidth, opacity: style.opacity, width: box.width, height: box.height };
+    });
+    expect(resetAppearance.border).toBe("1px");
+    expect(Number.parseFloat(resetAppearance.opacity)).toBeGreaterThanOrEqual(0.5);
+    expect(resetAppearance.width).toBeGreaterThan(70);
+    expect(resetAppearance.height).toBeGreaterThan(25);
     expect(await page.locator("[data-play]").count()).toBe(0);
     expect(await page.locator("[data-endpoint-prompt]").isHidden()).toBe(true);
     expect(await page.locator("[data-toggle-road]").isHidden()).toBe(true);
