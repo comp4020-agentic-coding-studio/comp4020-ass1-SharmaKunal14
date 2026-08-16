@@ -75,6 +75,10 @@ describe("transparent direct interactions", () => {
     expect(doc.querySelector(".route-ledger")?.getAttribute("aria-label")).toBe("Inspect where all 80 dots are now");
     expect(doc.querySelectorAll(".route-ledger [data-spotlight]")).toHaveLength(3);
     expect(doc.querySelectorAll(".calculation-equations [data-spotlight]")).toHaveLength(5);
+    expect(doc.querySelector("[data-calculation-copy]")?.getAttribute("aria-live")).toBe("polite");
+    expect(doc.querySelectorAll('.calculation-equations [data-spotlight][aria-describedby="calculation-help"]')).toHaveLength(5);
+    expect(doc.querySelectorAll(".calculation-equations [data-calculation-explanation]")).toHaveLength(5);
+    expect(cssSource).toContain(".route-ledger__route:focus-visible,\n.live-math button:focus-visible");
     expect(doc.querySelectorAll('[data-spotlight][aria-pressed="false"]')).toHaveLength(8);
     expect(copy).toContain("make the town as fast as possible");
     expect(copy).toContain("1Best pointFind it");

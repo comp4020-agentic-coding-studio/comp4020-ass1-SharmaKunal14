@@ -296,14 +296,16 @@
             <div class="live-math__heading">
               <p class="step-label">Live calculation</p>
               <h4 id="live-math-title">Where the current times come from</h4>
-              <p>Select a row to highlight those roads on the map.</p>
+              <p id="calculation-help" data-calculation-copy aria-live="polite">
+                Select a row to highlight those roads on the map.
+              </p>
             </div>
             <ol>
-              <li><button type="button" data-spotlight="narrow-load" aria-pressed="false"><span>Each narrow road load</span><code data-narrow-math>0 + (4,000 ÷ 2) = 2,000 drivers passing</code></button></li>
-              <li><button type="button" data-spotlight="narrow-time" aria-pressed="false"><span>Narrow road time</span><code data-narrow-time-math>2,000 ÷ 100 = 20 min</code></button></li>
-              <li><button type="button" data-spotlight="old-route" aria-pressed="false"><span>Old route</span><code data-old-math>20 + 45 = 65 min</code></button></li>
-              <li><button type="button" data-spotlight="shortcut-route" aria-pressed="false"><span>Shortcut route</span><code data-shortcut-math>20 + 0 + 20 = 40 min</code></button></li>
-              <li><button type="button" data-spotlight="town-average" aria-pressed="false"><span>Town average</span><code data-average-math>4,000 × 65 ÷ 4,000 = 65 min</code></button></li>
+              <li><button type="button" data-spotlight="narrow-load" data-calculation-explanation="Shortcut drivers cross both narrow roads. Everyone else splits evenly between the two old routes." aria-pressed="false" aria-describedby="calculation-help"><span>Each narrow road load</span><code data-narrow-math>0 + (4,000 ÷ 2) = 2,000 drivers passing</code></button></li>
+              <li><button type="button" data-spotlight="narrow-time" data-calculation-explanation="Divide one narrow road’s driver count by 100 to get its travel time." aria-pressed="false" aria-describedby="calculation-help"><span>Narrow road time</span><code data-narrow-time-math>2,000 ÷ 100 = 20 min</code></button></li>
+              <li><button type="button" data-spotlight="old-route" data-calculation-explanation="An old route uses one narrow road and one fixed 45-minute road." aria-pressed="false" aria-describedby="calculation-help"><span>Old route</span><code data-old-math>20 + 45 = 65 min</code></button></li>
+              <li><button type="button" data-spotlight="shortcut-route" data-calculation-explanation="The shortcut uses the top narrow road, the 0-minute connector, and the bottom narrow road." aria-pressed="false" aria-describedby="calculation-help"><span>Shortcut route</span><code data-shortcut-math>20 + 0 + 20 = 40 min</code></button></li>
+              <li><button type="button" data-spotlight="town-average" data-calculation-explanation="Multiply each route time by its driver count, add the groups, then divide by all 4,000 drivers." aria-pressed="false" aria-describedby="calculation-help"><span>Town average</span><code data-average-math>4,000 × 65 ÷ 4,000 = 65 min</code></button></li>
             </ol>
           </section>
         </section>

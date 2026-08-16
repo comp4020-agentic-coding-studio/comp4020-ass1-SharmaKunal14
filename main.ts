@@ -50,6 +50,7 @@ const networkState = need<HTMLElement>("[data-network-state]");
 const mapProof = need<HTMLElement>("[data-map-proof]");
 const network = need<SVGSVGElement>("[data-network]");
 const spotlightCopy = need<HTMLElement>("[data-spotlight-copy]");
+const calculationCopy = need<HTMLElement>("[data-calculation-copy]");
 const spotlightButtons = [...document.querySelectorAll<HTMLButtonElement>("[data-spotlight]")];
 const rescuePrompt = need<HTMLElement>("[data-rescue-prompt]");
 const rescueInstruction = need<HTMLElement>("[data-rescue-instruction]");
@@ -254,6 +255,8 @@ function renderRescue(result: BraessResult): void {
   rescueLoss.textContent = `${minutes(RESCUE_RESULT.individualSavingMinutes)} min worse for them`;
 }
 
+const defaultCalculationCopy = calculationCopy.textContent;
+
 const SPOTLIGHTS: Record<string, { map: string; dots: string; copy: string }> = {
   top: {
     map: "top",
@@ -306,6 +309,10 @@ function renderSpotlight(): void {
   driverLayer.dataset.focus = spotlight?.dots ?? "";
   spotlightCopy.textContent = spotlight?.copy ??
     "Road loads overlap: every shortcut driver passes through both narrow roads.";
+  const selectedCalculation = spotlightButtons.find(
+    (button) => button.dataset.spotlight === activeSpotlight,
+  );
+  calculationCopy.textContent = selectedCalculation?.dataset.calculationExplanation ?? defaultCalculationCopy;
   for (const button of spotlightButtons) {
     button.setAttribute("aria-pressed", String(button.dataset.spotlight === activeSpotlight));
   }

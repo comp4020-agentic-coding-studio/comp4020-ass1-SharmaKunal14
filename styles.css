@@ -974,7 +974,7 @@ body[data-rescue="true"] .decision {
 
 .live-math button {
   width: 100%;
-  padding: 0.55rem 0;
+  padding: 0.55rem 0.65rem;
   border: 0;
   background: transparent;
   display: grid;
@@ -991,6 +991,11 @@ body[data-rescue="true"] .decision {
 .live-math button[aria-pressed="true"] {
   background: rgb(11 120 136 / 7%);
   box-shadow: inset 4px 0 0 var(--teal);
+}
+
+.route-ledger__route:focus-visible,
+.live-math button:focus-visible {
+  outline-offset: -3px;
 }
 
 .live-math button span {

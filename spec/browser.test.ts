@@ -357,6 +357,25 @@ describe("transparent desktop experiment", () => {
     expect(await text(page, "[data-spotlight-copy]")).toBe(
       "One old route combines one narrow road with one fixed 45-minute road.",
     );
+    expect(await text(page, "[data-calculation-copy]")).toBe(
+      "An old route uses one narrow road and one fixed 45-minute road.",
+    );
+    const selectedRowLayout = await oldRouteMath.evaluate((element) => {
+      const row = element.getBoundingClientRect();
+      const label = element.querySelector("span")?.getBoundingClientRect();
+      if (label === undefined) throw new Error("missing calculation label");
+      return {
+        outlineWidth: Number.parseFloat(getComputedStyle(element).outlineWidth),
+        labelInset: label.left - row.left,
+      };
+    });
+    expect(selectedRowLayout.outlineWidth).toBe(3);
+    expect(selectedRowLayout.labelInset).toBeGreaterThanOrEqual(10);
+
+    await page.keyboard.press("Space");
+    expect(await text(page, "[data-calculation-copy]")).toBe(
+      "Select a row to highlight those roads on the map.",
+    );
     healthy(observed);
     await page.close();
   });
