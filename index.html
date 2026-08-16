@@ -31,12 +31,6 @@
           random is happening behind the scenes.
         </p>
 
-        <aside class="paradox-plain" aria-label="What the paradox is about">
-          <span>The idea in one sentence</span>
-          <strong>The quickest choice for each person can create a slower result for everyone.</strong>
-          <p>Your route changes the traffic that every other driver meets.</p>
-        </aside>
-
         <div class="rules" aria-label="The two road rules">
           <article>
             <span>Rule 1</span>
@@ -47,6 +41,16 @@
             <strong>The narrow road takes 1 minute per 100 cars using it.</strong>
           </article>
         </div>
+
+        <fieldset class="prediction">
+          <legend>Before you try it: what will the shortcut do to the town?</legend>
+          <p>There is no penalty for guessing. Test your idea with the slider below.</p>
+          <div class="prediction__options">
+            <label class="prediction__option"><input type="radio" name="prediction" value="faster" /> Make trips faster</label>
+            <label class="prediction__option"><input type="radio" name="prediction" value="same" /> Make no difference</label>
+            <label class="prediction__option"><input type="radio" name="prediction" value="slower" /> Make trips slower</label>
+          </div>
+        </fieldset>
       </section>
 
       <section class="experiment" id="experiment" aria-labelledby="experiment-title">
@@ -106,11 +110,18 @@
           <p class="network-note">
             Drivers who avoid the shortcut split evenly between the top and bottom.
             Every shortcut trip uses <strong>both</strong> narrow roads.
-            <span><i aria-hidden="true"></i> Each moving dot represents 100 drivers.</span>
+            <span><i aria-hidden="true"></i> Each moving dot represents 50 drivers.</span>
           </p>
         </div>
 
         <div class="calculator">
+          <section class="challenge" aria-labelledby="challenge-title">
+            <p class="eyebrow">Your challenge</p>
+            <h3 id="challenge-title">Find the lowest town average.</h3>
+            <p>Move drivers slowly. The shortcut helps at first—but watch what happens as it becomes popular.</p>
+            <output data-discovery>Start moving drivers onto the shortcut.</output>
+          </section>
+
           <div class="slider-block">
             <div class="slider-heading">
               <label for="shortcut-users">Move drivers onto the shortcut</label>
@@ -121,7 +132,7 @@
               type="range"
               min="0"
               max="4000"
-              step="200"
+              step="100"
               value="0"
               aria-describedby="slider-help"
             />
@@ -146,6 +157,19 @@
               <small data-average-change>same as before</small>
             </article>
           </div>
+
+          <section class="town-comparison" data-town-comparison data-state="same" aria-label="Town average compared with before">
+            <div>
+              <span class="town-comparison__label">Before the shortcut</span>
+              <strong class="town-comparison__value">65 min</strong>
+            </div>
+            <span class="town-comparison__arrow" aria-hidden="true">→</span>
+            <div>
+              <span class="town-comparison__label">Right now</span>
+              <strong class="town-comparison__value"><output data-comparison-average>65</output> min</strong>
+            </div>
+            <output class="town-comparison__verdict" data-comparison-verdict>No change yet</output>
+          </section>
 
           <fieldset class="personal-choice">
             <legend>You are one driver. Which route would you take right now?</legend>
@@ -180,6 +204,9 @@
           <section class="reveal" data-reveal hidden aria-labelledby="reveal-title">
             <p class="eyebrow">You found the paradox</p>
             <h3 id="reveal-title">The shortcut is each driver’s best option—and everyone’s worse outcome.</h3>
+            <p class="prediction-result" data-prediction-feedback>
+              You can now compare your prediction with what the numbers showed.
+            </p>
             <div class="paradox-comparison" aria-label="Individual choice compared with the whole town">
               <article>
                 <span>One driver’s choice now</span>
@@ -199,6 +226,9 @@
               split again, clearing those roads and returning every trip to 65 minutes. This is
               <strong>Braess’s paradox</strong>: individually sensible choices can create a worse
               result for the whole group.
+            </p>
+            <p class="paradox-plain">
+              <strong class="paradox-plain__statement">The quickest choice for each person can create a slower result for everyone.</strong>
             </p>
           </section>
 

@@ -110,10 +110,11 @@ describe("transparent desktop experiment", () => {
     const { page } = observed;
     expect(await page.locator("button").count()).toBe(0);
     expect(await page.locator('input[type="range"]').count()).toBe(1);
-    expect(await page.locator(".driver-dot").count()).toBe(40);
-    expect(await page.locator('.driver-dot[data-route="top"]').count()).toBe(20);
-    expect(await page.locator('.driver-dot[data-route="bottom"]').count()).toBe(20);
+    expect(await page.locator(".driver-dot").count()).toBe(80);
+    expect(await page.locator('.driver-dot[data-route="top"]').count()).toBe(40);
+    expect(await page.locator('.driver-dot[data-route="bottom"]').count()).toBe(40);
     expect(await page.locator('.driver-dot[data-route="shortcut"]').count()).toBe(0);
+    expect(await page.locator('input[name="prediction"]').count()).toBe(3);
     expect(await text(page, "[data-old-time]")).toBe("65");
     expect(await text(page, "[data-shortcut-time]")).toBe("40");
     expect(await text(page, "[data-average-time]")).toBe("65");
@@ -133,9 +134,9 @@ describe("transparent desktop experiment", () => {
     expect(await text(page, "[data-narrow-math]")).toBe("(4,000 + 2,000) ÷ 2 = 3,000");
     expect(await text(page, "[data-average-math]")).toBe("(2,000 × 75 + 2,000 × 60) ÷ 4,000 = 67.5 min");
     expect(await text(page, "[data-decision]")).toContain("Switching right now looks 15 minutes better");
-    expect(await page.locator('.driver-dot[data-route="top"]').count()).toBe(10);
-    expect(await page.locator('.driver-dot[data-route="bottom"]').count()).toBe(10);
-    expect(await page.locator('.driver-dot[data-route="shortcut"]').count()).toBe(20);
+    expect(await page.locator('.driver-dot[data-route="top"]').count()).toBe(20);
+    expect(await page.locator('.driver-dot[data-route="bottom"]').count()).toBe(20);
+    expect(await page.locator('.driver-dot[data-route="shortcut"]').count()).toBe(40);
 
     await page.locator('input[name="personal-route"][value="old"]').check();
     expect(await text(page, "[data-personal-result]")).toContain(
@@ -149,9 +150,27 @@ describe("transparent desktop experiment", () => {
     await page.close();
   });
 
+  it("lets the visitor discover the best point and the break-even point", async () => {
+    const observed = await open(DESKTOP);
+    const { page } = observed;
+    await setUsers(page, 500);
+    expect(await text(page, "[data-average-time]")).toBe("64.7");
+    expect(await text(page, "[data-discovery]")).toContain("You found the best balance");
+    expect(await page.locator("[data-town-comparison]").getAttribute("data-state")).toBe("better");
+    expect(await text(page, "[data-comparison-verdict]")).toBe("0.3 min faster");
+
+    await setUsers(page, 1_000);
+    expect(await text(page, "[data-average-time]")).toBe("65");
+    expect(await text(page, "[data-discovery]")).toContain("Break-even");
+    expect(await page.locator("[data-town-comparison]").getAttribute("data-state")).toBe("same");
+    healthy(observed);
+    await page.close();
+  });
+
   it("reveals the paradox only when every driver has switched", async () => {
     const observed = await open(DESKTOP);
     const { page } = observed;
+    await page.locator('input[name="prediction"][value="faster"]').check();
     await setUsers(page, 4_000);
     expect(await text(page, "[data-old-time]")).toBe("85");
     expect(await text(page, "[data-shortcut-time]")).toBe("80");
@@ -162,7 +181,8 @@ describe("transparent desktop experiment", () => {
     expect(await text(page, "[data-reveal]")).toContain("Stay: 80 min · Leave alone: 85 min");
     expect(await text(page, "[data-reveal]")).toContain("Before road: 65 min · After choices: 80 min");
     expect(await text(page, "[data-decision]")).toContain("nobody leaves");
-    expect(await page.locator('.driver-dot[data-route="shortcut"]').count()).toBe(40);
+    expect(await page.locator('.driver-dot[data-route="shortcut"]').count()).toBe(80);
+    expect(await text(page, "[data-prediction-feedback]")).toContain("You predicted the shortcut would make trips faster");
     await noOverflow(page);
     healthy(observed);
     await page.close();

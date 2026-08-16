@@ -21,8 +21,9 @@ describe("transparent direct interactions", () => {
     const sliders = doc.querySelectorAll<HTMLInputElement>('input[type="range"]');
     expect(sliders).toHaveLength(1);
     expect(doc.querySelectorAll<HTMLInputElement>('input[name="personal-route"]')).toHaveLength(2);
+    expect(doc.querySelectorAll<HTMLInputElement>('input[name="prediction"]')).toHaveLength(3);
     expect(doc.querySelectorAll("button")).toHaveLength(0);
-    expect(sliders[0]).toMatchObject({ min: "0", max: "4000", step: "200", value: "0" });
+    expect(sliders[0]).toMatchObject({ min: "0", max: "4000", step: "100", value: "0" });
   });
 
   it("states both rules before asking for interaction", () => {
@@ -33,7 +34,9 @@ describe("transparent direct interactions", () => {
     expect(copy).toContain("nothing random is happening behind the scenes");
     expect(copy).toContain("Here is every calculation");
     expect(copy).toContain("The quickest choice for each person can create a slower result for everyone");
-    expect(copy).toContain("Each moving dot represents 100 drivers");
+    expect(copy).toContain("Each moving dot represents 50 drivers");
+    expect(copy).toContain("Find the lowest town average");
+    expect(copy).toContain("Before the shortcut 65 min");
   });
 
   it("contains the complete initial arithmetic and withholds the reveal", () => {
@@ -56,7 +59,8 @@ describe("transparent direct interactions", () => {
       expect(mainSource).not.toContain(fragment);
     }
     expect(mainSource).toContain('from "./src/braess"');
-    expect(mainSource).toContain("const DOTS = 40");
+    expect(mainSource).toContain("const DRIVERS_PER_DOT = 50");
+    expect(mainSource).toContain("BRAESS_LANDMARKS");
     expect(mainSource).toContain("renderPersonalChoice(result)");
   });
 

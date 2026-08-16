@@ -1,5 +1,6 @@
 import {
   BASELINE_MINUTES,
+  BRAESS_LANDMARKS,
   TOTAL_DRIVERS,
   calculateBraess,
   type BraessResult,
@@ -33,6 +34,14 @@ const personalResult = need<HTMLOutputElement>("[data-personal-result]");
 const personalRouteInputs = [
   ...document.querySelectorAll<HTMLInputElement>('input[name="personal-route"]'),
 ];
+const predictionInputs = [
+  ...document.querySelectorAll<HTMLInputElement>('input[name="prediction"]'),
+];
+const discovery = need<HTMLOutputElement>("[data-discovery]");
+const townComparison = need<HTMLElement>("[data-town-comparison]");
+const comparisonAverage = need<HTMLOutputElement>("[data-comparison-average]");
+const comparisonVerdict = need<HTMLOutputElement>("[data-comparison-verdict]");
+const predictionFeedback = need<HTMLElement>("[data-prediction-feedback]");
 const driverLayer = need<SVGGElement>("[data-driver-layer]");
 const topFlow = need<SVGPathElement>("#top-flow");
 const bottomFlow = need<SVGPathElement>("#bottom-flow");
@@ -40,15 +49,17 @@ const shortcutFlow = need<SVGPathElement>("#shortcut-flow");
 
 const number = new Intl.NumberFormat("en-AU", { maximumFractionDigits: 1 });
 const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
-const DOTS = 40;
+const DRIVERS_PER_DOT = 50;
+const DOTS = TOTAL_DRIVERS / DRIVERS_PER_DOT;
 const driverDots = Array.from({ length: DOTS }, () => {
   const dot = document.createElementNS(SVG_NAMESPACE, "circle");
-  dot.setAttribute("r", "6");
+  dot.setAttribute("r", "5");
   dot.classList.add("driver-dot");
   driverLayer.append(dot);
   return dot;
 });
 let selectedPersonalRoute: "old" | "shortcut" | null = null;
+let selectedPrediction: "faster" | "same" | "slower" | null = null;
 
 function minutes(value: number): string {
   return number.format(value);
@@ -73,13 +84,62 @@ function placeDots(
 }
 
 function renderDriverDots(shortcutUsers: number): void {
-  const shortcutDotCount = Math.min(DOTS, Math.max(0, Math.round(shortcutUsers / 100)));
+  const shortcutDotCount = Math.min(DOTS, Math.max(0, Math.round(shortcutUsers / DRIVERS_PER_DOT)));
   const remainingDots = DOTS - shortcutDotCount;
   const topEnd = Math.ceil(remainingDots / 2);
   const bottomEnd = remainingDots;
   placeDots(driverDots.slice(0, topEnd), topFlow, "top");
   placeDots(driverDots.slice(topEnd, bottomEnd), bottomFlow, "bottom");
   placeDots(driverDots.slice(bottomEnd), shortcutFlow, "shortcut");
+}
+
+function renderDiscovery(result: BraessResult): void {
+  const { shortcutUsers, averageMinutes, averageChangeMinutes } = result;
+  const { bestShortcutUsers, bestAverageMinutes, breakEvenShortcutUsers } = BRAESS_LANDMARKS;
+  comparisonAverage.value = minutes(averageMinutes);
+
+  if (averageChangeMinutes < 0) {
+    townComparison.dataset.state = "better";
+    comparisonVerdict.value = `${minutes(Math.abs(averageChangeMinutes))} min faster`;
+  } else if (averageChangeMinutes > 0) {
+    townComparison.dataset.state = "worse";
+    comparisonVerdict.value = `${minutes(averageChangeMinutes)} min slower`;
+  } else {
+    townComparison.dataset.state = "same";
+    comparisonVerdict.value = "Same as before";
+  }
+
+  if (shortcutUsers === 0) {
+    discovery.value = "Start moving drivers onto the shortcut.";
+  } else if (shortcutUsers < bestShortcutUsers) {
+    discovery.value = "The town average is falling. Keep looking for the lowest point.";
+  } else if (shortcutUsers === bestShortcutUsers) {
+    discovery.value = `You found the best balance: ${drivers(bestShortcutUsers)} shortcut users and a ${minutes(bestAverageMinutes)}-minute average.`;
+  } else if (shortcutUsers < breakEvenShortcutUsers) {
+    discovery.value = `You passed the best point. The town is still faster than 65 minutes, but the benefit is shrinking.`;
+  } else if (shortcutUsers === breakEvenShortcutUsers) {
+    discovery.value = `Break-even: with ${drivers(breakEvenShortcutUsers)} shortcut users, the town is back to 65 minutes.`;
+  } else if (shortcutUsers < TOTAL_DRIVERS) {
+    discovery.value = "The town is now slower than before, even though the shortcut is still quicker for each driver.";
+  } else {
+    discovery.value = "Everyone followed the quicker route. The town average is now 15 minutes worse.";
+  }
+}
+
+function renderPredictionFeedback(): void {
+  if (selectedPrediction === null) {
+    predictionFeedback.textContent = "You did not need to predict correctly—the slider exposed what happened.";
+    return;
+  }
+
+  const prediction = {
+    faster: "make trips faster",
+    same: "make no difference",
+    slower: "make trips slower",
+  }[selectedPrediction];
+  predictionFeedback.textContent =
+    `You predicted the shortcut would ${prediction}. ` +
+    "It helped while lightly used, but after everyone followed the quicker route the town became slower.";
 }
 
 function renderPersonalChoice(result: BraessResult): void {
@@ -127,6 +187,8 @@ function render(result: BraessResult): void {
   }
   renderDriverDots(shortcutUsers);
   renderPersonalChoice(result);
+  renderDiscovery(result);
+  renderPredictionFeedback();
 
   if (averageChangeMinutes > 0) {
     averageChange.textContent = `${minutes(averageChangeMinutes)} min slower than without the shortcut`;
@@ -176,6 +238,16 @@ for (const routeInput of personalRouteInputs) {
   routeInput.addEventListener("change", () => {
     selectedPersonalRoute = routeInput.value === "shortcut" ? "shortcut" : "old";
     renderPersonalChoice(calculateBraess(Number(input.value)));
+  });
+}
+
+for (const predictionInput of predictionInputs) {
+  predictionInput.addEventListener("change", () => {
+    selectedPrediction =
+      predictionInput.value === "faster" || predictionInput.value === "same"
+        ? predictionInput.value
+        : "slower";
+    renderPredictionFeedback();
   });
 }
 
