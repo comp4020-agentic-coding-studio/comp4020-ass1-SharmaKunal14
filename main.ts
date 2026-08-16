@@ -187,6 +187,7 @@ function announce(message: string): void {
 }
 
 function enter(next: StateId, focusHeading = false): void {
+  const previousChapter = STORY[state]?.chapter;
   state = next;
   document.body.dataset.state = next;
   (window as unknown as { storyState?: StateId }).storyState = next;
@@ -211,7 +212,9 @@ function enter(next: StateId, focusHeading = false): void {
   scene.traceRoute(currentTrace());
   scene.setNarrative(next, narrativeShare());
 
-  if (hasEntered) animatePanels();
+  if (hasEntered) {
+    animatePanels(STORY[next].chapter !== previousChapter ? "chapter" : "step");
+  }
   hasEntered = true;
 
   if (next === "quiet_result") {
@@ -248,29 +251,50 @@ function enter(next: StateId, focusHeading = false): void {
 
 /**
  * Chapter state is committed before this decorative motion begins. Cancelling
- * it can never delay a result, move keyboard focus, or alter simulation time.
+ * it can never delay a result, move keyboard focus, or alter simulation time --
+ * every value on screen is already final when the animation starts.
+ *
+ * "chapter" plays only when the chapter number actually advances (or restarts):
+ * the panels unfold like a page turning, on a hinge at the top, with a brief
+ * overshoot that reads as paper settling rather than snapping into place. Every
+ * other transition -- the small steps inside one chapter -- keeps the quicker,
+ * quieter fade-and-rise, so stepping through a chapter's own sub-states (the
+ * quiet-road replay, the four peak waves) does not repeat a big flourish on
+ * every click. "delayed-step" is that same quiet fade, held back for the
+ * evidence panels so the map redraws first and the numbers land a beat later.
  */
-function animatePanels(delayedEvidence = false): void {
+type PanelTransition = "chapter" | "step" | "delayed-step";
+
+const UNFOLD_KEYFRAMES: Keyframe[] = [
+  { opacity: 0, transform: "perspective(1200px) rotateX(-18deg) scaleY(0.86)" },
+  { opacity: 1, offset: 0.62, transform: "perspective(1200px) rotateX(2deg) scaleY(1.01)" },
+  { opacity: 1, transform: "perspective(1200px) rotateX(0deg) scaleY(1)" },
+];
+
+const STEP_KEYFRAMES: Keyframe[] = [
+  { opacity: 0.12, transform: "translateY(10px)" },
+  { opacity: 1, transform: "translateY(0)" },
+];
+
+function animatePanels(kind: PanelTransition = "step"): void {
   for (const animation of panelAnimations) animation.cancel();
   panelAnimations = [];
   if (reducesMotion) return;
 
+  const isChapterChange = kind === "chapter";
   const panels = [ui.story, ui.measure, ui.control];
+  const keyframes = isChapterChange ? UNFOLD_KEYFRAMES : STEP_KEYFRAMES;
+  const duration = isChapterChange ? 560 : 320;
+  const stagger = isChapterChange ? 70 : 35;
+  // easeOutExpo-ish for the unfold: a fast, decisive open rather than a bounce.
+  const easing = isChapterChange
+    ? "cubic-bezier(0.16, 1, 0.3, 1)"
+    : "cubic-bezier(0.22, 1, 0.36, 1)";
+
   for (const [index, panel] of panels.entries()) {
     if (panel.hidden || typeof panel.animate !== "function") continue;
-    const delay = delayedEvidence && index > 0 ? 300 : index * 35;
-    const animation = panel.animate(
-      [
-        { opacity: 0.12, transform: "translateY(10px)" },
-        { opacity: 1, transform: "translateY(0)" },
-      ],
-      {
-        duration: 340,
-        delay,
-        easing: "cubic-bezier(0.22, 1, 0.36, 1)",
-        fill: "both",
-      },
-    );
+    const delay = kind === "delayed-step" && index > 0 ? 300 : index * stagger;
+    const animation = panel.animate(keyframes, { duration, delay, easing, fill: "both" });
     animation.addEventListener(
       "finish",
       () => {
@@ -932,7 +956,7 @@ function onAction(event: MouseEvent): void {
     scene.traceRoute(currentTrace());
     renderControls();
     renderStateCopy();
-    animatePanels(true);
+    animatePanels("delayed-step");
     announce(
       "Shortcut drawn. The map estimate falls from 5 minutes 5 seconds to 4 minutes 34 seconds.",
     );

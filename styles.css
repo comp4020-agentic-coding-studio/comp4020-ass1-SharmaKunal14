@@ -263,6 +263,10 @@ main {
 .story {
   grid-area: story;
   min-width: 0;
+
+  /* Idle transform-origin: inert until the chapter-unfold animation sets a
+     transform, so a page turn hinges at the top rather than the panel's centre. */
+  transform-origin: top center;
   will-change: opacity, transform;
 }
 
@@ -301,6 +305,7 @@ main {
   min-width: 0;
   padding-top: 1.3rem;
   border-top: 1px solid var(--rule);
+  transform-origin: top center;
   will-change: opacity, transform;
 }
 
@@ -399,6 +404,8 @@ body:is(
 .control {
   grid-area: control;
   align-self: end;
+  min-width: 0;
+  transform-origin: top center;
   will-change: opacity, transform;
 }
 
@@ -406,6 +413,7 @@ body:is(
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.55rem;
+  min-width: 0;
   margin-bottom: 0.7rem;
 }
 
@@ -489,6 +497,13 @@ body:is(
   cursor: pointer;
   display: flex;
   align-items: center;
+}
+
+.option__copy {
+  /* A flex item's default min-width is auto, so without this its text content
+     sets the floor and can force .option -- and everything above it up to
+     .control -- wider than the single-column track at 390px. */
+  min-width: 0;
 }
 
 .option:hover {

@@ -243,3 +243,32 @@ new fourth checkpoint at 1,800 seconds shows Riverside at 1.195×, Millbrook at 
 and the connector at 1.013×. The picture now supports its own explanation. Static
 labels say “paired cohort” and live labels say “live choices” so the two protocols
 cannot quietly blur together.
+
+## Sat 16 Aug — chapter-turn animation, and a scrollbar red herring
+
+Added a real "page unfold" transition between chapters: a hinge-at-the-top
+`perspective()/rotateX()/scaleY()` open, 560ms, easeOutExpo-ish, with a small
+overshoot that reads as paper settling rather than a mechanical snap. It fires
+only when `STORY[next].chapter !== STORY[state].chapter` -- the quick
+fade-and-rise stays for in-chapter steps (the quiet-road replay steps, the four
+peak waves), so stepping through one chapter's own sub-states doesn't repeat a
+big flourish on every click. Verified with `Element.getAnimations()`: chapter
+boundaries measure 560ms/expo, in-chapter steps measure 320ms/soft-ease, with no
+overlap once each fully settles. Reduced motion still returns zero animations,
+confirming the existing `reducesMotion` gate covers the new path too.
+
+While sweeping viewports for this I found `scrollWidth: 396` against
+`innerWidth: 390` first appearing at the "peak" chapter on a 390x844 phone
+viewport. Confirmed present on the prior commit too (via `git stash`), so it
+predates this change. Chased it down: no element's own `getBoundingClientRect()`
+exceeds 390px anywhere in the tree (checked every element including SVG
+children), and it correlates exactly with `scrollHeight > innerHeight` first
+becoming true at that chapter -- i.e. the first point the page needs a vertical
+scrollbar. That is the signature of headless Chromium's classic (non-overlay)
+scrollbar being counted into `documentElement.scrollWidth`, not a real
+horizontal overflow: a real phone has no reserved-width scrollbar at all, and
+`pnpm check`'s own browser suite (97/97) does not trip on it. Added
+`min-width: 0` to `.control`, `.choices` and a new `.option__copy` rule anyway,
+since the grid/flex chain feeding the radio-group quiz options was missing it
+and the project already has a standing rule about exactly this trap -- cheap
+insurance, not a claimed fix for the scrollbar artifact.
