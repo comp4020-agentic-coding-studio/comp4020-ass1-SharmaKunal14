@@ -20,48 +20,43 @@ describe("transparent direct interactions", () => {
   it("uses direct controls rather than a sequence of continue buttons", () => {
     const sliders = doc.querySelectorAll<HTMLInputElement>('input[type="range"]');
     expect(sliders).toHaveLength(1);
-    expect(doc.querySelectorAll<HTMLInputElement>('input[name="personal-route"]')).toHaveLength(2);
+    expect(doc.querySelectorAll<HTMLInputElement>('input[name="personal-route"]')).toHaveLength(0);
     expect(doc.querySelectorAll<HTMLInputElement>('input[name="prediction"]')).toHaveLength(3);
-    expect(doc.querySelectorAll("button")).toHaveLength(1);
-    expect(doc.querySelector("button")?.hasAttribute("data-toggle-road")).toBe(true);
+    expect(doc.querySelectorAll("button")).toHaveLength(2);
+    expect(doc.querySelector("[data-play]")).not.toBeNull();
+    expect(doc.querySelector("[data-toggle-road]")).not.toBeNull();
     expect(sliders[0]).toMatchObject({ min: "0", max: "4000", step: "100", value: "0" });
   });
 
-  it("groups the task into three clear zones without repeating the same metrics", () => {
+  it("keeps the live experiment and its arithmetic together", () => {
     const explore = doc.querySelector(".explore-card");
     expect(explore).not.toBeNull();
     expect(explore?.querySelector("#shortcut-users")).not.toBeNull();
     expect(explore?.querySelector("[data-town-comparison]")).not.toBeNull();
-    expect(doc.querySelectorAll("[data-old-time]")).toHaveLength(1);
-    expect(doc.querySelectorAll("[data-shortcut-time]")).toHaveLength(1);
+    expect(explore?.querySelector(".live-math")).not.toBeNull();
     expect(doc.querySelectorAll("[data-average-time]")).toHaveLength(1);
     expect(doc.querySelector(".times")).toBeNull();
-    expect((doc.body.textContent ?? "").replace(/\s+/g, " ")).toContain("Step 1 · Move the crowd");
-    expect((doc.body.textContent ?? "").replace(/\s+/g, " ")).toContain("Step 2 · Choose for yourself");
-    expect((doc.body.textContent ?? "").replace(/\s+/g, " ")).toContain("Step 3 · Check the arithmetic");
+    expect(doc.querySelector("details")).toBeNull();
+    expect(doc.querySelector(".personal-choice")).toBeNull();
   });
 
   it("states all three rules before asking for interaction", () => {
     const copy = (doc.body.textContent ?? "").replace(/\s+/g, " ");
-    expect(copy).toContain("The grey road always takes 45 minutes");
-    expect(copy).toContain("The narrow road takes 1 minute per 100 cars");
-    expect(copy).toContain("The short middle connector adds 0 minutes");
-    expect(doc.querySelectorAll(".rules article")).toHaveLength(3);
-    expect(copy).toContain("Every shortcut trip uses both narrow roads");
-    expect(copy).toContain("nothing random is happening behind the scenes");
-    expect(copy).toContain("Nothing is hidden");
-    expect(copy).toContain("The quickest choice for each person can create a slower result for everyone");
-    expect(copy).toContain("Each moving dot represents 50 drivers");
-    expect(copy).toContain("darker and wider means more congestion");
+    const rules = [...doc.querySelectorAll(".rules article")].map((rule) => rule.textContent?.replace(/\s+/g, " "));
+    expect(rules).toEqual([
+      "1Grey roadAlways 45 minutes",
+      "2Narrow road1 minute per 100 cars",
+      "3Middle connectorAdds 0 minutes in this model",
+    ]);
+    expect(copy).toContain("Same 4,000 drivers throughout");
+    expect(copy).toContain("Each dot represents 50 drivers");
     expect(copy).toContain("find the lowest town average");
     expect(copy).toContain("Before the shortcut 65 min");
-    expect(copy).toContain("highlighted YOU marker trace your option");
+    expect(copy).toContain("Where the current times come from");
+    expect(copy).toContain("Only the shortcut changed. The driver count did not");
+    expect(copy).toContain("Your action revealed Braess’s paradox");
     expect(copy).toContain("Reverse the experiment");
     expect(copy).toContain("Close the shortcut");
-    const calculations = doc.querySelector<HTMLDetailsElement>("details.math");
-    expect(calculations).not.toBeNull();
-    expect(calculations?.open).toBe(false);
-    expect(calculations?.querySelector("summary")?.textContent).toContain("Show how these numbers are calculated");
   });
 
   it("contains the complete initial arithmetic and withholds the reveal", () => {
@@ -71,11 +66,11 @@ describe("transparent direct interactions", () => {
     expect(doc.querySelector("[data-reveal]")?.hasAttribute("hidden")).toBe(true);
   });
 
-  it("separates the individual route comparison from the before-and-after comparison", () => {
+  it("makes the controlled comparison explicit in the reveal", () => {
     const copy = (doc.body.textContent ?? "").replace(/\s+/g, " ");
-    expect(copy).toContain("Stay: 80 min · Leave alone: 85 min");
-    expect(copy).toContain("Before road: 65 min · After choices: 80 min");
-    expect(copy).toContain("individually sensible choices can create a worse result");
+    expect(copy).toContain("4,000 drivers split evenly → 65 min");
+    expect(copy).toContain("The same 4,000 follow it → 80 min");
+    expect(copy).toContain("80 minutes instead of 85 alone");
     expect(copy).not.toContain("Each driver saved time by switching");
   });
 
@@ -87,8 +82,8 @@ describe("transparent direct interactions", () => {
     expect(mainSource).toContain("const DRIVERS_PER_DOT = 50");
     expect(mainSource).toContain("BRAESS_LANDMARKS");
     expect(mainSource).toContain("BEST_RESULT.individualSavingMinutes");
-    expect(mainSource).toContain("renderPersonalChoice(result)");
-    expect(mainSource).toContain("renderPersonalRoute(selectedPersonalRoute)");
+    expect(mainSource).toContain("playNextStep");
+    expect(mainSource).toContain("window.setTimeout(playNextStep, 80)");
   });
 
   it("keeps the primary copy free of the discarded process jargon", () => {

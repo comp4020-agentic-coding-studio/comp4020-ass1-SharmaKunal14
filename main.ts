@@ -15,8 +15,6 @@ function need<T extends Element>(selector: string): T {
 
 const input = need<HTMLInputElement>("#shortcut-users");
 const shortcutOutput = need<HTMLOutputElement>("[data-shortcut-output]");
-const oldTime = need<HTMLOutputElement>("[data-old-time]");
-const shortcutTime = need<HTMLOutputElement>("[data-shortcut-time]");
 const averageTime = need<HTMLOutputElement>("[data-average-time]");
 const averageChange = need<HTMLElement>("[data-average-change]");
 const decision = need<HTMLElement>("[data-decision]");
@@ -29,10 +27,6 @@ const shortcutMath = need<HTMLElement>("[data-shortcut-math]");
 const averageMath = need<HTMLElement>("[data-average-math]");
 const reveal = need<HTMLElement>("[data-reveal]");
 const liveSummary = need<HTMLElement>("[data-live-summary]");
-const personalResult = need<HTMLOutputElement>("[data-personal-result]");
-const personalRouteInputs = [
-  ...document.querySelectorAll<HTMLInputElement>('input[name="personal-route"]'),
-];
 const predictionInputs = [
   ...document.querySelectorAll<HTMLInputElement>('input[name="prediction"]'),
 ];
@@ -47,8 +41,7 @@ const roadControlCopy = need<HTMLElement>("[data-road-control-copy]");
 const closureResult = need<HTMLElement>("[data-closure-result]");
 const toggleRoad = need<HTMLButtonElement>("[data-toggle-road]");
 const driverLayer = need<SVGGElement>("[data-driver-layer]");
-const youTrace = need<SVGPathElement>("[data-you-trace]");
-const youDriver = need<SVGGElement>("[data-you-driver]");
+const playButton = need<HTMLButtonElement>("[data-play]");
 const topFlow = need<SVGPathElement>("#top-flow");
 const bottomFlow = need<SVGPathElement>("#bottom-flow");
 const shortcutFlow = need<SVGPathElement>("#shortcut-flow");
@@ -65,9 +58,9 @@ const driverDots = Array.from({ length: DOTS }, () => {
   driverLayer.append(dot);
   return dot;
 });
-let selectedPersonalRoute: "old" | "shortcut" | null = null;
 let selectedPrediction: "faster" | "same" | "slower" | null = null;
 let roadClosed = false;
+let playTimer: number | null = null;
 
 function minutes(value: number): string {
   return number.format(value);
@@ -99,30 +92,6 @@ function renderDriverDots(shortcutUsers: number): void {
   placeDots(driverDots.slice(0, topEnd), topFlow, "top");
   placeDots(driverDots.slice(topEnd, bottomEnd), bottomFlow, "bottom");
   placeDots(driverDots.slice(bottomEnd), shortcutFlow, "shortcut");
-}
-
-function renderPersonalRoute(route: "old" | "shortcut"): void {
-  const path = route === "old" ? topFlow : shortcutFlow;
-  const routeData = path.getAttribute("d");
-  if (routeData === null) throw new Error(`Missing route geometry for ${route}`);
-
-  const length = path.getTotalLength();
-  const point = path.getPointAtLength(length * 0.58);
-  youTrace.setAttribute("d", routeData);
-  youTrace.dataset.route = route;
-  youTrace.removeAttribute("hidden");
-  youDriver.dataset.route = route;
-  youDriver.style.transform = `translate(${point.x}px, ${point.y}px)`;
-  youDriver.removeAttribute("hidden");
-  driverLayer.classList.add("driver-layer--muted");
-
-  for (const animation of youTrace.getAnimations()) animation.cancel();
-  if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-    youTrace.animate(
-      [{ strokeDashoffset: String(length) }, { strokeDashoffset: "0" }],
-      { duration: 420, easing: "cubic-bezier(0.22, 1, 0.36, 1)" },
-    );
-  }
 }
 
 function renderDiscovery(result: BraessResult): void {
@@ -167,14 +136,6 @@ function renderDiscovery(result: BraessResult): void {
   }
 }
 
-function clearPersonalRoute(): void {
-  selectedPersonalRoute = null;
-  for (const routeInput of personalRouteInputs) routeInput.checked = false;
-  youTrace.setAttribute("hidden", "");
-  youDriver.setAttribute("hidden", "");
-  driverLayer.classList.remove("driver-layer--muted");
-}
-
 function renderPredictionFeedback(): void {
   if (selectedPrediction === null) {
     predictionFeedback.textContent = "You did not need to predict correctly—the slider exposed what happened.";
@@ -195,26 +156,6 @@ bestExplanation.textContent =
   `The town’s best balance was ${drivers(BRAESS_LANDMARKS.bestShortcutUsers)} shortcut users at ${minutes(BEST_RESULT.averageMinutes)} minutes. ` +
   `It could not last: the shortcut was still ${minutes(BEST_RESULT.individualSavingMinutes)} minutes quicker than an old route, so each next driver had a reason to join it.`;
 
-function renderPersonalChoice(result: BraessResult): void {
-  if (selectedPersonalRoute === null) {
-    personalResult.value = "Choose a route to compare the two options.";
-    return;
-  }
-
-  renderPersonalRoute(selectedPersonalRoute);
-
-  const choseShortcut = selectedPersonalRoute === "shortcut";
-  const chosen = choseShortcut ? result.shortcutRouteMinutes : result.oldRouteMinutes;
-  const other = choseShortcut ? result.oldRouteMinutes : result.shortcutRouteMinutes;
-  const chosenLabel = choseShortcut ? "shortcut" : "old route";
-  const otherLabel = choseShortcut ? "old route" : "shortcut";
-  const difference = Math.abs(chosen - other);
-  personalResult.value =
-    chosen <= other
-      ? `You chose the ${chosenLabel}: ${minutes(chosen)} minutes. That is ${minutes(difference)} minutes quicker than the ${otherLabel} right now.`
-      : `You chose the ${chosenLabel}: ${minutes(chosen)} minutes. The ${otherLabel} is ${minutes(difference)} minutes quicker right now.`;
-}
-
 function render(result: BraessResult): void {
   const {
     shortcutUsers,
@@ -232,15 +173,12 @@ function render(result: BraessResult): void {
   document.body.dataset.complete = String(shortcutUsers === TOTAL_DRIVERS && !roadClosed);
   document.body.dataset.roadClosed = String(roadClosed);
   shortcutOutput.value = `${drivers(shortcutUsers)} of ${drivers(TOTAL_DRIVERS)}`;
-  oldTime.value = minutes(oldRouteMinutes);
-  shortcutTime.value = minutes(shortcutRouteMinutes);
   averageTime.value = minutes(averageMinutes);
   shortcutCount.textContent = `${drivers(shortcutUsers)} drivers`;
   for (const label of narrowLabels) {
     label.textContent = `${drivers(narrowRoadUsers)} cars → ${minutes(narrowRoadMinutes)} min`;
   }
   renderDriverDots(shortcutUsers);
-  renderPersonalChoice(result);
   renderDiscovery(result);
   renderPredictionFeedback();
 
@@ -269,7 +207,7 @@ function render(result: BraessResult): void {
   }
 
   narrowMath.textContent =
-    `${drivers(shortcutUsers)} + (${drivers(oldRouteUsers)} ÷ 2) = ${drivers(narrowRoadUsers)}`;
+    `${drivers(shortcutUsers)} + (${drivers(oldRouteUsers)} ÷ 2) = ${drivers(narrowRoadUsers)} cars`;
   narrowTimeMath.textContent = `${drivers(narrowRoadUsers)} ÷ 100 = ${minutes(narrowRoadMinutes)} min`;
   oldMath.textContent = `${minutes(narrowRoadMinutes)} + 45 = ${minutes(oldRouteMinutes)} min`;
   shortcutMath.textContent =
@@ -295,29 +233,81 @@ function render(result: BraessResult): void {
     : `${drivers(shortcutUsers)} drivers use the shortcut. ` +
       `Old route ${minutes(oldRouteMinutes)} minutes, shortcut ${minutes(shortcutRouteMinutes)} minutes, ` +
       `town average ${minutes(averageMinutes)} minutes.`;
+
+  if (playTimer === null) {
+    playButton.innerHTML = shortcutUsers === TOTAL_DRIVERS
+      ? '<span aria-hidden="true">↺</span> Replay from the start'
+      : '<span aria-hidden="true">▶</span> Play the full change';
+  }
 }
 
 input.addEventListener("input", () => {
+  stopPlaying();
   roadClosed = false;
   const result = calculateBraess(Number(input.value));
   input.value = String(result.shortcutUsers);
   render(result);
 });
 
+input.addEventListener("change", () => {
+  if (Number(input.value) === TOTAL_DRIVERS) {
+    reveal.scrollIntoView({
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+      block: "center",
+    });
+  }
+});
+
 toggleRoad.addEventListener("click", () => {
+  stopPlaying();
   roadClosed = !roadClosed;
   input.disabled = roadClosed;
   input.value = roadClosed ? "0" : String(TOTAL_DRIVERS);
-  if (roadClosed) clearPersonalRoute();
   render(calculateBraess(Number(input.value)));
 });
 
-for (const routeInput of personalRouteInputs) {
-  routeInput.addEventListener("change", () => {
-    selectedPersonalRoute = routeInput.value === "shortcut" ? "shortcut" : "old";
-    renderPersonalChoice(calculateBraess(Number(input.value)));
-  });
+function stopPlaying(): void {
+  if (playTimer !== null) window.clearTimeout(playTimer);
+  playTimer = null;
+  playButton.setAttribute("aria-pressed", "false");
 }
+
+function playNextStep(): void {
+  const current = Number(input.value);
+  if (current >= TOTAL_DRIVERS) {
+    stopPlaying();
+    render(calculateBraess(current));
+    reveal.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "center" });
+    return;
+  }
+
+  input.value = String(Math.min(TOTAL_DRIVERS, current + 100));
+  playTimer = window.setTimeout(playNextStep, 80);
+  render(calculateBraess(Number(input.value)));
+}
+
+playButton.addEventListener("click", () => {
+  if (playTimer !== null) {
+    stopPlaying();
+    render(calculateBraess(Number(input.value)));
+    return;
+  }
+
+  roadClosed = false;
+  input.disabled = false;
+  if (Number(input.value) >= TOTAL_DRIVERS) input.value = "0";
+
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    input.value = String(TOTAL_DRIVERS);
+    render(calculateBraess(TOTAL_DRIVERS));
+    reveal.scrollIntoView({ block: "center" });
+    return;
+  }
+
+  playButton.innerHTML = '<span aria-hidden="true">❚❚</span> Pause';
+  playButton.setAttribute("aria-pressed", "true");
+  playNextStep();
+});
 
 for (const predictionInput of predictionInputs) {
   predictionInput.addEventListener("change", () => {

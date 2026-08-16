@@ -24,37 +24,33 @@
 
     <main id="top">
       <section class="intro" aria-labelledby="page-title">
-        <p class="eyebrow">A traffic puzzle you can calculate yourself</p>
-        <h1 id="page-title">Can a shortcut make everyone slower?</h1>
-        <p class="intro__lead">
-          Move drivers onto the new road. Every time below comes from just three rules—nothing
-          random is happening behind the scenes.
-        </p>
-
-        <div class="rules" aria-label="The three road rules">
-          <article>
-            <span>Rule 1</span>
-            <strong>The grey road always takes 45 minutes.</strong>
-          </article>
-          <article>
-            <span>Rule 2</span>
-            <strong>The narrow road takes 1 minute per 100 cars using it.</strong>
-          </article>
-          <article>
-            <span>Rule 3</span>
-            <strong>The short middle connector adds 0 minutes in this classroom model.</strong>
-          </article>
+        <div class="intro__copy">
+          <p class="eyebrow">A traffic puzzle you control</p>
+          <h1 id="page-title">Can one shortcut slow the same 4,000 drivers?</h1>
+          <p class="intro__lead">
+            Nothing else changes: same drivers, same roads, same rules. Move the crowd and
+            watch every calculation update.
+          </p>
+          <a class="start-link" href="#experiment">Try the experiment <span aria-hidden="true">↓</span></a>
         </div>
 
-        <fieldset class="prediction">
-          <legend>Before you try it: what will the shortcut do to the town?</legend>
-          <p>There is no penalty for guessing. Test your idea with the slider below.</p>
-          <div class="prediction__options">
-            <label class="prediction__option"><input type="radio" name="prediction" value="faster" /> Make trips faster</label>
-            <label class="prediction__option"><input type="radio" name="prediction" value="same" /> Make no difference</label>
-            <label class="prediction__option"><input type="radio" name="prediction" value="slower" /> Make trips slower</label>
+        <div class="intro__setup">
+          <div class="rules" aria-label="The three road rules">
+            <article><span>1</span><strong>Grey road</strong><p>Always 45 minutes</p></article>
+            <article><span>2</span><strong>Narrow road</strong><p>1 minute per 100 cars</p></article>
+            <article><span>3</span><strong>Middle connector</strong><p>Adds 0 minutes in this model</p></article>
           </div>
-        </fieldset>
+
+          <fieldset class="prediction">
+            <legend>Your prediction</legend>
+            <p>What happens when the shortcut becomes available?</p>
+            <div class="prediction__options">
+              <label class="prediction__option"><input type="radio" name="prediction" value="faster" /> Faster</label>
+              <label class="prediction__option"><input type="radio" name="prediction" value="same" /> No change</label>
+              <label class="prediction__option"><input type="radio" name="prediction" value="slower" /> Slower</label>
+            </div>
+          </fieldset>
+        </div>
       </section>
 
       <section class="experiment" id="experiment" aria-labelledby="experiment-title">
@@ -89,12 +85,7 @@
             <path id="top-flow" class="flow-path" d="M 90 260 L 430 90 L 810 260" />
             <path id="bottom-flow" class="flow-path" d="M 90 260 L 430 430 L 810 260" />
             <path id="shortcut-flow" class="flow-path" d="M 90 260 L 430 90 L 430 430 L 810 260" />
-            <path class="you-trace" data-you-trace hidden />
             <g class="driver-layer" data-driver-layer aria-hidden="true"></g>
-            <g class="you-driver" data-you-driver hidden aria-hidden="true">
-              <circle class="you-driver__marker" r="10" />
-              <text x="15" y="-12">YOU</text>
-            </g>
 
             <g class="node"><circle cx="90" cy="260" r="14" /><text x="50" y="225">Home</text></g>
             <g class="node"><circle cx="430" cy="90" r="14" /></g>
@@ -102,14 +93,14 @@
             <g class="node"><circle cx="810" cy="260" r="14" /><text x="760" y="225">Work</text></g>
 
             <g class="road-label">
-              <text x="190" y="135">narrow road</text>
-              <text class="road-value" data-narrow-label x="190" y="164">2,000 cars → 20 min</text>
+              <text x="120" y="72">narrow road</text>
+              <text class="road-value" data-narrow-label x="120" y="99">2,000 cars → 20 min</text>
             </g>
-            <g class="road-label"><text x="625" y="125">always 45 min</text></g>
-            <g class="road-label"><text x="190" y="410">always 45 min</text></g>
+            <g class="road-label"><text x="650" y="82">always 45 min</text></g>
+            <g class="road-label"><text x="120" y="476">always 45 min</text></g>
             <g class="road-label">
-              <text x="600" y="402">narrow road</text>
-              <text class="road-value" data-narrow-label x="600" y="431">2,000 cars → 20 min</text>
+              <text x="620" y="454">narrow road</text>
+              <text class="road-value" data-narrow-label x="620" y="481">2,000 cars → 20 min</text>
             </g>
             <g class="shortcut-label">
               <text x="450" y="246">0 min connector</text>
@@ -117,10 +108,8 @@
             </g>
           </svg>
           <p class="network-note">
-            Drivers who avoid the shortcut split evenly between the top and bottom.
-            Every shortcut trip uses <strong>both</strong> narrow roads.
-            <span><i aria-hidden="true"></i> Each moving dot represents 50 drivers.</span>
-            <span>Watch the red roads: darker and wider means more congestion.</span>
+            <strong>Same 4,000 drivers throughout.</strong> Grey roads stay fixed; red roads slow
+            as more cars use them. Each dot represents 50 drivers.
           </p>
         </div>
 
@@ -147,6 +136,12 @@
                 aria-describedby="slider-help"
               />
               <div class="range-labels" aria-hidden="true"><span>none</span><span>half</span><span>all</span></div>
+              <div class="play-row">
+                <button type="button" class="play-button" data-play aria-describedby="play-help">
+                  <span aria-hidden="true">▶</span> Play the full change
+                </button>
+                <p id="play-help" class="play-row__help">Or drag the slider yourself</p>
+              </div>
               <output class="discovery" data-discovery>Start moving drivers onto the shortcut.</output>
               <p id="slider-help" class="decision" data-decision>
                 The shortcut takes 40 minutes, so the first driver wants to switch.
@@ -166,67 +161,45 @@
               </div>
               <output class="town-comparison__verdict" data-comparison-verdict>No change yet</output>
             </section>
+
+            <section class="live-math" aria-labelledby="live-math-title">
+              <div class="live-math__heading">
+                <p class="step-label">Live calculation</p>
+                <h4 id="live-math-title">Where the current times come from</h4>
+              </div>
+              <ol>
+                <li><span>Narrow road load</span><code data-narrow-math>0 + (4,000 ÷ 2) = 2,000 cars</code></li>
+                <li><span>Narrow road time</span><code data-narrow-time-math>2,000 ÷ 100 = 20 min</code></li>
+                <li><span>Old route</span><code data-old-math>20 + 45 = 65 min</code></li>
+                <li><span>Shortcut route</span><code data-shortcut-math>20 + 0 + 20 = 40 min</code></li>
+                <li><span>Town average</span><code data-average-math>4,000 × 65 ÷ 4,000 = 65 min</code></li>
+              </ol>
+            </section>
           </section>
-
-          <fieldset class="personal-choice">
-            <legend><span>Step 2 · Choose for yourself</span>You are one driver. Which route would you take?</legend>
-            <p>Your single choice does not change the totals. Watch the highlighted YOU marker trace your option.</p>
-            <div class="personal-choice__options">
-              <label>
-                <input type="radio" name="personal-route" value="old" />
-                <span>Old route <strong><output data-old-time>65</output> min</strong></span>
-              </label>
-              <label>
-                <input type="radio" name="personal-route" value="shortcut" />
-                <span>Shortcut <strong><output data-shortcut-time>40</output> min</strong></span>
-              </label>
-            </div>
-            <output class="personal-choice__result" data-personal-result aria-live="polite">
-              Choose a route to compare the two options.
-            </output>
-          </fieldset>
-
-          <details class="math">
-            <summary><span>Step 3 · Check the arithmetic</span>Show how these numbers are calculated</summary>
-            <p class="math__note">Nothing is hidden. These five lines update with the slider.</p>
-            <ol>
-              <li><span>Cars on each narrow road</span><code data-narrow-math>0 + (4,000 ÷ 2) = 2,000</code></li>
-              <li><span>Time on each narrow road</span><code data-narrow-time-math>2,000 ÷ 100 = 20 min</code></li>
-              <li><span>Old route</span><code data-old-math>20 + 45 = 65 min</code></li>
-              <li><span>Shortcut route</span><code data-shortcut-math>20 + 0 + 20 = 40 min</code></li>
-              <li><span>Average of all 4,000 trips</span><code data-average-math>4,000 × 65 ÷ 4,000 = 65 min</code></li>
-            </ol>
-          </details>
+        </div>
 
           <section class="reveal" data-reveal hidden aria-labelledby="reveal-title">
-            <p class="eyebrow">You found the paradox</p>
-            <h3 id="reveal-title">The shortcut is each driver’s best option—and everyone’s worse outcome.</h3>
+            <p class="eyebrow">Your action revealed Braess’s paradox</p>
+            <h3 id="reveal-title">Same 4,000 drivers. One extra road. Everyone takes 15 minutes longer.</h3>
             <p class="prediction-result" data-prediction-feedback>
               You can now compare your prediction with what the numbers showed.
             </p>
             <p class="unstable-best" data-best-explanation></p>
-            <div class="paradox-comparison" aria-label="Individual choice compared with the whole town">
+            <div class="paradox-comparison" aria-label="Same-driver controlled comparison">
               <article>
-                <span>One driver’s choice now</span>
-                <strong>Stay: 80 min · Leave alone: 85 min</strong>
-                <p>Staying is 5 minutes better, so nobody wants to leave.</p>
+                <span>Shortcut closed</span>
+                <strong>4,000 drivers split evenly → 65 min</strong>
+                <p>2,000 drivers use each narrow road.</p>
               </article>
               <article>
-                <span>The whole town</span>
-                <strong>Before road: 65 min · After choices: 80 min</strong>
-                <p>Everyone is 15 minutes slower than before the shortcut existed.</p>
+                <span>Shortcut open</span>
+                <strong>The same 4,000 follow it → 80 min</strong>
+                <p>All 4,000 now use both narrow roads.</p>
               </article>
             </div>
-            <p>
-              The shortcut is not magically slow. It changes everyone’s reason for choosing a
-              route. Each person follows the quickest option available to them, which sends all
-              4,000 drivers through both narrow roads. Removing the shortcut forces traffic to
-              split again, clearing those roads and returning every trip to 65 minutes. This is
-              <strong>Braess’s paradox</strong>: individually sensible choices can create a worse
-              result for the whole group.
-            </p>
             <p class="paradox-plain">
-              <strong class="paradox-plain__statement">The quickest choice for each person can create a slower result for everyone.</strong>
+              <strong class="paradox-plain__statement">Only the shortcut changed. The driver count did not.</strong>
+              <span class="paradox-plain__explanation">The shortcut still looks best to one driver: 80 minutes instead of 85 alone. That is why the slower group result persists.</span>
             </p>
           </section>
 
@@ -244,7 +217,6 @@
           </section>
 
           <p class="sr-only" aria-live="polite" data-live-summary></p>
-        </div>
       </section>
     </main>
 

@@ -108,7 +108,8 @@ describe("transparent desktop experiment", () => {
   it("shows the rules and initial calculation before interaction", async () => {
     const observed = await open(DESKTOP);
     const { page } = observed;
-    expect(await page.locator("button").count()).toBe(1);
+    expect(await page.locator("button").count()).toBe(2);
+    expect(await page.locator("[data-play]").isVisible()).toBe(true);
     expect(await page.locator("[data-toggle-road]").isHidden()).toBe(true);
     expect(await page.locator('input[type="range"]').count()).toBe(1);
     expect(await page.locator(".driver-dot").count()).toBe(80);
@@ -116,12 +117,10 @@ describe("transparent desktop experiment", () => {
     expect(await page.locator('.driver-dot[data-route="bottom"]').count()).toBe(40);
     expect(await page.locator('.driver-dot[data-route="shortcut"]').count()).toBe(0);
     expect(await page.locator('input[name="prediction"]').count()).toBe(3);
-    expect(await text(page, "[data-old-time]")).toBe("65");
-    expect(await text(page, "[data-shortcut-time]")).toBe("40");
+    expect(await page.locator("#experiment").evaluate((element) => element.getBoundingClientRect().top)).toBeLessThan(DESKTOP.height);
     expect(await text(page, "[data-average-time]")).toBe("65");
-    expect(await page.locator("details.math").getAttribute("open")).toBeNull();
-    await page.locator("details.math summary").click();
     expect(await page.locator("[data-narrow-math]").isVisible()).toBe(true);
+    expect(await text(page, "[data-shortcut-math]")).toBe("20 + 0 + 20 = 40 min");
     expect(await page.locator("[data-reveal]").isHidden()).toBe(true);
     await noOverflow(page);
     healthy(observed);
@@ -132,31 +131,40 @@ describe("transparent desktop experiment", () => {
     const observed = await open(DESKTOP);
     const { page } = observed;
     await setUsers(page, 2_000);
-    expect(await text(page, "[data-old-time]")).toBe("75");
-    expect(await text(page, "[data-shortcut-time]")).toBe("60");
     expect(await text(page, "[data-average-time]")).toBe("67.5");
-    expect(await text(page, "[data-narrow-math]")).toBe("2,000 + (2,000 ÷ 2) = 3,000");
+    expect(await text(page, "[data-narrow-math]")).toBe("2,000 + (2,000 ÷ 2) = 3,000 cars");
+    expect(await text(page, "[data-old-math]")).toBe("30 + 45 = 75 min");
+    expect(await text(page, "[data-shortcut-math]")).toBe("30 + 0 + 30 = 60 min");
     expect(await text(page, "[data-average-math]")).toBe("(2,000 × 75 + 2,000 × 60) ÷ 4,000 = 67.5 min");
     expect(await text(page, "[data-decision]")).toContain("Switching right now looks 15 minutes better");
     expect(await page.locator('.driver-dot[data-route="top"]').count()).toBe(20);
     expect(await page.locator('.driver-dot[data-route="bottom"]').count()).toBe(20);
     expect(await page.locator('.driver-dot[data-route="shortcut"]').count()).toBe(40);
 
-    await page.locator('input[name="personal-route"][value="old"]').check();
-    expect(await text(page, "[data-personal-result]")).toContain(
-      "You chose the old route: 75 minutes. The shortcut is 15 minutes quicker",
-    );
-    expect(await page.locator("[data-you-trace]").getAttribute("data-route")).toBe("old");
-    expect(await page.locator("[data-you-driver]").getAttribute("data-route")).toBe("old");
-    expect(await page.locator("[data-you-driver]").isVisible()).toBe(true);
-    await page.waitForFunction(() => Number.parseFloat(getComputedStyle(document.querySelector("[data-driver-layer]")!).opacity) < 0.3);
-    expect(Number(await page.locator("[data-driver-layer]").evaluate((element) => getComputedStyle(element).opacity))).toBeLessThan(1);
-    await page.locator('input[name="personal-route"][value="shortcut"]').check();
-    expect(await text(page, "[data-personal-result]")).toContain(
-      "You chose the shortcut: 60 minutes. That is 15 minutes quicker",
-    );
-    expect(await page.locator("[data-you-trace]").getAttribute("data-route")).toBe("shortcut");
-    expect(await page.locator("[data-you-driver]").getAttribute("data-route")).toBe("shortcut");
+    healthy(observed);
+    await page.close();
+  });
+
+  it("keeps diagram labels clear of the road strokes", async () => {
+    const observed = await open(DESKTOP);
+    const { page } = observed;
+    await setUsers(page, 2_000);
+    const overlaps = await page.evaluate(() => {
+      const roads = [...document.querySelectorAll<SVGGeometryElement>(".road")];
+      const labels = [...document.querySelectorAll<SVGGraphicsElement>(".road-label text, .shortcut-label text")];
+      return labels.filter((label) => {
+        const box = label.getBBox();
+        const points = [
+          new DOMPoint(box.x, box.y),
+          new DOMPoint(box.x + box.width, box.y),
+          new DOMPoint(box.x, box.y + box.height),
+          new DOMPoint(box.x + box.width, box.y + box.height),
+          new DOMPoint(box.x + box.width / 2, box.y + box.height / 2),
+        ];
+        return roads.some((road) => points.some((point) => road.isPointInStroke(point)));
+      }).map((label) => label.textContent);
+    });
+    expect(overlaps).toEqual([]);
     healthy(observed);
     await page.close();
   });
@@ -183,14 +191,14 @@ describe("transparent desktop experiment", () => {
     const { page } = observed;
     await page.locator('input[name="prediction"][value="faster"]').check();
     await setUsers(page, 4_000);
-    expect(await text(page, "[data-old-time]")).toBe("85");
-    expect(await text(page, "[data-shortcut-time]")).toBe("80");
     expect(await text(page, "[data-average-time]")).toBe("80");
     expect(await text(page, "[data-average-change]")).toBe("15 min slower than without the shortcut");
     expect(await page.locator("[data-reveal]").isVisible()).toBe(true);
     expect(await text(page, "[data-reveal]")).toContain("Braess’s paradox");
-    expect(await text(page, "[data-reveal]")).toContain("Stay: 80 min · Leave alone: 85 min");
-    expect(await text(page, "[data-reveal]")).toContain("Before road: 65 min · After choices: 80 min");
+    expect(await text(page, "[data-reveal]")).toContain("Same 4,000 drivers. One extra road");
+    expect(await text(page, "[data-reveal]")).toContain("4,000 drivers split evenly → 65 min");
+    expect(await text(page, "[data-reveal]")).toContain("The same 4,000 follow it → 80 min");
+    expect(await text(page, "[data-reveal]")).toContain("Only the shortcut changed. The driver count did not");
     expect(await text(page, "[data-best-explanation]")).toContain(
       "best balance was 500 shortcut users at 64.7 minutes",
     );
@@ -223,7 +231,6 @@ describe("transparent desktop experiment", () => {
     expect(await page.locator('.driver-dot[data-route="top"]').count()).toBe(40);
     expect(await page.locator('.driver-dot[data-route="bottom"]').count()).toBe(40);
     expect(await page.locator('.driver-dot[data-route="shortcut"]').count()).toBe(0);
-    expect(await page.locator(".personal-choice").isHidden()).toBe(true);
     await page.waitForFunction(() => Number.parseFloat(getComputedStyle(document.querySelector(".road--narrow")!).strokeWidth) < 9.01);
     const clearedRoadWidth = Number.parseFloat(await page.locator(".road--narrow").first().evaluate((element) => getComputedStyle(element).strokeWidth));
     expect(clearedRoadWidth).toBeCloseTo(initialRoadWidth, 1);
@@ -234,6 +241,29 @@ describe("transparent desktop experiment", () => {
     expect(await page.locator("#shortcut-users").inputValue()).toBe("4000");
     expect(await text(page, "[data-average-time]")).toBe("80");
     expect(await page.locator("[data-reveal]").isVisible()).toBe(true);
+    healthy(observed);
+    await page.close();
+  });
+
+  it("plays, pauses and completes the same slider calculation", async () => {
+    const observed = await open(DESKTOP);
+    const { page } = observed;
+    const play = page.locator("[data-play]");
+    await play.click();
+    await page.waitForFunction(() => Number((document.querySelector("#shortcut-users") as HTMLInputElement).value) >= 300);
+    expect(await text(page, "[data-play]")).toContain("Pause");
+
+    await play.click();
+    const pausedAt = await page.locator("#shortcut-users").inputValue();
+    await page.waitForTimeout(180);
+    expect(await page.locator("#shortcut-users").inputValue()).toBe(pausedAt);
+
+    await play.click();
+    await page.waitForFunction(() => document.body.dataset.complete === "true", undefined, { timeout: 6_000 });
+    expect(await page.locator("#shortcut-users").inputValue()).toBe("4000");
+    expect(await page.locator("[data-reveal]").isVisible()).toBe(true);
+    await page.waitForFunction(() => document.querySelector("[data-play]")?.textContent?.includes("Replay"));
+    expect(await text(page, "[data-play]")).toContain("Replay from the start");
     healthy(observed);
     await page.close();
   });
@@ -273,13 +303,12 @@ describe("phone and keyboard", () => {
   it("removes decorative motion when reduced motion is requested", async () => {
     const observed = await open(PHONE, true);
     const { page } = observed;
-    await setUsers(page, 4_000);
-    await page.locator('input[name="personal-route"][value="shortcut"]').check();
+    await page.locator("[data-play]").click();
+    expect(await page.locator("#shortcut-users").inputValue()).toBe("4000");
     const duration = await page.locator("[data-reveal]").evaluate((element) =>
       getComputedStyle(element).animationDuration,
     );
     expect(Number.parseFloat(duration)).toBeLessThanOrEqual(0.00001);
-    expect(await page.locator("[data-you-trace]").evaluate((element) => element.getAnimations().length)).toBe(0);
     healthy(observed);
     await page.close();
   });
