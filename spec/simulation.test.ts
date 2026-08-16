@@ -6,7 +6,7 @@
 // out of the model, because those change legitimately under calibration — they
 // assert the properties a quotable result has to have.
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { CONTROL, TARGET, buildSchedule, horizonOf, networkOf } from "../src/experiment/config.ts";
 import type { ExperimentConfig } from "../src/experiment/config.ts";
 import {
@@ -20,6 +20,12 @@ import { Simulation } from "../src/sim/engine.ts";
 import type { ScheduledDeparture } from "../src/sim/engine.ts";
 import { linkFreeFlowTime, routeFreeFlowTime } from "../src/sim/network.ts";
 import { MAX_DECELERATION } from "../src/sim/idm.ts";
+
+// These tests run full steady-state simulations (several per test, some pairing
+// two configs across multiple seeds), so wall time scales with the CI runner's
+// speed, not just this file's line count. The default 5000ms timeout is tight
+// enough to be runner-speed-dependent rather than a real regression signal.
+vi.setConfig({ testTimeout: 20000 });
 
 function simulationFor(
   config: ExperimentConfig,
