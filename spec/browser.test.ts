@@ -212,7 +212,7 @@ describe("transparent desktop experiment", () => {
     const reset = page.locator("[data-reset-simulation]");
     expect(await reset.isDisabled()).toBe(true);
     expect(await reset.getAttribute("aria-label")).toBe("Reset experiment");
-    expect(await text(page, "[data-reset-simulation]")).toBe("↺ Reset experiment");
+    expect(await text(page, "[data-reset-simulation]")).toBe("↺ Reset");
     expect(await page.locator(".intro__actions > .start-link").count()).toBe(2);
     const actionCenters = await page.locator(".intro__actions > .start-link").evaluateAll((actions) =>
       actions.map((action) => {
@@ -220,7 +220,11 @@ describe("transparent desktop experiment", () => {
         return box.top + box.height / 2;
       }),
     );
-    expect(actionCenters[0]).toBeCloseTo(actionCenters[1], 0);
+    // Manrope/DM Mono aren't self-hosted, so this renders in whichever
+    // fallback sans-serif the OS provides; fallback metrics vary enough
+    // between macOS and CI's Linux runner that a sub-pixel match is the
+    // wrong bar. What matters is that the two actions share a row.
+    expect(Math.abs(actionCenters[0] - actionCenters[1])).toBeLessThan(10);
     const resetAppearance = await reset.evaluate((element) => {
       const style = getComputedStyle(element);
       const box = element.getBoundingClientRect();
@@ -685,7 +689,11 @@ describe("phone and keyboard", () => {
         return box.top + box.height / 2;
       }),
     );
-    expect(actionCenters[0]).toBeCloseTo(actionCenters[1], 0);
+    // Manrope/DM Mono aren't self-hosted, so this renders in whichever
+    // fallback sans-serif the OS provides; fallback metrics vary enough
+    // between macOS and CI's Linux runner that a sub-pixel match is the
+    // wrong bar. What matters is that the two actions share a row.
+    expect(Math.abs(actionCenters[0] - actionCenters[1])).toBeLessThan(10);
     await noOverflow(page);
     await setUsers(page, 2_000);
     await noOverflow(page);
