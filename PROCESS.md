@@ -32,15 +32,15 @@ made the same connector help. That is stronger than a dramatic single run, but i
 is not a claim that every trial fully settled
 ([`8171e40...9ae0852`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-SharmaKunal14/compare/8171e40...9ae0852)).
 
-**3. A CI-only hang was a real interaction bug, not a flaky test.** The reversal
-test hung only in CI; reduced motion fixed part of it, so I kept instrumenting
-instead of raising the timeout. Step logging showed why: `toggleRoad` always
-scrolled `networkWrap`, even when closing the road moved focus to `mapProof`
-instead. Scrolling the actual focus destination reproduced the hang locally for
-the first time. Measuring `mapProof`'s `getBoundingClientRect()` afterwards showed
-**top: -8.4px** — near the bottom of the page, `block: "start"` cannot flush an
-element's top to exactly zero once the document runs out of room to scroll. I
-fixed the test's own assumption, not the timeout
+**3. A CI timeout exposed both a real interaction bug and a brittle test.** Closing
+the shortcut moved keyboard focus to `mapProof`, but `toggleRoad` always scrolled
+`networkWrap`, so focus and the visible destination could disagree. Step logging
+isolated the timeout to the geometry check. After making the handler scroll the
+focused destination, `mapProof` remained slightly offset from the top because the
+browser had reached its available scroll range: the page was not frozen, the test
+was waiting for exact alignment the browser could not guarantee. I fixed the
+interaction, then changed the test to require the result be visible rather than
+positioned at an exact pixel
 ([`98a7a85`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-SharmaKunal14/commit/98a7a85)).
 
 **4. More explanation made the explanation worse.** The user said buttons caused
