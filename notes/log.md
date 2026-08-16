@@ -528,3 +528,16 @@ context, then a full-width deliberate reveal action. A browser geometry check no
 the heading to retain most of the card width and the action to sit below the explanation at
 both 1920×1080 and 390×844. This changed presentation only; the reveal remains user-triggered
 and the calculation state is unchanged.
+
+## Mon 17 Aug — the setup separated inputs from instructions
+
+The opening listed three road formulas, but it never plainly told the visitor which parts
+of the experiment were fixed, which value they controlled, or what they were trying to
+optimise. “Move the crowd” left those responsibilities implicit, so the rules read like a
+reference table detached from the task.
+
+I reorganised the same content into an experiment brief: the 4,000-driver crowd is fixed,
+one slider controls shortcut use, and the goal is the lowest town average. The three road
+rules now sit below that contract and are labelled as formulas that never change. This adds
+no new model claim or interaction. Static tests bind the exact setup, while the existing
+desktop and phone browser paths guard the first-screen layout and overflow.

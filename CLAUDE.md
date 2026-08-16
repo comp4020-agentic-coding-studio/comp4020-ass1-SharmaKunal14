@@ -237,6 +237,13 @@ every 100-driver slider step transfers one from each origin to the shortcut.
 Dragging the slider updates the route ledger, town average, map and five visible
 equations from the pure calculation in `src/braess.ts`.
 
+The opening must establish the experiment before presenting its formulas. Keep
+three facts explicit and visually distinct: **Fixed** means the same 4,000 drivers
+with one start and destination; **You control** means only the share using the
+shortcut; **Your goal** means the lowest town-wide average. The three road-time
+rules follow as immutable inputs. Do not make the visitor infer this contract from
+the map or from arithmetic later in the page.
+
 On wide screens, keep those three jobs spatially distinct: slider investigation on
 the left, the persistent road map as the dominant centre surface, and live arithmetic
 on the right. The right rail owns the current town comparison, route ledger and five
