@@ -110,6 +110,10 @@ describe("transparent desktop experiment", () => {
     const { page } = observed;
     expect(await page.locator("button").count()).toBe(0);
     expect(await page.locator('input[type="range"]').count()).toBe(1);
+    expect(await page.locator(".driver-dot").count()).toBe(40);
+    expect(await page.locator('.driver-dot[data-route="top"]').count()).toBe(20);
+    expect(await page.locator('.driver-dot[data-route="bottom"]').count()).toBe(20);
+    expect(await page.locator('.driver-dot[data-route="shortcut"]').count()).toBe(0);
     expect(await text(page, "[data-old-time]")).toBe("65");
     expect(await text(page, "[data-shortcut-time]")).toBe("40");
     expect(await text(page, "[data-average-time]")).toBe("65");
@@ -129,6 +133,18 @@ describe("transparent desktop experiment", () => {
     expect(await text(page, "[data-narrow-math]")).toBe("(4,000 + 2,000) ÷ 2 = 3,000");
     expect(await text(page, "[data-average-math]")).toBe("(2,000 × 75 + 2,000 × 60) ÷ 4,000 = 67.5 min");
     expect(await text(page, "[data-decision]")).toContain("Switching right now looks 15 minutes better");
+    expect(await page.locator('.driver-dot[data-route="top"]').count()).toBe(10);
+    expect(await page.locator('.driver-dot[data-route="bottom"]').count()).toBe(10);
+    expect(await page.locator('.driver-dot[data-route="shortcut"]').count()).toBe(20);
+
+    await page.locator('input[name="personal-route"][value="old"]').check();
+    expect(await text(page, "[data-personal-result]")).toContain(
+      "You chose the old route: 75 minutes. The shortcut is 15 minutes quicker",
+    );
+    await page.locator('input[name="personal-route"][value="shortcut"]').check();
+    expect(await text(page, "[data-personal-result]")).toContain(
+      "You chose the shortcut: 60 minutes. That is 15 minutes quicker",
+    );
     healthy(observed);
     await page.close();
   });
@@ -146,6 +162,7 @@ describe("transparent desktop experiment", () => {
     expect(await text(page, "[data-reveal]")).toContain("Stay: 80 min · Leave alone: 85 min");
     expect(await text(page, "[data-reveal]")).toContain("Before road: 65 min · After choices: 80 min");
     expect(await text(page, "[data-decision]")).toContain("nobody leaves");
+    expect(await page.locator('.driver-dot[data-route="shortcut"]').count()).toBe(40);
     await noOverflow(page);
     healthy(observed);
     await page.close();

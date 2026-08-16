@@ -31,6 +31,12 @@
           random is happening behind the scenes.
         </p>
 
+        <aside class="paradox-plain" aria-label="What the paradox is about">
+          <span>The idea in one sentence</span>
+          <strong>The quickest choice for each person can create a slower result for everyone.</strong>
+          <p>Your route changes the traffic that every other driver meets.</p>
+        </aside>
+
         <div class="rules" aria-label="The two road rules">
           <article>
             <span>Rule 1</span>
@@ -72,6 +78,11 @@
             <line class="road road--narrow" x1="430" y1="430" x2="810" y2="260" />
             <line class="road road--shortcut" x1="430" y1="90" x2="430" y2="430" />
 
+            <path id="top-flow" class="flow-path" d="M 90 260 L 430 90 L 810 260" />
+            <path id="bottom-flow" class="flow-path" d="M 90 260 L 430 430 L 810 260" />
+            <path id="shortcut-flow" class="flow-path" d="M 90 260 L 430 90 L 430 430 L 810 260" />
+            <g class="driver-layer" data-driver-layer aria-hidden="true"></g>
+
             <g class="node"><circle cx="90" cy="260" r="14" /><text x="50" y="225">Home</text></g>
             <g class="node"><circle cx="430" cy="90" r="14" /></g>
             <g class="node"><circle cx="430" cy="430" r="14" /></g>
@@ -95,6 +106,7 @@
           <p class="network-note">
             Drivers who avoid the shortcut split evenly between the top and bottom.
             Every shortcut trip uses <strong>both</strong> narrow roads.
+            <span><i aria-hidden="true"></i> Each moving dot represents 100 drivers.</span>
           </p>
         </div>
 
@@ -109,7 +121,7 @@
               type="range"
               min="0"
               max="4000"
-              step="100"
+              step="200"
               value="0"
               aria-describedby="slider-help"
             />
@@ -134,6 +146,24 @@
               <small data-average-change>same as before</small>
             </article>
           </div>
+
+          <fieldset class="personal-choice">
+            <legend>You are one driver. Which route would you take right now?</legend>
+            <p>Your single choice does not change the 4,000-driver totals. It lets you compare your options.</p>
+            <div class="personal-choice__options">
+              <label>
+                <input type="radio" name="personal-route" value="old" />
+                <span>Old route <strong><output data-personal-old>65</output> min</strong></span>
+              </label>
+              <label>
+                <input type="radio" name="personal-route" value="shortcut" />
+                <span>Shortcut <strong><output data-personal-shortcut>40</output> min</strong></span>
+              </label>
+            </div>
+            <output class="personal-choice__result" data-personal-result>
+              Choose a route to compare the two options.
+            </output>
+          </fieldset>
 
           <section class="math" aria-labelledby="math-title">
             <p class="eyebrow">Nothing hidden</p>

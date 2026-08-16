@@ -16,12 +16,13 @@ function prose(markdown: string): string[] {
     .filter(Boolean);
 }
 
-describe("one transparent interaction", () => {
-  it("uses one slider and no sequence of buttons", () => {
+describe("transparent direct interactions", () => {
+  it("uses one slider, one personal route choice and no sequence of buttons", () => {
     const sliders = doc.querySelectorAll<HTMLInputElement>('input[type="range"]');
     expect(sliders).toHaveLength(1);
+    expect(doc.querySelectorAll<HTMLInputElement>('input[name="personal-route"]')).toHaveLength(2);
     expect(doc.querySelectorAll("button")).toHaveLength(0);
-    expect(sliders[0]).toMatchObject({ min: "0", max: "4000", step: "100", value: "0" });
+    expect(sliders[0]).toMatchObject({ min: "0", max: "4000", step: "200", value: "0" });
   });
 
   it("states both rules before asking for interaction", () => {
@@ -31,6 +32,8 @@ describe("one transparent interaction", () => {
     expect(copy).toContain("Every shortcut trip uses both narrow roads");
     expect(copy).toContain("nothing random is happening behind the scenes");
     expect(copy).toContain("Here is every calculation");
+    expect(copy).toContain("The quickest choice for each person can create a slower result for everyone");
+    expect(copy).toContain("Each moving dot represents 100 drivers");
   });
 
   it("contains the complete initial arithmetic and withholds the reveal", () => {
@@ -53,6 +56,8 @@ describe("one transparent interaction", () => {
       expect(mainSource).not.toContain(fragment);
     }
     expect(mainSource).toContain('from "./src/braess"');
+    expect(mainSource).toContain("const DOTS = 40");
+    expect(mainSource).toContain("renderPersonalChoice(result)");
   });
 
   it("keeps the primary copy free of the discarded process jargon", () => {

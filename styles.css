@@ -140,6 +140,42 @@ h1 {
   line-height: 1.45;
 }
 
+.paradox-plain {
+  max-width: 56rem;
+  margin-top: 2rem;
+  padding: 1.1rem 1.25rem;
+  border-left: 5px solid var(--gold);
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.paradox-plain span,
+.paradox-plain strong {
+  display: block;
+}
+
+.paradox-plain span {
+  color: var(--gold);
+  font-size: 0.63rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.paradox-plain strong {
+  margin-top: 0.35rem;
+  font-family: Newsreader, Georgia, serif;
+  font-size: clamp(1.2rem, 2vw, 1.55rem);
+  font-weight: 500;
+  line-height: 1.25;
+}
+
+.paradox-plain p {
+  margin: 0.45rem 0 0;
+  color: #dce2df;
+  font-size: 0.78rem;
+}
+
 .rules {
   max-width: 56rem;
   margin-top: 2.25rem;
@@ -243,6 +279,23 @@ h2 {
   text-align: center;
 }
 
+.network-note span {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.68rem;
+}
+
+.network-note i {
+  display: inline-block;
+  width: 0.65rem;
+  height: 0.65rem;
+  margin-right: 0.25rem;
+  border: 2px solid var(--ink);
+  border-radius: 50%;
+  background: var(--gold);
+  vertical-align: -0.08rem;
+}
+
 .road {
   fill: none;
   stroke-linecap: round;
@@ -262,6 +315,29 @@ h2 {
   stroke: var(--teal);
   stroke-width: calc(7px + var(--shortcut-share) * 12px);
   transition: stroke-width 160ms ease;
+}
+
+.flow-path {
+  fill: none;
+  stroke: none;
+}
+
+.driver-layer {
+  pointer-events: none;
+}
+
+.driver-dot {
+  fill: var(--ink);
+  stroke: var(--paper);
+  stroke-width: 2;
+  transition:
+    transform 260ms cubic-bezier(0.22, 1, 0.36, 1),
+    fill 160ms ease;
+}
+
+.driver-dot--shortcut {
+  fill: var(--gold);
+  stroke: var(--ink);
 }
 
 .node circle {
@@ -408,6 +484,83 @@ body[data-complete="true"] .times__average strong,
 body[data-complete="true"] .times__average small {
   color: var(--rust);
 }
+
+/* stylelint-disable no-descending-specificity -- this compact form reuses the
+   page's shared span/strong primitives with a deliberately different hierarchy. */
+.personal-choice {
+  min-width: 0;
+  margin: 1rem 0 0;
+  padding: 1.2rem;
+  border: 1px solid var(--rule);
+}
+
+.personal-choice legend {
+  padding: 0 0.35rem;
+  font-family: Newsreader, Georgia, serif;
+  font-size: 1.25rem;
+  font-weight: 500;
+}
+
+.personal-choice > p {
+  margin: 0 0 0.8rem;
+  color: var(--ink-soft);
+  font-size: 0.7rem;
+  line-height: 1.4;
+}
+
+.personal-choice__options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.personal-choice__options label {
+  min-width: 0;
+  padding: 0.75rem;
+  border: 1px solid var(--rule);
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.55rem;
+  align-items: center;
+  cursor: pointer;
+}
+
+.personal-choice__options label:has(input:checked) {
+  border-color: var(--teal);
+  background: rgb(11 120 136 / 7%);
+}
+
+.personal-choice__options input {
+  accent-color: var(--teal);
+}
+
+.personal-choice__options span,
+.personal-choice__options strong {
+  display: block;
+}
+
+.personal-choice__options span {
+  color: var(--ink-soft);
+  font-size: 0.68rem;
+}
+
+.personal-choice__options strong {
+  margin-top: 0.15rem;
+  color: var(--ink);
+  font-family: "DM Mono", monospace;
+  font-size: 0.8rem;
+}
+
+.personal-choice__result {
+  display: block;
+  min-height: 2.8em;
+  margin-top: 0.8rem;
+  color: var(--teal);
+  font-size: 0.74rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+/* stylelint-enable no-descending-specificity */
 
 .math {
   margin-top: 1rem;
@@ -645,6 +798,10 @@ footer {
 
   .times small {
     grid-column: 1 / -1;
+  }
+
+  .personal-choice__options {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .math li {

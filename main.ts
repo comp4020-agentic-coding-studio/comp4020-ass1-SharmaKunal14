@@ -27,8 +27,28 @@ const shortcutMath = need<HTMLElement>("[data-shortcut-math]");
 const averageMath = need<HTMLElement>("[data-average-math]");
 const reveal = need<HTMLElement>("[data-reveal]");
 const liveSummary = need<HTMLElement>("[data-live-summary]");
+const personalOld = need<HTMLOutputElement>("[data-personal-old]");
+const personalShortcut = need<HTMLOutputElement>("[data-personal-shortcut]");
+const personalResult = need<HTMLOutputElement>("[data-personal-result]");
+const personalRouteInputs = [
+  ...document.querySelectorAll<HTMLInputElement>('input[name="personal-route"]'),
+];
+const driverLayer = need<SVGGElement>("[data-driver-layer]");
+const topFlow = need<SVGPathElement>("#top-flow");
+const bottomFlow = need<SVGPathElement>("#bottom-flow");
+const shortcutFlow = need<SVGPathElement>("#shortcut-flow");
 
 const number = new Intl.NumberFormat("en-AU", { maximumFractionDigits: 1 });
+const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
+const DOTS = 40;
+const driverDots = Array.from({ length: DOTS }, () => {
+  const dot = document.createElementNS(SVG_NAMESPACE, "circle");
+  dot.setAttribute("r", "6");
+  dot.classList.add("driver-dot");
+  driverLayer.append(dot);
+  return dot;
+});
+let selectedPersonalRoute: "old" | "shortcut" | null = null;
 
 function minutes(value: number): string {
   return number.format(value);
@@ -36,6 +56,50 @@ function minutes(value: number): string {
 
 function drivers(value: number): string {
   return number.format(value);
+}
+
+function placeDots(
+  dots: SVGCircleElement[],
+  path: SVGPathElement,
+  route: "top" | "bottom" | "shortcut",
+): void {
+  const length = path.getTotalLength();
+  for (const [index, dot] of dots.entries()) {
+    const point = path.getPointAtLength((length * (index + 1)) / (dots.length + 1));
+    dot.dataset.route = route;
+    dot.classList.toggle("driver-dot--shortcut", route === "shortcut");
+    dot.style.transform = `translate(${point.x}px, ${point.y}px)`;
+  }
+}
+
+function renderDriverDots(shortcutUsers: number): void {
+  const shortcutDotCount = Math.min(DOTS, Math.max(0, Math.round(shortcutUsers / 100)));
+  const remainingDots = DOTS - shortcutDotCount;
+  const topEnd = Math.ceil(remainingDots / 2);
+  const bottomEnd = remainingDots;
+  placeDots(driverDots.slice(0, topEnd), topFlow, "top");
+  placeDots(driverDots.slice(topEnd, bottomEnd), bottomFlow, "bottom");
+  placeDots(driverDots.slice(bottomEnd), shortcutFlow, "shortcut");
+}
+
+function renderPersonalChoice(result: BraessResult): void {
+  personalOld.value = minutes(result.oldRouteMinutes);
+  personalShortcut.value = minutes(result.shortcutRouteMinutes);
+  if (selectedPersonalRoute === null) {
+    personalResult.value = "Choose a route to compare the two options.";
+    return;
+  }
+
+  const choseShortcut = selectedPersonalRoute === "shortcut";
+  const chosen = choseShortcut ? result.shortcutRouteMinutes : result.oldRouteMinutes;
+  const other = choseShortcut ? result.oldRouteMinutes : result.shortcutRouteMinutes;
+  const chosenLabel = choseShortcut ? "shortcut" : "old route";
+  const otherLabel = choseShortcut ? "old route" : "shortcut";
+  const difference = Math.abs(chosen - other);
+  personalResult.value =
+    chosen <= other
+      ? `You chose the ${chosenLabel}: ${minutes(chosen)} minutes. That is ${minutes(difference)} minutes quicker than the ${otherLabel} right now.`
+      : `You chose the ${chosenLabel}: ${minutes(chosen)} minutes. The ${otherLabel} is ${minutes(difference)} minutes quicker right now.`;
 }
 
 function render(result: BraessResult): void {
@@ -61,6 +125,8 @@ function render(result: BraessResult): void {
   for (const label of narrowLabels) {
     label.textContent = `${drivers(narrowRoadUsers)} cars → ${minutes(narrowRoadMinutes)} min`;
   }
+  renderDriverDots(shortcutUsers);
+  renderPersonalChoice(result);
 
   if (averageChangeMinutes > 0) {
     averageChange.textContent = `${minutes(averageChangeMinutes)} min slower than without the shortcut`;
@@ -105,6 +171,13 @@ input.addEventListener("input", () => {
   input.value = String(result.shortcutUsers);
   render(result);
 });
+
+for (const routeInput of personalRouteInputs) {
+  routeInput.addEventListener("change", () => {
+    selectedPersonalRoute = routeInput.value === "shortcut" ? "shortcut" : "old";
+    renderPersonalChoice(calculateBraess(Number(input.value)));
+  });
+}
 
 render(calculateBraess(Number(input.value)));
 
