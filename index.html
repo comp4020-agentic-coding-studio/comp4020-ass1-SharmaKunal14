@@ -1,220 +1,172 @@
 <!doctype html>
-<html lang="en-AU">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#f2efe6" />
     <meta
       name="description"
-      content="A six-chapter traffic story about what can happen when one tempting shortcut opens."
+      content="A transparent, interactive explanation of Braess's paradox. Move drivers and see every calculation change."
     />
-    <title>One More Road</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22><rect width=%2232%22 height=%2232%22 rx=%224%22 fill=%22%23192520%22/><path d=%22M4 23 13 14l6 6 9-11%22 fill=%22none%22 stroke=%22%23f2efe6%22 stroke-width=%223%22/><path d=%22m13 14 6 6%22 stroke=%22%2314788b%22 stroke-width=%224%22/></svg>" />
-    <link rel="stylesheet" href="./styles.css" />
+    <meta name="theme-color" content="#f4f0e7" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22><rect width=%2264%22 height=%2264%22 rx=%2212%22 fill=%22%23152520%22/><path d=%22M14 20h36M14 32h36M14 44h36%22 stroke=%22%23f3ae2b%22 stroke-width=%226%22/></svg>" />
+    <link rel="stylesheet" href="/styles.css" />
+    <title>One More Road — A transparent traffic paradox</title>
   </head>
-  <body data-state="map">
+  <body>
+    <a class="skip-link" href="#experiment">Skip to the experiment</a>
+
     <header class="masthead">
       <nav aria-label="Page">
-        <a class="skip-link" href="#experience">Skip to the traffic story</a>
-        <p class="wordmark">
-          <span aria-hidden="true" class="wordmark__mark"></span>
-          One More Road
-        </p>
+        <a class="brand" href="#top" aria-label="One More Road, start">One More Road</a>
       </nav>
-      <p class="masthead__note">A traffic story in six short chapters</p>
+      <p>One slider. Two rules. No hidden simulation.</p>
     </header>
 
-    <main>
-      <section
-        class="experience"
-        id="experience"
-        aria-labelledby="story-heading"
-        tabindex="-1"
-      >
-        <nav class="chapters" aria-label="Story progress">
-          <p class="chapters__label">Your progress</p>
-          <p class="chapters__count">
-            Chapter <span data-chapter-number>1</span> of 6
-          </p>
-          <ol class="chapters__list">
-            <li data-chapter="1" aria-current="step">Meet the roads</li>
-            <li data-chapter="2">Add a shortcut</li>
-            <li data-chapter="3">Try a quiet morning</li>
-            <li data-chapter="4">Make it busy</li>
-            <li data-chapter="5">Watch cars choose</li>
-            <li data-chapter="6">Explain the surprise</li>
-          </ol>
-        </nav>
+    <main id="top">
+      <section class="intro" aria-labelledby="page-title">
+        <p class="eyebrow">A traffic puzzle you can calculate yourself</p>
+        <h1 id="page-title">Can a shortcut make everyone slower?</h1>
+        <p class="intro__lead">
+          Move drivers onto the new road. Every time below comes from just two rules—nothing
+          random is happening behind the scenes.
+        </p>
 
-        <div class="story">
-          <p class="story__eyebrow" data-eyebrow>Chapter 1 of 6 · Meet the roads</p>
-          <h1 class="story__headline" id="story-heading" data-headline tabindex="-1">
-            The map says both ways take 5:05.
-          </h1>
-          <p class="story__body" data-body>
-            That estimate uses only road lengths and speed limits. Trace each way from Eastgate to
-            Central.
-          </p>
-
-          <aside class="discoveries" data-discoveries hidden aria-label="Evidence collected">
-            <p class="discoveries__label">Your evidence</p>
-            <ol>
-              <li data-discovery="route"><span>1</span><strong>A shortcut car’s path</strong></li>
-              <li data-discovery="queues"><span>2</span><strong>Where queues form</strong></li>
-              <li data-discovery="result"><span>3</span><strong>Which morning wins</strong></li>
-            </ol>
-          </aside>
+        <div class="rules" aria-label="The two road rules">
+          <article>
+            <span>Rule 1</span>
+            <strong>The grey road always takes 45 minutes.</strong>
+          </article>
+          <article>
+            <span>Rule 2</span>
+            <strong>The narrow road takes 1 minute per 100 cars using it.</strong>
+          </article>
         </div>
-
-        <div class="measure" aria-live="off">
-          <div class="measure__live" data-live-measure>
-            <p class="measure__value" data-metric-value>5:31</p>
-            <p class="measure__label" data-metric-label>map estimate · minutes:seconds</p>
-          </div>
-
-          <div class="comparison" data-comparison hidden>
-            <div class="comparison__side">
-              <span class="comparison__value" data-closed-value>5:31</span>
-              <span class="comparison__label">shortcut closed</span>
-            </div>
-            <span class="comparison__arrow" aria-hidden="true">→</span>
-            <div class="comparison__side comparison__side--after">
-              <span class="comparison__value" data-open-value>5:44</span>
-              <span class="comparison__label">shortcut open</span>
-            </div>
-            <p class="comparison__delta" data-delta-value>+13 seconds</p>
-          </div>
-
-          <p class="measure__context" data-metric-context>
-            Road lengths and speed limits add up to 305 seconds, or 5:05.
-          </p>
-        </div>
-
-        <figure class="stage" aria-labelledby="stage-caption">
-          <div class="stage__figure" data-figure></div>
-          <figcaption class="stage__caption" id="stage-caption" data-caption>
-            Choose a way to trace it on the map.
-          </figcaption>
-
-          <h2 class="sr-only">Current road conditions</h2>
-          <ul class="sr-only" data-loads></ul>
-        </figure>
-
-        <div class="control">
-          <div class="choices" data-choices role="group" aria-label="Chapter choices"></div>
-          <button class="action" type="button" data-action disabled>
-            Go to the shortcut
-          </button>
-          <p class="control__status" data-status>
-            Tap the north and south ways to continue.
-          </p>
-        </div>
-
-        <p class="sr-only" aria-live="polite" aria-atomic="true" data-announce></p>
       </section>
 
-      <section class="afterword" data-afterword hidden aria-labelledby="afterword-heading">
-        <div class="afterword__copy">
-          <p class="afterword__eyebrow">What you found</p>
-          <h2 id="afterword-heading">A useful shortcut sent more cars to both bridges.</h2>
-          <p>
-            The shortcut itself stayed quick. The surprise came from its full path: every gold car
-            used Riverside Road, the shortcut, and Millbrook Road. Both narrow bridges became
-            busier.
-          </p>
-          <p>
-            This does not mean that new roads are bad. With fewer cars, the same shortcut saved
-            about <span data-control-seconds>8</span> seconds.
+      <section class="experiment" id="experiment" aria-labelledby="experiment-title">
+        <div class="network-wrap">
+          <div class="network-heading">
+            <div>
+              <p class="eyebrow">The road map</p>
+              <h2 id="experiment-title">4,000 drivers need to cross town.</h2>
+            </div>
+            <p class="baseline"><span>Before the shortcut</span><strong>65 min average</strong></p>
+          </div>
+
+          <svg
+            class="network"
+            viewBox="0 0 900 520"
+            role="img"
+            aria-labelledby="network-title network-description"
+          >
+            <title id="network-title">A four-road network with one central shortcut</title>
+            <desc id="network-description">
+              Start is on the left and work is on the right. Two old routes pass through one
+              narrow road and one fixed forty-five-minute road. A new vertical shortcut joins
+              the two middle junctions.
+            </desc>
+
+            <line class="road road--narrow" x1="90" y1="260" x2="430" y2="90" />
+            <line class="road road--fixed" x1="430" y1="90" x2="810" y2="260" />
+            <line class="road road--fixed" x1="90" y1="260" x2="430" y2="430" />
+            <line class="road road--narrow" x1="430" y1="430" x2="810" y2="260" />
+            <line class="road road--shortcut" x1="430" y1="90" x2="430" y2="430" />
+
+            <g class="node"><circle cx="90" cy="260" r="14" /><text x="50" y="225">Home</text></g>
+            <g class="node"><circle cx="430" cy="90" r="14" /></g>
+            <g class="node"><circle cx="430" cy="430" r="14" /></g>
+            <g class="node"><circle cx="810" cy="260" r="14" /><text x="760" y="225">Work</text></g>
+
+            <g class="road-label">
+              <text x="190" y="135">narrow road</text>
+              <text class="road-value" data-narrow-label x="190" y="164">2,000 cars → 20 min</text>
+            </g>
+            <g class="road-label"><text x="625" y="125">always 45 min</text></g>
+            <g class="road-label"><text x="190" y="410">always 45 min</text></g>
+            <g class="road-label">
+              <text x="600" y="402">narrow road</text>
+              <text class="road-value" data-narrow-label x="600" y="431">2,000 cars → 20 min</text>
+            </g>
+            <g class="shortcut-label">
+              <text x="450" y="246">new shortcut</text>
+              <text data-shortcut-count x="450" y="275">0 drivers</text>
+            </g>
+          </svg>
+          <p class="network-note">
+            Drivers who avoid the shortcut split evenly between the top and bottom.
+            Every shortcut trip uses <strong>both</strong> narrow roads.
           </p>
         </div>
 
-        <details class="model-note">
-          <summary>How the simulation works and where the numbers come from</summary>
-          <div class="model-note__body">
-            <p>
-              <strong>This is a made-up map.</strong> In scientific terms it is a synthetic
-              network: it shows one possible traffic pattern and does not represent Canberra or
-              any real place.
-            </p>
-            <p>
-              <strong>The computer follows every car.</strong> A car speeds up when there is room
-              and slows behind the car ahead. The technical rule is the Intelligent Driver Model,
-              advanced at a fixed 0.25-second timestep. Nothing secretly adds a delay when the
-              shortcut opens.
-            </p>
-            <p>
-              <strong>How does a car choose?</strong> The computer keeps one remembered time for
-              each way. A finished trip nudges that way's remembered time toward what just
-              happened. A quicker-looking way gets better odds, but it is never guaranteed. In
-              technical terms, this is shared learning with one running estimate and a seeded,
-              probabilistic choice.
-            </p>
-            <p>
-              <strong>What does “Let the next cars choose” do?</strong> It only lets the same
-              simulated morning continue, then pauses again so you can look. The roads, traffic
-              rate, choice rule, and saved random-number list do not change. Animation time is
-              compressed, but the car rules are not.
-            </p>
-            <p>
-              <strong>Where do the answer numbers come from?</strong> They were made beforehand by
-              two complete replays. Both reuse the same generated departure schedule and random
-              seed: the same car start times and the same saved chance numbers. The only treatment
-              difference is whether the shortcut is available. Scientists call this a paired
-              counterfactual. The moving example starts with traffic already running (a warm-start
-              illustration); its changing choice counts are not used as the scientific result.
-            </p>
-            <p>
-              <strong>The quiet test uses about <span data-control-demand>300</span> cars an
-              hour.</strong> That is an average rate, not an exact count. Cars get irregular gaps
-              between their start times, so a shorter period can land above or below that average.
-              In this 20-minute scoring part,
-              <span data-control-cohort>96</span> cars started. Their average trip time was
-              <span data-control-closed>5:19</span> with the shortcut closed and
-              <span data-control-open>5:11</span> with it open: about
-              <span data-control-seconds>8</span> seconds saved.
-              <span data-control-count>41</span> ÷ <span data-control-cohort>96</span> ≈
-              <span data-control-share>43%</span> chose the shortcut.
-            </p>
-            <p>
-              <strong>The first 5:05 and 4:34 numbers are map estimates.</strong> They add road
-              lengths and speed limits to make the computer's starting guess: 305 seconds for an
-              old way and 274 for the shortcut. They are not timed trips. Moving cars accelerate
-              and have slightly different speeds, so measured trip times differ.
-            </p>
-            <p>
-              <strong>The busy test uses about 860 cars an hour.</strong> Its 20-minute scoring part
-              contains <span data-evidence-cohort>280</span> car starts. The average changed from
-              <span data-evidence-closed>5:31</span> to <span data-evidence-open>5:44</span>, or
-              <span data-evidence-percent>3.8%</span> longer. With the shortcut open,
-              <span data-evidence-count>106</span> of <span data-evidence-cohort>280</span> trips
-              used the shortcut: 106 ÷ 280 ≈ <span data-evidence-share>38%</span>. “Average” means
-              all trip times were added, then divided by the number of trips. Clock times are
-              rounded to the nearest second. We also let the simulation run longer and got a
-              similar answer (the longer-horizon check).
-            </p>
-            <p>
-              <strong>There is no 4% score you must reach.</strong> A fair test and the direction of
-              the change matter more than a big number. We tried
-              <span data-seed-attempts>10</span> saved traffic lists, called seeds.
-              <span data-seed-usable>8</span> settled down enough to count; their average increase
-              was <span data-seed-mean>4.2%</span>. Two were still changing, so we left them out.
-            </p>
-            <p>
-              <strong>Source.</strong> M. Treiber, A. Hennecke &amp; D. Helbing,
-              <a href="https://doi.org/10.1103/PhysRevE.62.1805">
-                “Congested traffic states in empirical observations and microscopic simulations”
-              </a>, <em>Physical Review E</em> 62 (2000).
+        <div class="calculator">
+          <div class="slider-block">
+            <div class="slider-heading">
+              <label for="shortcut-users">Move drivers onto the shortcut</label>
+              <output for="shortcut-users" data-shortcut-output>0 of 4,000</output>
+            </div>
+            <input
+              id="shortcut-users"
+              type="range"
+              min="0"
+              max="4000"
+              step="100"
+              value="0"
+              aria-describedby="slider-help"
+            />
+            <div class="range-labels" aria-hidden="true"><span>none</span><span>half</span><span>all</span></div>
+            <p id="slider-help" class="decision" data-decision>
+              The shortcut takes 40 minutes, so the first driver wants to switch.
             </p>
           </div>
-        </details>
+
+          <div class="times" aria-label="Current travel times">
+            <article>
+              <span>Old route</span>
+              <strong><output data-old-time>65</output> min</strong>
+            </article>
+            <article class="times__shortcut">
+              <span>Shortcut route</span>
+              <strong><output data-shortcut-time>40</output> min</strong>
+            </article>
+            <article class="times__average">
+              <span>Town average</span>
+              <strong><output data-average-time>65</output> min</strong>
+              <small data-average-change>same as before</small>
+            </article>
+          </div>
+
+          <section class="math" aria-labelledby="math-title">
+            <p class="eyebrow">Nothing hidden</p>
+            <h3 id="math-title">Here is every calculation.</h3>
+            <ol>
+              <li><span>Cars on each narrow road</span><code data-narrow-math>(4,000 + 0) ÷ 2 = 2,000</code></li>
+              <li><span>Time on each narrow road</span><code data-narrow-time-math>2,000 ÷ 100 = 20 min</code></li>
+              <li><span>Old route</span><code data-old-math>20 + 45 = 65 min</code></li>
+              <li><span>Shortcut route</span><code data-shortcut-math>20 + 20 = 40 min</code></li>
+              <li><span>Average of all 4,000 trips</span><code data-average-math>4,000 × 65 ÷ 4,000 = 65 min</code></li>
+            </ol>
+          </section>
+
+          <section class="reveal" data-reveal hidden aria-labelledby="reveal-title">
+            <p class="eyebrow">You found the paradox</p>
+            <h3 id="reveal-title">Each driver saved time by switching. Together, they added 15 minutes.</h3>
+            <p>
+              With no shortcut, the average was 65 minutes. When all 4,000 drivers use it,
+              both narrow roads take 40 minutes, so the shortcut trip takes 80 minutes.
+              This is <strong>Braess’s paradox</strong>: a new option can make the whole network worse.
+            </p>
+          </section>
+
+          <p class="sr-only" aria-live="polite" data-live-summary></p>
+        </div>
       </section>
     </main>
 
-    <footer class="footer">
-      <p>Made-up map · not a real city</p>
+    <footer>
+      <p>Made-up network · exact classroom calculation</p>
       <p>COMP4020 Agentic Coding Studio · ANU</p>
     </footer>
 
-    <script type="module" src="./main.ts"></script>
+    <script type="module" src="/main.ts"></script>
   </body>
 </html>
