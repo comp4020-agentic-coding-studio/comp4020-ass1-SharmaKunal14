@@ -47,13 +47,14 @@ interface as buttons causing unexplained events. I first responded by adding cha
 predictions, route tracing and evidence cards. That made the mechanism more defensible
 but also made the visitor learn the simulator before learning the paradox. I finally
 separated realism from clarity and deleted the staged interface. The delivered page has
-two stated rules, one range slider, forty visible driver groups and one personal route
-choice. Moving the slider updates every route time and prints each equation. At 4,000
-shortcut users, **40 + 40 = 80 minutes**, compared with the original **20 + 45 = 65**.
-The personal choice then exposes the tension: staying on the shortcut takes 80 minutes,
-while leaving alone takes 85. Browser tests check the exact arithmetic, driver movement,
-phone layout, keyboard use and reduced motion
-([`5977880...53b0846`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-SharmaKunal14/compare/5977880...53b0846)).
+two rules and direct manipulation: predict, move eighty driver groups, find the derived
+**64.7-minute** best balance and **65-minute** break-even, choose one highlighted route,
+then close the shortcut to reverse **80 → 65 minutes**. Equations remain inspectable but
+collapsed. The key explanation is now earned: at the town's best balance the shortcut is
+still **22.5 minutes** quicker, so individually sensible switching continues until the
+group is worse. Browser tests cover the landmarks, route trace, reversal, phone layout,
+keyboard and reduced motion
+([`5977880...35df5b6`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-SharmaKunal14/compare/5977880...35df5b6)).
 
 Rules are in `CLAUDE.md`, prior commitments in `PLAN.md`, and the unedited working
 record is in `notes/log.md`.

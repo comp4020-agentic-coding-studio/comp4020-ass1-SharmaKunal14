@@ -317,3 +317,25 @@ sampling actual interpolated values at real progress points exposed it.
 Reverified after the fix: reduced motion still produces zero animations, no
 new overflow at 390px at any point during the now-steeper fold, and keyboard
 focus still lands on the headline through a chapter transition.
+
+## Sun 17 Aug — the interaction now reveals the mechanism
+
+The latest request was not for more explanation cards; it was for interactions that
+make the paradox discoverable. I started below the interface by deriving and testing
+the model's two landmarks: 500 shortcut users gives the 64.6875-minute minimum, and
+1,000 returns the town to its 65-minute baseline. The page now asks for a prediction,
+lets the visitor search those points with the slider, and keeps the original average
+visible beside the current one.
+
+The remaining changes were split by causal purpose. Eighty 50-driver dots keep every
+100-driver slider step visually exact. A highlighted YOU marker traces either personal
+route. Narrow roads become darker and wider as shared traffic grows. At full adoption,
+closing the shortcut disables the unavailable choice, redistributes the dots and restores
+65 minutes; reopening returns to the same 80-minute endpoint. The five equations moved
+into a native disclosure so transparency no longer means permanent visual load.
+
+The important explanatory correction is explicit in both the interaction and reveal:
+the town's best balance cannot hold because the shortcut is still 22.5 minutes quicker
+for the next individual. Each implementation slice was tested and committed separately;
+the final browser contract covers both marking viewports, keyboard use, reduced motion,
+landmarks, route highlighting, congestion and the reversible comparison.

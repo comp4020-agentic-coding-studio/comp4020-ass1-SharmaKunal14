@@ -1,9 +1,11 @@
 # One More Road
 
 One More Road is a transparent, interactive explanation of Braess's paradox. The
-visitor moves 4,000 drivers onto a shortcut, watches forty driver groups change route,
-and chooses a personal route to compare it with the result for the whole town. Every
-travel time and arithmetic step updates immediately.
+visitor predicts an outcome, moves 4,000 drivers onto a shortcut, watches eighty
+driver groups change route, searches for the town's best balance and compares one
+personal route with the result for everyone. Closing the shortcut reverses the same
+experiment. Every travel time comes from the two visible rules; the complete arithmetic
+is available on demand.
 
 The presented network uses two explicit classroom rules:
 
@@ -51,10 +53,10 @@ mise exec -- pnpm check:evidence
 
 | Area | Responsibility |
 | --- | --- |
-| `index.html` | Semantic page, road diagram, slider, personal choice, calculations and reveal |
-| `styles.css` | Responsive editorial layout, moving driver groups and reduced motion |
-| `main.ts` | Reads both direct interactions and updates every visible result |
-| `src/braess.ts` | Pure, deterministic textbook-network calculation |
+| `index.html` | Semantic experiment, prediction, route choice, reversal and reveal |
+| `styles.css` | Responsive layout, congestion cues, moving driver groups and reduced motion |
+| `main.ts` | Coordinates direct interactions and updates every visible result |
+| `src/braess.ts` | Pure calculation plus derived best and break-even landmarks |
 | `spec/braess.test.ts` | Exact arithmetic, bounds and individual-choice invariant |
 | `spec/page.test.ts` | Scope, copy, accessibility, delivery and assignment contracts |
 | `spec/browser.test.ts` | Desktop, phone, keyboard, reduced-motion and network checks |

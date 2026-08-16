@@ -230,10 +230,12 @@ locally and 404s on the deployed URL.
 ## Assignment 1: what this prototype is, and what it must stay
 
 **One More Road** — an interactive explainer of Braess's paradox. The visitor
-uses one transparent classroom network, one range slider and one personal route
-choice. Forty dots represent 4,000 drivers. Moving the slider visibly transfers
-drivers to the shortcut while the old-route time, shortcut time, town average
-and every equation update from the same pure calculation in `src/braess.ts`.
+uses one transparent classroom network, one range slider, a prediction, one
+personal route choice and one causal close/reopen action. Eighty dots represent
+4,000 drivers. Moving the slider visibly transfers drivers to the shortcut while
+the old-route time, shortcut time and town average update from the same pure
+calculation in `src/braess.ts`. The five equations remain available in one native
+disclosure instead of competing with the main result.
 
 **One idea, two viewpoints.** The route radio answers “what should I do now?”;
 the before/after comparison answers “what happened to everyone?”. Do not merge
@@ -301,7 +303,7 @@ a measurement of a real place and not a prediction about road building. “More
 roads always make traffic worse” is false. The supported claim is narrower:
 *in this stated network, a shortcut makes the quickest individual choice produce
 a slower result for the whole group.* Keep the two visible rules beside the
-experiment and show every arithmetic step. Never describe 80 minutes as a
+experiment and keep every arithmetic step inspectable. Never describe 80 minutes as a
 five-minute saving from the original 65-minute network; it is five minutes
 better only than one driver leaving alone after the congested state exists.
 
@@ -312,12 +314,13 @@ better only than one driver leaving alone after the congested state exists.
 - Test the whole interaction at **1920×1080** and **390×844**, including the
   slider midpoint and endpoint, both personal route choices and horizontal
   overflow.
-- The public contract is one range input, one native two-option radio group and
-  no staged button sequence. `spec/page.test.ts` makes that scope explicit.
+- The public contract is one range input, one prediction group, one personal-route
+  group, one native calculation disclosure and one causal road toggle. There is
+  no staged Continue-button sequence. `spec/page.test.ts` makes that scope explicit.
 - All displayed numbers must come from `calculateBraess`; browser tests check the
   start, midpoint and endpoint equations rather than only checking that values
   changed.
-- The forty decorative driver dots stay `aria-hidden`. The meaningful counts and
+- The eighty decorative driver dots stay `aria-hidden`. The meaningful counts and
   times remain text and are announced through the polite live region.
 - Reduced motion shortens transitions without changing values or interaction.
 - Built assets remain relative for the GitHub Pages subpath, and the page loads
@@ -437,7 +440,8 @@ Two rules of judgement from the same pass:
 - **Every checkpoint must earn its controls.** The discarded page once showed the
   network, traffic, four metrics, a chart, a route table and the model note at
   once. Its generic progression clicks hid causes instead of exposing them. That
-  failure is why the current page uses direct manipulation and no buttons.
+  failure is why the current page uses direct manipulation and only one button:
+  the causal close/reopen reversal.
 - **A visual explanation still needs a textual equivalent.** Decorative movement
   may be hidden from assistive technology only when the meaningful counts, route
   times and conclusion remain available as ordinary text.
