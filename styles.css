@@ -168,7 +168,8 @@ h1 {
 .intro__actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: .5rem;
+  align-items: center;
 }
 
 .intro__setup {

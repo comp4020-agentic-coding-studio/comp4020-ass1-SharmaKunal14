@@ -342,7 +342,7 @@ function render(result: BraessResult): void {
   document.documentElement.style.setProperty("--shortcut-share", String(shortcutUsers / TOTAL_DRIVERS));
   document.body.dataset.complete = String(shortcutUsers === TOTAL_DRIVERS && !roadClosed);
   document.body.dataset.roadClosed = String(roadClosed);
-  resetSimulation.disabled = shortcutUsers === 0 && furthestShortcutUsers === 0;
+  resetSimulation.disabled = !shortcutUsers && !furthestShortcutUsers;
   shortcutOutput.value = `${drivers(shortcutUsers)} of ${drivers(TOTAL_DRIVERS)}`;
   averageTime.value = minutes(averageMinutes);
   shortcutCount.textContent = `${drivers(shortcutUsers)} shortcut drivers`;
