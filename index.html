@@ -175,32 +175,61 @@
                 <li><span>Town average</span><code data-average-math>4,000 × 65 ÷ 4,000 = 65 min</code></li>
               </ol>
             </section>
+
+            <section class="endpoint-prompt" data-endpoint-prompt hidden aria-labelledby="endpoint-title">
+              <div>
+                <p class="step-label">The slider is complete</p>
+                <h4 id="endpoint-title">Everyone chose the route that looked quicker.</h4>
+                <p>Now hold the same 4,000 drivers still and change only the road network.</p>
+              </div>
+              <button type="button" data-show-result>Compare the two networks</button>
+            </section>
           </section>
         </div>
 
           <section class="reveal" data-reveal hidden aria-labelledby="reveal-title">
-            <p class="eyebrow">Your action revealed Braess’s paradox</p>
-            <h3 id="reveal-title">Same 4,000 drivers. One extra road. Everyone takes 15 minutes longer.</h3>
-            <p class="prediction-result" data-prediction-feedback>
-              You can now compare your prediction with what the numbers showed.
-            </p>
-            <p class="unstable-best" data-best-explanation></p>
-            <div class="paradox-comparison" aria-label="Same-driver controlled comparison">
+            <header class="reveal__header">
+              <div>
+                <p class="eyebrow">Braess’s paradox revealed</p>
+                <h3 id="reveal-title">One extra road made the same crowd slower.</h3>
+              </div>
+              <p class="prediction-result" data-prediction-feedback>
+                You can now compare your prediction with what the numbers showed.
+              </p>
+            </header>
+
+            <div class="result-score" aria-label="Same-driver controlled comparison">
               <article>
                 <span>Shortcut closed</span>
-                <strong>4,000 drivers split evenly → 65 min</strong>
-                <p>2,000 drivers use each narrow road.</p>
+                <strong>65 <small>min</small></strong>
+                <p>4,000 drivers split evenly.</p>
               </article>
+              <div class="result-score__change" aria-label="15 minutes slower">
+                <span aria-hidden="true">→</span>
+                <strong>+15 min</strong>
+                <small>slower</small>
+              </div>
               <article>
                 <span>Shortcut open</span>
-                <strong>The same 4,000 follow it → 80 min</strong>
-                <p>All 4,000 now use both narrow roads.</p>
+                <strong>80 <small>min</small></strong>
+                <p>The same 4,000 use both narrow roads.</p>
               </article>
             </div>
-            <p class="paradox-plain">
-              <strong class="paradox-plain__statement">Only the shortcut changed. The driver count did not.</strong>
-              <span class="paradox-plain__explanation">The shortcut still looks best to one driver: 80 minutes instead of 85 alone. That is why the slower group result persists.</span>
-            </p>
+
+            <div class="result-reasons">
+              <article>
+                <span>What changed?</span>
+                <strong>Only the shortcut.</strong>
+                <p>The driver count stayed exactly 4,000.</p>
+              </article>
+              <article>
+                <span>Why does nobody switch back?</span>
+                <strong>80 minutes still beats 85 alone.</strong>
+                <p>Each driver’s sensible choice keeps the worse group result in place.</p>
+              </article>
+            </div>
+
+            <p class="unstable-best" data-best-explanation></p>
           </section>
 
           <section class="road-control" data-road-control hidden aria-labelledby="road-control-title">

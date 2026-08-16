@@ -108,8 +108,9 @@ describe("transparent desktop experiment", () => {
   it("shows the rules and initial calculation before interaction", async () => {
     const observed = await open(DESKTOP);
     const { page } = observed;
-    expect(await page.locator("button").count()).toBe(2);
+    expect(await page.locator("button").count()).toBe(3);
     expect(await page.locator("[data-play]").isVisible()).toBe(true);
+    expect(await page.locator("[data-endpoint-prompt]").isHidden()).toBe(true);
     expect(await page.locator("[data-toggle-road]").isHidden()).toBe(true);
     expect(await page.locator('input[type="range"]').count()).toBe(1);
     expect(await page.locator(".driver-dot").count()).toBe(80);
@@ -186,19 +187,25 @@ describe("transparent desktop experiment", () => {
     await page.close();
   });
 
-  it("reveals the paradox only when every driver has switched", async () => {
+  it("offers a deliberate comparison before revealing the paradox", async () => {
     const observed = await open(DESKTOP);
     const { page } = observed;
     await page.locator('input[name="prediction"][value="faster"]').check();
     await setUsers(page, 4_000);
     expect(await text(page, "[data-average-time]")).toBe("80");
     expect(await text(page, "[data-average-change]")).toBe("15 min slower than without the shortcut");
+    expect(await page.locator("[data-endpoint-prompt]").isVisible()).toBe(true);
+    expect(await page.locator("[data-reveal]").isHidden()).toBe(true);
+    expect(await page.locator("[data-toggle-road]").isHidden()).toBe(true);
+    expect(Number.parseFloat(await page.locator("[data-endpoint-prompt]").evaluate((element) => getComputedStyle(element).animationDuration))).toBeGreaterThan(0.3);
+
+    await page.locator("[data-show-result]").click();
     expect(await page.locator("[data-reveal]").isVisible()).toBe(true);
     expect(await text(page, "[data-reveal]")).toContain("Braess’s paradox");
-    expect(await text(page, "[data-reveal]")).toContain("Same 4,000 drivers. One extra road");
-    expect(await text(page, "[data-reveal]")).toContain("4,000 drivers split evenly → 65 min");
-    expect(await text(page, "[data-reveal]")).toContain("The same 4,000 follow it → 80 min");
-    expect(await text(page, "[data-reveal]")).toContain("Only the shortcut changed. The driver count did not");
+    expect(await text(page, "[data-reveal]")).toContain("One extra road made the same crowd slower");
+    expect(await text(page, "[data-reveal]")).toContain("Shortcut closed 65 min 4,000 drivers split evenly");
+    expect(await text(page, "[data-reveal]")).toContain("Shortcut open 80 min The same 4,000 use both narrow roads");
+    expect(await text(page, "[data-reveal]")).toContain("Only the shortcut");
     expect(await text(page, "[data-best-explanation]")).toContain(
       "best balance was 500 shortcut users at 64.7 minutes",
     );
@@ -219,6 +226,7 @@ describe("transparent desktop experiment", () => {
     const { page } = observed;
     const initialRoadWidth = Number.parseFloat(await page.locator(".road--narrow").first().evaluate((element) => getComputedStyle(element).strokeWidth));
     await setUsers(page, 4_000);
+    await page.locator("[data-show-result]").click();
     await page.waitForFunction(() => Number.parseFloat(getComputedStyle(document.querySelector(".road--narrow")!).strokeWidth) > 19);
     const crowdedRoadWidth = Number.parseFloat(await page.locator(".road--narrow").first().evaluate((element) => getComputedStyle(element).strokeWidth));
     expect(crowdedRoadWidth).toBeGreaterThan(initialRoadWidth);
@@ -261,9 +269,12 @@ describe("transparent desktop experiment", () => {
     await play.click();
     await page.waitForFunction(() => document.body.dataset.complete === "true", undefined, { timeout: 8_000 });
     expect(await page.locator("#shortcut-users").inputValue()).toBe("4000");
-    expect(await page.locator("[data-reveal]").isVisible()).toBe(true);
+    expect(await page.locator("[data-endpoint-prompt]").isVisible()).toBe(true);
+    expect(await page.locator("[data-reveal]").isHidden()).toBe(true);
     await page.waitForFunction(() => document.querySelector("[data-play]")?.textContent?.includes("Replay"));
     expect(await text(page, "[data-play]")).toContain("Replay from the start");
+    await page.locator("[data-show-result]").click();
+    expect(await page.locator("[data-reveal]").isVisible()).toBe(true);
     healthy(observed);
     await page.close();
   }, 12_000);
@@ -278,6 +289,9 @@ describe("phone and keyboard", () => {
     await noOverflow(page);
     await setUsers(page, 4_000);
     await noOverflow(page);
+    expect(await page.locator("[data-reveal]").isHidden()).toBe(true);
+    await page.locator("[data-show-result]").click();
+    await noOverflow(page);
     expect(await page.locator("[data-reveal]").isVisible()).toBe(true);
     healthy(observed);
     await page.close();
@@ -290,8 +304,11 @@ describe("phone and keyboard", () => {
     await slider.focus();
     await page.keyboard.press("End");
     expect(await slider.inputValue()).toBe("4000");
-    expect(await page.locator("[data-reveal]").isVisible()).toBe(true);
+    expect(await page.locator("[data-reveal]").isHidden()).toBe(true);
     expect(await page.evaluate(() => document.activeElement?.id)).toBe("shortcut-users");
+    await page.locator("[data-show-result]").focus();
+    await page.keyboard.press("Enter");
+    expect(await page.locator("[data-reveal]").isVisible()).toBe(true);
     await page.locator("[data-toggle-road]").focus();
     await page.keyboard.press("Enter");
     expect(await text(page, "[data-average-time]")).toBe("65");
@@ -305,6 +322,8 @@ describe("phone and keyboard", () => {
     const { page } = observed;
     await page.locator("[data-play]").click();
     expect(await page.locator("#shortcut-users").inputValue()).toBe("4000");
+    expect(await page.locator("[data-reveal]").isHidden()).toBe(true);
+    await page.locator("[data-show-result]").click();
     const duration = await page.locator("[data-reveal]").evaluate((element) =>
       getComputedStyle(element).animationDuration,
     );

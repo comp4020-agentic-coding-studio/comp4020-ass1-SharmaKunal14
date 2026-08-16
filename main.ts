@@ -26,6 +26,8 @@ const oldMath = need<HTMLElement>("[data-old-math]");
 const shortcutMath = need<HTMLElement>("[data-shortcut-math]");
 const averageMath = need<HTMLElement>("[data-average-math]");
 const reveal = need<HTMLElement>("[data-reveal]");
+const endpointPrompt = need<HTMLElement>("[data-endpoint-prompt]");
+const showResult = need<HTMLButtonElement>("[data-show-result]");
 const liveSummary = need<HTMLElement>("[data-live-summary]");
 const predictionInputs = [
   ...document.querySelectorAll<HTMLInputElement>('input[name="prediction"]'),
@@ -61,6 +63,7 @@ const driverDots = Array.from({ length: DOTS }, () => {
 });
 let selectedPrediction: "faster" | "same" | "slower" | null = null;
 let roadClosed = false;
+let resultRevealed = false;
 let playTimer: number | null = null;
 
 function minutes(value: number): string {
@@ -219,8 +222,10 @@ function render(result: BraessResult): void {
     `${drivers(shortcutUsers)} × ${minutes(shortcutRouteMinutes)}) ÷ ` +
     `${drivers(TOTAL_DRIVERS)} = ${minutes(averageMinutes)} min`;
 
-  reveal.hidden = shortcutUsers !== TOTAL_DRIVERS || roadClosed;
-  roadControl.hidden = shortcutUsers !== TOTAL_DRIVERS && !roadClosed;
+  const reachedEndpoint = shortcutUsers === TOTAL_DRIVERS && !roadClosed;
+  endpointPrompt.hidden = !reachedEndpoint || resultRevealed;
+  reveal.hidden = !reachedEndpoint || !resultRevealed;
+  roadControl.hidden = (!reachedEndpoint || !resultRevealed) && !roadClosed;
   closureResult.hidden = !roadClosed;
   toggleRoad.textContent = roadClosed ? "Reopen the shortcut" : "Close the shortcut";
   roadControlTitle.textContent = roadClosed
@@ -247,16 +252,17 @@ input.addEventListener("input", () => {
   roadClosed = false;
   const result = calculateBraess(Number(input.value));
   input.value = String(result.shortcutUsers);
+  if (result.shortcutUsers < TOTAL_DRIVERS) resultRevealed = false;
   render(result);
 });
 
-input.addEventListener("change", () => {
-  if (Number(input.value) === TOTAL_DRIVERS) {
-    reveal.scrollIntoView({
-      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
-      block: "center",
-    });
-  }
+showResult.addEventListener("click", () => {
+  resultRevealed = true;
+  render(calculateBraess(Number(input.value)));
+  reveal.scrollIntoView({
+    behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+    block: "start",
+  });
 });
 
 toggleRoad.addEventListener("click", () => {
@@ -278,7 +284,6 @@ function playNextStep(): void {
   if (current >= TOTAL_DRIVERS) {
     stopPlaying();
     render(calculateBraess(current));
-    reveal.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "center" });
     return;
   }
 
@@ -296,12 +301,14 @@ playButton.addEventListener("click", () => {
 
   roadClosed = false;
   input.disabled = false;
-  if (Number(input.value) >= TOTAL_DRIVERS) input.value = "0";
+  if (Number(input.value) >= TOTAL_DRIVERS) {
+    input.value = "0";
+    resultRevealed = false;
+  }
 
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
     input.value = String(TOTAL_DRIVERS);
     render(calculateBraess(TOTAL_DRIVERS));
-    reveal.scrollIntoView({ block: "center" });
     return;
   }
 

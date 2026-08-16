@@ -666,63 +666,200 @@ h3 {
   line-height: 1;
 }
 
-.reveal {
-  margin-top: 0;
+/* stylelint-disable no-descending-specificity -- endpoint and result components
+   intentionally override the page's shared text/button primitives. */
+.endpoint-prompt {
   padding: var(--space-4);
-  grid-column: 1 / -1;
-  border-left: 6px solid var(--rust);
+  border-top: 1px solid var(--rule);
   background: var(--paper-deep);
-  animation: reveal 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-4);
+  align-items: center;
+  animation: endpoint-arrival 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-.reveal p:last-child {
-  margin: 1rem 0 0;
+.endpoint-prompt h4 {
+  margin: 0;
+  font-family: Newsreader, Georgia, serif;
+  font-size: 1.25rem;
+  font-weight: 500;
+}
+
+.endpoint-prompt p:not(.step-label) {
+  margin: var(--space-1) 0 0;
   color: var(--ink-soft);
-  font-size: 0.84rem;
-  line-height: 1.55;
+  font-size: 0.7rem;
+  line-height: 1.45;
+}
+
+.endpoint-prompt button {
+  min-height: 3rem;
+  padding: 0.8rem 1rem;
+  border: 0;
+  background: var(--rust);
+  color: var(--paper);
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.endpoint-prompt button:hover {
+  background: var(--ink);
+}
+
+.reveal {
+  width: min(100%, 72rem);
+  margin-top: var(--space-3);
+  padding: clamp(1.5rem, 3vw, 2.5rem);
+  grid-column: 1 / -1;
+  justify-self: center;
+  border-top: 7px solid var(--gold);
+  background: var(--ink);
+  color: var(--paper);
+  animation: reveal 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.reveal__header {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(14rem, 0.6fr);
+  gap: var(--space-5);
+  align-items: end;
+}
+
+.reveal h3 {
+  max-width: 18ch;
+  color: var(--paper);
+  font-size: clamp(2rem, 4vw, 3.5rem);
+}
+
+.reveal .eyebrow {
+  color: var(--gold);
 }
 
 .prediction-result {
-  margin: 0.85rem 0 0;
-  color: var(--ink-soft);
+  margin: 0;
+  color: #c9d0cd;
   font-size: 0.76rem;
   line-height: 1.5;
 }
 
 .unstable-best {
-  margin: 1rem 0 0;
-  padding: 0.85rem;
-  border-left: 4px solid var(--gold);
-  background: rgb(243 174 43 / 10%);
-  color: var(--ink-soft);
-  font-size: 0.76rem;
+  margin: var(--space-4) 0 0;
+  padding-top: var(--space-3);
+  border-top: 1px solid #52615c;
+  color: #c9d0cd;
+  font-size: 0.7rem;
   line-height: 1.5;
 }
 
-.reveal .paradox-plain {
-  margin: 1.2rem 0 0;
-  padding: 1rem;
-  border-left: 5px solid var(--gold);
-  background: var(--ink);
-  color: var(--paper);
+.result-score {
+  margin-top: var(--space-5);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: stretch;
 }
 
-.paradox-plain__explanation {
+.result-score article {
+  padding: var(--space-4);
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.result-score article > span,
+.result-reasons span {
   display: block;
-  margin-top: var(--space-2);
-  color: #dce2df;
-  font-size: 0.75rem;
-  line-height: 1.5;
+  color: var(--rust);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
-.paradox-plain__statement {
+.result-score article > strong {
+  display: block;
+  margin-top: var(--space-1);
+  font-family: "DM Mono", monospace;
+  font-size: clamp(2.3rem, 5vw, 4.5rem);
+  line-height: 1;
+}
+
+.result-score article > strong small {
+  font-size: 0.8rem;
+}
+
+.result-score article p {
+  margin: var(--space-2) 0 0;
+  color: var(--ink-soft);
+  font-size: 0.7rem;
+}
+
+.result-score__change {
+  min-width: 7rem;
+  padding: var(--space-3);
+  background: var(--gold);
+  color: var(--ink);
+  display: grid;
+  place-content: center;
+  text-align: center;
+}
+
+.result-score__change span,
+.result-score__change strong,
+.result-score__change small {
+  display: block;
+}
+
+.result-score__change span {
+  font-size: 1.5rem;
+}
+
+.result-score__change strong {
+  font-family: "DM Mono", monospace;
+  font-size: 0.85rem;
+}
+
+.result-score__change small {
+  font-size: 0.6rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.result-reasons {
+  margin-top: var(--space-4);
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border: 1px solid #52615c;
+}
+
+.result-reasons article {
+  padding: var(--space-4);
+}
+
+.result-reasons article + article {
+  border-left: 1px solid #52615c;
+}
+
+.result-reasons strong {
+  display: block;
+  margin-top: var(--space-1);
+  color: var(--paper);
   font-family: Newsreader, Georgia, serif;
   font-size: 1.2rem;
   font-weight: 500;
-  line-height: 1.3;
+}
+
+.result-reasons p {
+  margin: var(--space-1) 0 0;
+  color: #c9d0cd;
+  font-size: 0.7rem;
+  line-height: 1.45;
 }
 
 .road-control {
+  width: min(100%, 72rem);
   margin-top: 0;
   padding: var(--space-4);
   border: 1px solid var(--rule);
@@ -731,6 +868,7 @@ h3 {
   gap: 1rem;
   align-items: center;
   grid-column: 1 / -1;
+  justify-self: center;
 }
 
 .road-control p:not(.eyebrow, .closure-result) {
@@ -773,57 +911,19 @@ h3 {
   color: var(--teal);
   font-family: "DM Mono", monospace;
 }
-
-/* stylelint-disable no-descending-specificity -- the reveal is rendered after
-   the shared time/math surfaces and intentionally gives its nested text a
-   different hierarchy. */
-.paradox-comparison {
-  margin-top: 1.25rem;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  border: 1px solid var(--rule);
-}
-
-.paradox-comparison article {
-  padding: 1rem;
-}
-
-.paradox-comparison article + article {
-  border-left: 1px solid var(--rule);
-}
-
-.paradox-comparison span,
-.paradox-comparison strong {
-  display: block;
-}
-
-.paradox-comparison span {
-  color: var(--rust);
-  font-size: 0.63rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.paradox-comparison strong {
-  margin-top: 0.4rem;
-  font-family: "DM Mono", monospace;
-  font-size: 0.74rem;
-  line-height: 1.5;
-}
-
-.paradox-comparison p {
-  margin: 0.5rem 0 0;
-  color: var(--ink-soft);
-  font-size: 0.72rem;
-  line-height: 1.45;
-}
 /* stylelint-enable no-descending-specificity */
 
 @keyframes reveal {
   from {
     opacity: 0;
-    transform: translateY(12px);
+    transform: translateY(20px) scale(0.985);
+  }
+}
+
+@keyframes endpoint-arrival {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
   }
 }
 
@@ -951,6 +1051,14 @@ footer {
     width: 100%;
   }
 
+  .endpoint-prompt {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .endpoint-prompt button {
+    width: 100%;
+  }
+
   .town-comparison {
     grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   }
@@ -973,17 +1081,27 @@ footer {
     overflow-wrap: anywhere;
   }
 
-  /* stylelint-disable no-descending-specificity -- phone layout continues the
-     reveal-specific override declared after the shared card rules. */
-  .paradox-comparison {
+  .reveal__header,
+  .result-reasons {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .paradox-comparison article + article {
-    border-top: 1px solid var(--rule);
+  .result-score {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .result-score__change {
+    min-height: 5rem;
+  }
+
+  .result-score__change span {
+    transform: rotate(90deg);
+  }
+
+  .result-reasons article + article {
+    border-top: 1px solid #52615c;
     border-left: 0;
   }
-  /* stylelint-enable no-descending-specificity */
 
   footer {
     padding: 1rem 0;

@@ -22,8 +22,9 @@ describe("transparent direct interactions", () => {
     expect(sliders).toHaveLength(1);
     expect(doc.querySelectorAll<HTMLInputElement>('input[name="personal-route"]')).toHaveLength(0);
     expect(doc.querySelectorAll<HTMLInputElement>('input[name="prediction"]')).toHaveLength(3);
-    expect(doc.querySelectorAll("button")).toHaveLength(2);
+    expect(doc.querySelectorAll("button")).toHaveLength(3);
     expect(doc.querySelector("[data-play]")).not.toBeNull();
+    expect(doc.querySelector("[data-show-result]")).not.toBeNull();
     expect(doc.querySelector("[data-toggle-road]")).not.toBeNull();
     expect(sliders[0]).toMatchObject({ min: "0", max: "4000", step: "100", value: "0" });
   });
@@ -53,8 +54,9 @@ describe("transparent direct interactions", () => {
     expect(copy).toContain("find the lowest town average");
     expect(copy).toContain("Before the shortcut 65 min");
     expect(copy).toContain("Where the current times come from");
-    expect(copy).toContain("Only the shortcut changed. The driver count did not");
-    expect(copy).toContain("Your action revealed Braess’s paradox");
+    expect(copy).toContain("Only the shortcut");
+    expect(copy).toContain("Braess’s paradox revealed");
+    expect(copy).toContain("Compare the two networks");
     expect(copy).toContain("Reverse the experiment");
     expect(copy).toContain("Close the shortcut");
   });
@@ -64,13 +66,14 @@ describe("transparent direct interactions", () => {
     expect(doc.querySelector("[data-old-math]")?.textContent).toContain("20 + 45 = 65 min");
     expect(doc.querySelector("[data-shortcut-math]")?.textContent).toContain("20 + 0 + 20 = 40 min");
     expect(doc.querySelector("[data-reveal]")?.hasAttribute("hidden")).toBe(true);
+    expect(doc.querySelector("[data-endpoint-prompt]")?.hasAttribute("hidden")).toBe(true);
   });
 
   it("makes the controlled comparison explicit in the reveal", () => {
     const copy = (doc.body.textContent ?? "").replace(/\s+/g, " ");
-    expect(copy).toContain("4,000 drivers split evenly → 65 min");
-    expect(copy).toContain("The same 4,000 follow it → 80 min");
-    expect(copy).toContain("80 minutes instead of 85 alone");
+    expect(copy).toContain("Shortcut closed 65 min 4,000 drivers split evenly");
+    expect(copy).toContain("Shortcut open 80 min The same 4,000 use both narrow roads");
+    expect(copy).toContain("80 minutes still beats 85 alone");
     expect(copy).not.toContain("Each driver saved time by switching");
   });
 
