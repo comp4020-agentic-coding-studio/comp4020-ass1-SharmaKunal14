@@ -4,7 +4,13 @@ import { readFile, readdir, stat } from "node:fs/promises";
 import { extname, join, resolve } from "node:path";
 import { chromium } from "playwright";
 import type { Browser, Page } from "playwright";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+
+// Real browser interactions (CSS-transition waits, Playwright round-trips)
+// scale with the CI runner's speed, not just this file's line count. The
+// default 5000ms timeout is tight enough to be runner-speed-dependent rather
+// than a real regression signal.
+vi.setConfig({ testTimeout: 20000 });
 
 const DIST = resolve("dist");
 const DESKTOP = { width: 1920, height: 1080 };
