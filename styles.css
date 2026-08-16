@@ -331,16 +331,16 @@ h1 {
   outline-offset: 4px;
 }
 
-.map-proof div {
+.map-proof__metric {
   min-width: 9rem;
 }
 
-.map-proof span,
-.map-proof strong {
+.map-proof__label,
+.map-proof__result {
   display: block;
 }
 
-.map-proof span {
+.map-proof__label {
   color: #c9d0cd;
   font-size: 0.58rem;
   font-weight: 800;
@@ -348,7 +348,7 @@ h1 {
   text-transform: uppercase;
 }
 
-.map-proof strong {
+.map-proof__result {
   margin-top: 0.25rem;
   color: var(--gold);
   font-family: "DM Mono", monospace;
@@ -364,12 +364,16 @@ h1 {
 
 .map-proof a {
   color: var(--paper);
+  display: inline-flex;
+  gap: 0.4rem;
+  align-items: center;
   font-size: 0.64rem;
   font-weight: 800;
   letter-spacing: 0.06em;
   text-decoration-color: var(--gold);
   text-underline-offset: 0.3rem;
   text-transform: uppercase;
+  white-space: nowrap;
 }
 
 h2 {

@@ -131,6 +131,23 @@ async function endpointStacksCleanly(page: Page): Promise<void> {
   expect(geometry.buttonRight).toBeLessThan(geometry.promptRight);
 }
 
+async function reversalLinkStaysOnOneLine(page: Page): Promise<void> {
+  const geometry = await page.locator("[data-map-proof] a").evaluate((link) => {
+    const arrow = link.querySelector<HTMLElement>("span");
+    if (arrow === null) throw new Error("missing reversal-link arrow");
+    const linkBox = link.getBoundingClientRect();
+    const arrowBox = arrow.getBoundingClientRect();
+    return {
+      linkHeight: linkBox.height,
+      arrowHeight: arrowBox.height,
+      linkMiddle: linkBox.top + linkBox.height / 2,
+      arrowMiddle: arrowBox.top + arrowBox.height / 2,
+    };
+  });
+  expect(geometry.linkHeight).toBeLessThan(geometry.arrowHeight * 1.5);
+  expect(geometry.arrowMiddle).toBeCloseTo(geometry.linkMiddle, 0);
+}
+
 describe("transparent desktop experiment", () => {
   it("places controls, map and calculations in three readable columns", async () => {
     const observed = await open(DESKTOP);
@@ -460,6 +477,7 @@ describe("transparent desktop experiment", () => {
       "One road removed. The same 4,000 drivers are now 15 minutes faster.",
     );
     expect(await page.locator("[data-map-proof]").evaluate((element) => element === document.activeElement)).toBe(true);
+    await reversalLinkStaysOnOneLine(page);
     await page.waitForFunction(() => document.querySelector("[data-network-wrap]")!.getBoundingClientRect().top >= 0);
     expect(await page.locator('.driver-dot[data-route="top"]').count()).toBe(40);
     expect(await page.locator('.driver-dot[data-route="bottom"]').count()).toBe(40);
@@ -517,6 +535,7 @@ describe("phone and keyboard", () => {
     await page.keyboard.press("Enter");
     expect(await text(page, "[data-average-time]")).toBe("65");
     expect(await page.locator("[data-map-proof]").evaluate((element) => element === document.activeElement)).toBe(true);
+    await reversalLinkStaysOnOneLine(page);
     healthy(observed);
     await page.close();
   });
