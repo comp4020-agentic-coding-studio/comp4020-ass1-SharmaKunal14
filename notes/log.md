@@ -414,3 +414,17 @@ The new result is a full-width editorial chapter. Its hierarchy is the controlle
 action. The map now ends before the chapter starts. A browser assertion measures both
 rectangles after the deliberate reveal and fails if the map or experiment overlaps it;
 the same suite checks phone flow, focus transfer and reduced motion.
+
+## Mon 17 Aug — the prediction did no work
+
+The opening prediction panel looked interactive, but it changed neither the model nor
+the visitor's path through the explanation. Its only effect was to restate the selected
+radio label after the slider had already supplied the evidence. That made it a survey,
+not part of the experiment.
+
+I removed the fieldset, its styles, stored state, listeners and conditional feedback.
+The slider is now the only way to answer the opening question: moving the same 80 dots
+changes the map, ledger, route times, town average and five equations together. The
+result chapter uses the recovered space for the causal sentence the interaction earned:
+each driver followed the route that looked quicker, and together they crowded both
+narrow roads. Static and browser contracts now fail if the prediction control returns.

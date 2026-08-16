@@ -230,8 +230,8 @@ locally and 404s on the deployed URL.
 ## Assignment 1: what this prototype is, and what it must stay
 
 **One More Road** — an interactive explainer of Braess's paradox. The visitor
-uses one transparent classroom network, one range slider, a prediction, one
-deliberate comparison action and one causal close/reopen action. Eighty dots
+uses one transparent classroom network, one range slider, one deliberate
+comparison action and one causal close/reopen action. Eighty dots
 represent 4,000 drivers. Forty dots permanently originate on each old route;
 every 100-driver slider step transfers one from each origin to the shortcut.
 Dragging the slider updates the route ledger, town average, map and five visible
@@ -320,8 +320,8 @@ make an equation look simpler.
   `PROCESS.md`, the reflection or commit citations.
 - Test the whole interaction at **1920×1080** and **390×844**, including the
   slider midpoint and endpoint, deliberate reveal and horizontal overflow.
-- The public contract is one range input, one prediction group, one comparison action,
-  five always-visible equations and one causal road toggle. There is no staged
+- The public contract is one range input, one comparison action, five always-visible
+  equations and one causal road toggle. There is no prediction survey and no staged
   Continue-button sequence. `spec/page.test.ts` makes that scope explicit.
 - All displayed numbers must come from `calculateBraess`; browser tests check the
   start, midpoint and endpoint equations rather than only checking that values
@@ -449,8 +449,8 @@ Two rules of judgement from the same pass:
 - **Every checkpoint must earn its controls.** The discarded page once showed the
   network, traffic, four metrics, a chart, a route table and the model note at
   once. Its generic progression clicks hid causes instead of exposing them. That
-  failure is why the current page uses direct manipulation and only one button:
-  the causal close/reopen reversal.
+  failure is why the current page uses direct manipulation and only two actions:
+  the deliberate network comparison and the causal close/reopen reversal.
 - **A visual explanation still needs a textual equivalent.** Decorative movement
   may be hidden from assistive technology only when the meaningful counts, route
   times and conclusion remain available as ordinary text.

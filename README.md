@@ -1,8 +1,8 @@
 # One More Road
 
 One More Road is a transparent, interactive explanation of Braess's paradox. The
-visitor predicts an outcome, moves 4,000 drivers onto a shortcut, watches eighty
-driver groups change route and searches for the town's best balance by dragging the
+visitor moves 4,000 drivers onto a shortcut, watches eighty driver groups change
+route and searches for the town's best balance by dragging the
 slider. No groups appear or disappear: every 100-driver step moves one 50-driver dot
 from each old route, while a live ledger accounts for all 80 dots. At the endpoint, a
 deliberate comparison action ends the experiment and opens a full-width result chapter
@@ -57,7 +57,7 @@ mise exec -- pnpm check:evidence
 
 | Area | Responsibility |
 | --- | --- |
-| `index.html` | Semantic experiment, prediction, live arithmetic, reversal and reveal |
+| `index.html` | Semantic experiment, live arithmetic, reversal and reveal |
 | `styles.css` | Responsive layout, congestion cues, moving driver groups and reduced motion |
 | `main.ts` | Transfers persistent driver groups and updates every visible result from the slider |
 | `src/braess.ts` | Pure calculation plus derived best and break-even landmarks |
