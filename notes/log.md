@@ -368,3 +368,14 @@ not introduce another model or result. Reduced-motion visitors jump to the ident
 endpoint. I also shortened the introduction, moved SVG labels away from road strokes,
 and added browser checks for the first-screen experiment position, label clearance and
 the complete play lifecycle.
+
+## Mon 17 Aug — finishing stopped hijacking the page
+
+The first endpoint reveal was technically in normal document flow, but the controller
+scrolled it into view as soon as playback finished. That made a large result panel feel
+like a pop-up and interrupted the visitor before they had chosen to compare anything.
+I removed every automatic result scroll and separated “finish moving drivers” from
+“compare the networks.” The endpoint now adds one small invitation inside the existing
+calculator. Its button deliberately opens a centred result surface with the controlling
+`65 → 80` comparison first, followed by only two explanations: what changed and why the
+bad state persists. Keyboard and reduced-motion paths use the same explicit action.

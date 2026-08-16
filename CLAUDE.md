@@ -236,10 +236,11 @@ Play/Pause control and one causal close/reopen action. Eighty dots represent
 map and five visible equations all update from the pure calculation in
 `src/braess.ts`. There is no second animation model.
 
-**One controlled comparison.** The endpoint must say that the same 4,000 drivers
-take 65 minutes with the shortcut closed and 80 with it open; only road
-availability changes. Then explain why the bad state persists: staying on the
-shortcut takes 80 minutes while leaving alone takes 85. Do not present `80 vs 85`
+**One controlled comparison.** Reaching the endpoint must not move the viewport
+or open the result automatically. It offers one compact comparison action; only
+that deliberate action reveals that the same 4,000 drivers take 65 minutes with
+the shortcut closed and 80 with it open. Then explain why the bad state persists:
+staying takes 80 minutes while leaving alone takes 85. Do not present `80 vs 85`
 without the controlling `65 vs 80` comparison.
 
 Before adding anything, the question is *does this make the visitor understand
