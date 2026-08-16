@@ -169,55 +169,6 @@ h1 {
   border: 1px solid var(--rule);
 }
 
-.prediction {
-  margin: 0;
-  padding: var(--space-3) var(--space-4);
-  border: 0;
-  border-left: 5px solid var(--gold);
-  background: var(--ink);
-  color: var(--paper);
-}
-
-.prediction legend {
-  width: 100%;
-  margin: 0 0 0.35rem;
-  padding: 0;
-  float: left;
-  color: var(--gold);
-  font-size: 0.72rem;
-  font-weight: 800;
-}
-
-.prediction p {
-  clear: both;
-  margin: 0.15rem 0 0.8rem;
-  color: #dce2df;
-  font-size: 0.7rem;
-}
-
-.prediction__options {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.45rem;
-}
-
-.prediction__option {
-  padding: 0.55rem 0.7rem;
-  border: 1px solid #66726e;
-  font-size: 0.7rem;
-  cursor: pointer;
-}
-
-.prediction__option:has(input:checked) {
-  border-color: var(--gold);
-  background: rgb(243 174 43 / 14%);
-}
-
-.prediction__options input {
-  margin: 0 0.35rem 0 0;
-  accent-color: var(--gold);
-}
-
 .rules {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -772,7 +723,7 @@ h3 {
   color: var(--rust);
 }
 
-.prediction-result {
+.reveal-summary {
   margin: 0;
   padding-left: var(--space-3);
   border-left: 4px solid var(--teal);
@@ -1035,11 +986,6 @@ footer {
   .rules p {
     grid-column: 2;
     text-align: left;
-  }
-
-  .prediction__options {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
   }
 
   .experiment {

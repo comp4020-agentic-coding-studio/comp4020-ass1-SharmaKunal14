@@ -21,7 +21,9 @@ describe("transparent direct interactions", () => {
     const sliders = doc.querySelectorAll<HTMLInputElement>('input[type="range"]');
     expect(sliders).toHaveLength(1);
     expect(doc.querySelectorAll<HTMLInputElement>('input[name="personal-route"]')).toHaveLength(0);
-    expect(doc.querySelectorAll<HTMLInputElement>('input[name="prediction"]')).toHaveLength(3);
+    expect(doc.querySelectorAll<HTMLInputElement>('input[name="prediction"]')).toHaveLength(0);
+    expect(doc.querySelector(".prediction")).toBeNull();
+    expect(doc.querySelector("[data-prediction-feedback]")).toBeNull();
     expect(doc.querySelectorAll("button")).toHaveLength(2);
     expect(doc.querySelector("[data-play]")).toBeNull();
     expect(doc.querySelector("[data-show-result]")).not.toBeNull();
@@ -57,6 +59,8 @@ describe("transparent direct interactions", () => {
     expect(copy).toContain("Before the shortcut 65 min");
     expect(copy).toContain("Where the current times come from");
     expect(copy).toContain("Only the shortcut changed");
+    expect(copy).toContain("Every driver followed the route that looked quicker");
+    expect(copy).toContain("Together, they made both narrow roads busier");
     expect(copy).toContain("Your action revealed Braess’s paradox");
     expect(copy).toContain("Compare the two networks");
     expect(copy).toContain("Prove it backwards");

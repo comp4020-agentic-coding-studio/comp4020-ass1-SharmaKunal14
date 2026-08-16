@@ -122,16 +122,9 @@ describe("transparent desktop experiment", () => {
     expect(await text(page, "[data-top-route-ledger]")).toBe("2,000 drivers · 40 dots");
     expect(await text(page, "[data-shortcut-route-ledger]")).toBe("0 drivers · 0 dots");
     expect(await text(page, "[data-bottom-route-ledger]")).toBe("2,000 drivers · 40 dots");
-    expect(await page.locator('input[name="prediction"]').count()).toBe(3);
-    const predictionLayout = await page.locator(".prediction").evaluate((fieldset) => {
-      const legend = fieldset.querySelector("legend");
-      if (legend === null) throw new Error("missing prediction legend");
-      return {
-        fieldsetTop: fieldset.getBoundingClientRect().top,
-        legendTop: legend.getBoundingClientRect().top,
-      };
-    });
-    expect(predictionLayout.legendTop).toBeGreaterThan(predictionLayout.fieldsetTop + 8);
+    expect(await page.locator('input[name="prediction"]').count()).toBe(0);
+    expect(await page.locator(".prediction").count()).toBe(0);
+    expect(await page.locator(".rules article").count()).toBe(3);
     expect(await page.locator("#experiment").evaluate((element) => element.getBoundingClientRect().top)).toBeLessThan(DESKTOP.height);
     expect(await text(page, "[data-average-time]")).toBe("65");
     expect(await page.locator("[data-narrow-math]").isVisible()).toBe(true);
@@ -229,7 +222,6 @@ describe("transparent desktop experiment", () => {
   it("offers a deliberate comparison before revealing the paradox", async () => {
     const observed = await open(DESKTOP);
     const { page } = observed;
-    await page.locator('input[name="prediction"][value="faster"]').check();
     await setUsers(page, 4_000);
     expect(await text(page, "[data-average-time]")).toBe("80");
     expect(await text(page, "[data-average-change]")).toBe("15 min slower than without the shortcut");
@@ -253,7 +245,9 @@ describe("transparent desktop experiment", () => {
     );
     expect(await text(page, "[data-decision]")).toContain("nobody leaves");
     expect(await page.locator('.driver-dot[data-route="shortcut"]').count()).toBe(80);
-    expect(await text(page, "[data-prediction-feedback]")).toContain("You predicted the shortcut would make trips faster");
+    expect(await text(page, ".reveal-summary")).toBe(
+      "Every driver followed the route that looked quicker. Together, they made both narrow roads busier.",
+    );
     expect(await page.locator("[data-toggle-road]").isVisible()).toBe(true);
     expect(await page.locator("[data-reveal]").evaluate((element) => element === document.activeElement)).toBe(true);
     expect(await page.locator("[data-reveal] > [data-road-control]").count()).toBe(1);

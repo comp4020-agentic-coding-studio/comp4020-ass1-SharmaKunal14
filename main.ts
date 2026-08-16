@@ -32,13 +32,9 @@ const reveal = need<HTMLElement>("[data-reveal]");
 const endpointPrompt = need<HTMLElement>("[data-endpoint-prompt]");
 const showResult = need<HTMLButtonElement>("[data-show-result]");
 const liveSummary = need<HTMLElement>("[data-live-summary]");
-const predictionInputs = [
-  ...document.querySelectorAll<HTMLInputElement>('input[name="prediction"]'),
-];
 const discovery = need<HTMLOutputElement>("[data-discovery]");
 const townComparison = need<HTMLElement>("[data-town-comparison]");
 const comparisonVerdict = need<HTMLOutputElement>("[data-comparison-verdict]");
-const predictionFeedback = need<HTMLElement>("[data-prediction-feedback]");
 const bestExplanation = need<HTMLElement>("[data-best-explanation]");
 const roadControl = need<HTMLElement>("[data-road-control]");
 const roadControlTitle = need<HTMLElement>("[data-road-control-title]");
@@ -66,7 +62,6 @@ const driverDots = Array.from({ length: DOTS }, (_, index) => {
 });
 const topOriginDots = driverDots.slice(0, DOTS_PER_OLD_ROUTE);
 const bottomOriginDots = driverDots.slice(DOTS_PER_OLD_ROUTE);
-let selectedPrediction: "faster" | "same" | "slower" | null = null;
 let roadClosed = false;
 let resultRevealed = false;
 
@@ -149,22 +144,6 @@ function renderDiscovery(result: BraessResult): void {
   }
 }
 
-function renderPredictionFeedback(): void {
-  if (selectedPrediction === null) {
-    predictionFeedback.textContent = "You did not need to predict correctly—the slider exposed what happened.";
-    return;
-  }
-
-  const prediction = {
-    faster: "make trips faster",
-    same: "make no difference",
-    slower: "make trips slower",
-  }[selectedPrediction];
-  predictionFeedback.textContent =
-    `You predicted the shortcut would ${prediction}. ` +
-    "It helped while lightly used, but after everyone followed the quicker route the town became slower.";
-}
-
 bestExplanation.textContent =
   `The town’s best balance was ${drivers(BRAESS_LANDMARKS.bestShortcutUsers)} shortcut users at ${minutes(BEST_RESULT.averageMinutes)} minutes. ` +
   `It could not last: the shortcut was still ${minutes(BEST_RESULT.individualSavingMinutes)} minutes quicker than an old route, so each next driver had a reason to join it.`;
@@ -194,7 +173,6 @@ function render(result: BraessResult): void {
   }
   renderDriverDots(shortcutUsers, usersPerOldRoute);
   renderDiscovery(result);
-  renderPredictionFeedback();
 
   if (averageChangeMinutes > 0) {
     averageChange.textContent = `${minutes(averageChangeMinutes)} min slower than without the shortcut`;
@@ -277,16 +255,6 @@ toggleRoad.addEventListener("click", () => {
   input.value = roadClosed ? "0" : String(TOTAL_DRIVERS);
   render(calculateBraess(Number(input.value)));
 });
-
-for (const predictionInput of predictionInputs) {
-  predictionInput.addEventListener("change", () => {
-    selectedPrediction =
-      predictionInput.value === "faster" || predictionInput.value === "same"
-        ? predictionInput.value
-        : "slower";
-    renderPredictionFeedback();
-  });
-}
 
 render(calculateBraess(Number(input.value)));
 
