@@ -42,19 +42,22 @@ the adjustment-period transient from the settled effect, and a test requires bot
 protocols to agree at equilibrium
 ([`c70f164`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-SharmaKunal14/commit/c70f164)).
 
-**4. More explanation made the explanation worse.** The user described buttons causing
-unexplained events. Chapters, predictions and evidence cards made the visitor learn a
-simulator before learning the paradox, so I deleted that staged interface. The delivered
-page uses three rules and one slider. Eighty persistent dots expose every transfer; three
+**4. More explanation made the explanation worse.** The user said buttons caused
+unexplained events. Chapters, predictions and evidence cards forced the visitor to learn
+a simulator before the paradox, so I deleted the staged interface. The delivered page
+uses three rules and one slider; eighty persistent dots expose every transfer. Three
 landmarks unlock the **64.7-minute** minimum, **65-minute** break-even and **80-minute**
-paradox. Moving back to 3,900 then reveals the trap: the town improves to **79.1**, but
-returning drivers face **84.5** while staying takes **79**. Route and equation controls
-spotlight the same map without changing it. The endpoint action names the paradox, and
-an open/closed switch visibly locks the crowd at 4,000 while the original map reverses
-**80 → 65**. Wide screens separate controls, map and calculations into three readable
-columns; phones return them to one. Browser tests cover arithmetic, persistent dots,
-focus, both marking viewports and reduced motion
-([`5977880...d2790ce`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-SharmaKunal14/compare/5977880...d2790ce)).
+paradox. Moving back to 3,900 reveals the trap: the town improves to **79.1**, but returning
+drivers face **84.5** while staying takes **79**. Route and equation controls spotlight the
+same map without changing calculations. A screenshot exposed another failure:
+correct `2,350` road loads looked like `2,350 × 2 + 700` drivers. Rather than hide a
+causal road, I separated unique route groups from overlapping pass-through counts, wrote
+`1,650 old + same 700 shortcut`, and added arrows for the sole shortcut path. The endpoint
+names the paradox; a switch holds 4,000 drivers while the same map reverses **80 → 65**.
+Browser tests bind arithmetic, 80 dots, SVG label bounds, keyboard, both viewports and
+reduced motion
+([`5977880...d2790ce`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-SharmaKunal14/compare/5977880...d2790ce),
+[`4a37ad0...9c0bf02`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-SharmaKunal14/compare/4a37ad0...9c0bf02)).
 
-Rules are in `CLAUDE.md`, prior commitments in `PLAN.md`, and the unedited working
+Rules are in `CLAUDE.md`, prior commitments in `PLAN.md`, and the running working
 record is in `notes/log.md`.
