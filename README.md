@@ -13,6 +13,11 @@ Drivers who avoid the shortcut split evenly between two identical old routes. Ev
 shortcut driver uses both narrow roads. With no shortcut users, each old route takes
 `20 + 45 = 65` minutes. When all 4,000 drivers choose the individually quicker
 shortcut, both narrow roads take 40 minutes and the shortcut takes `40 + 40 = 80`.
+An individual driver would still prefer that 80-minute shortcut to leaving alone on an
+85-minute old route, so nobody changes course by themselves. Removing the shortcut
+changes the choices for everyone, restores the even split and returns every trip to 65
+minutes. The paradox is the gap between the individually best choice and the best result
+for the whole network.
 
 This is an exact illustrative model, not a claim about a real city and not a hidden
 traffic simulation. The prior microscopic simulator remains in the repository as part

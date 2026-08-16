@@ -63,7 +63,7 @@ function render(result: BraessResult): void {
   }
 
   if (averageChangeMinutes > 0) {
-    averageChange.textContent = `${minutes(averageChangeMinutes)} min worse than before`;
+    averageChange.textContent = `${minutes(averageChangeMinutes)} min slower than without the shortcut`;
   } else if (averageChangeMinutes < 0) {
     averageChange.textContent = `${minutes(Math.abs(averageChangeMinutes))} min better than before`;
   } else {
@@ -71,13 +71,17 @@ function render(result: BraessResult): void {
   }
 
   if (shortcutUsers === 0) {
-    decision.textContent = `The shortcut takes ${minutes(shortcutRouteMinutes)} minutes, so the first driver wants to switch.`;
+    decision.textContent =
+      `Shortcut: ${minutes(shortcutRouteMinutes)} minutes. Old route: ${minutes(oldRouteMinutes)}. ` +
+      `The first driver sees a ${minutes(individualSavingMinutes)}-minute advantage.`;
   } else if (shortcutUsers < TOTAL_DRIVERS) {
     decision.textContent =
-      `A driver still saves ${minutes(individualSavingMinutes)} minutes by switching. ` +
-      "Move the slider right to follow that choice.";
+      `Shortcut: ${minutes(shortcutRouteMinutes)} minutes. Old route: ${minutes(oldRouteMinutes)}. ` +
+      `Switching right now looks ${minutes(individualSavingMinutes)} minutes better.`;
   } else {
-    decision.textContent = "No driver can improve alone now. Everyone uses the shortcut—and the town is slower.";
+    decision.textContent =
+      `Staying takes ${minutes(shortcutRouteMinutes)} minutes. Leaving alone would take ` +
+      `${minutes(oldRouteMinutes)}. So nobody leaves—even though everyone used to take 65.`;
   }
 
   narrowMath.textContent = `(${drivers(TOTAL_DRIVERS)} + ${drivers(shortcutUsers)}) ÷ 2 = ${drivers(narrowRoadUsers)}`;

@@ -40,6 +40,14 @@ describe("one transparent interaction", () => {
     expect(doc.querySelector("[data-reveal]")?.hasAttribute("hidden")).toBe(true);
   });
 
+  it("separates the individual route comparison from the before-and-after comparison", () => {
+    const copy = (doc.body.textContent ?? "").replace(/\s+/g, " ");
+    expect(copy).toContain("Stay: 80 min · Leave alone: 85 min");
+    expect(copy).toContain("Before road: 65 min · After choices: 80 min");
+    expect(copy).toContain("individually sensible choices can create a worse result");
+    expect(copy).not.toContain("Each driver saved time by switching");
+  });
+
   it("does not import the old opaque simulation into the interface", () => {
     for (const fragment of ["src/live", "src/story", "src/experiment", "Math.random", "requestAnimationFrame", "setInterval"]) {
       expect(mainSource).not.toContain(fragment);

@@ -471,6 +471,52 @@ h3 {
   line-height: 1.55;
 }
 
+/* stylelint-disable no-descending-specificity -- the reveal is rendered after
+   the shared time/math surfaces and intentionally gives its nested text a
+   different hierarchy. */
+.paradox-comparison {
+  margin-top: 1.25rem;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border: 1px solid var(--rule);
+}
+
+.paradox-comparison article {
+  padding: 1rem;
+}
+
+.paradox-comparison article + article {
+  border-left: 1px solid var(--rule);
+}
+
+.paradox-comparison span,
+.paradox-comparison strong {
+  display: block;
+}
+
+.paradox-comparison span {
+  color: var(--rust);
+  font-size: 0.63rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.paradox-comparison strong {
+  margin-top: 0.4rem;
+  font-family: "DM Mono", monospace;
+  font-size: 0.74rem;
+  line-height: 1.5;
+}
+
+.paradox-comparison p {
+  margin: 0.5rem 0 0;
+  color: var(--ink-soft);
+  font-size: 0.72rem;
+  line-height: 1.45;
+}
+/* stylelint-enable no-descending-specificity */
+
 @keyframes reveal {
   from {
     opacity: 0;
@@ -605,6 +651,18 @@ footer {
     grid-template-columns: minmax(0, 1fr);
     gap: 0.25rem;
   }
+
+  /* stylelint-disable no-descending-specificity -- phone layout continues the
+     reveal-specific override declared after the shared card rules. */
+  .paradox-comparison {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .paradox-comparison article + article {
+    border-top: 1px solid var(--rule);
+    border-left: 0;
+  }
+  /* stylelint-enable no-descending-specificity */
 
   .math code {
     text-align: left;

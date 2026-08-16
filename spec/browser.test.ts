@@ -128,7 +128,7 @@ describe("transparent desktop experiment", () => {
     expect(await text(page, "[data-average-time]")).toBe("67.5");
     expect(await text(page, "[data-narrow-math]")).toBe("(4,000 + 2,000) ÷ 2 = 3,000");
     expect(await text(page, "[data-average-math]")).toBe("(2,000 × 75 + 2,000 × 60) ÷ 4,000 = 67.5 min");
-    expect(await text(page, "[data-decision]")).toContain("still saves 15 minutes");
+    expect(await text(page, "[data-decision]")).toContain("Switching right now looks 15 minutes better");
     healthy(observed);
     await page.close();
   });
@@ -140,9 +140,12 @@ describe("transparent desktop experiment", () => {
     expect(await text(page, "[data-old-time]")).toBe("85");
     expect(await text(page, "[data-shortcut-time]")).toBe("80");
     expect(await text(page, "[data-average-time]")).toBe("80");
-    expect(await text(page, "[data-average-change]")).toBe("15 min worse than before");
+    expect(await text(page, "[data-average-change]")).toBe("15 min slower than without the shortcut");
     expect(await page.locator("[data-reveal]").isVisible()).toBe(true);
     expect(await text(page, "[data-reveal]")).toContain("Braess’s paradox");
+    expect(await text(page, "[data-reveal]")).toContain("Stay: 80 min · Leave alone: 85 min");
+    expect(await text(page, "[data-reveal]")).toContain("Before road: 65 min · After choices: 80 min");
+    expect(await text(page, "[data-decision]")).toContain("nobody leaves");
     await noOverflow(page);
     healthy(observed);
     await page.close();

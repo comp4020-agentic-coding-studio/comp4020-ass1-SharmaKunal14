@@ -121,15 +121,15 @@
 
           <div class="times" aria-label="Current travel times">
             <article>
-              <span>Old route</span>
+              <span>Old route right now</span>
               <strong><output data-old-time>65</output> min</strong>
             </article>
             <article class="times__shortcut">
-              <span>Shortcut route</span>
+              <span>Shortcut right now</span>
               <strong><output data-shortcut-time>40</output> min</strong>
             </article>
             <article class="times__average">
-              <span>Town average</span>
+              <span>Town average right now</span>
               <strong><output data-average-time>65</output> min</strong>
               <small data-average-change>same as before</small>
             </article>
@@ -149,11 +149,26 @@
 
           <section class="reveal" data-reveal hidden aria-labelledby="reveal-title">
             <p class="eyebrow">You found the paradox</p>
-            <h3 id="reveal-title">Each driver saved time by switching. Together, they added 15 minutes.</h3>
+            <h3 id="reveal-title">The shortcut is each driver’s best option—and everyone’s worse outcome.</h3>
+            <div class="paradox-comparison" aria-label="Individual choice compared with the whole town">
+              <article>
+                <span>One driver’s choice now</span>
+                <strong>Stay: 80 min · Leave alone: 85 min</strong>
+                <p>Staying is 5 minutes better, so nobody wants to leave.</p>
+              </article>
+              <article>
+                <span>The whole town</span>
+                <strong>Before road: 65 min · After choices: 80 min</strong>
+                <p>Everyone is 15 minutes slower than before the shortcut existed.</p>
+              </article>
+            </div>
             <p>
-              With no shortcut, the average was 65 minutes. When all 4,000 drivers use it,
-              both narrow roads take 40 minutes, so the shortcut trip takes 80 minutes.
-              This is <strong>Braess’s paradox</strong>: a new option can make the whole network worse.
+              The shortcut is not magically slow. It changes everyone’s reason for choosing a
+              route. Each person follows the quickest option available to them, which sends all
+              4,000 drivers through both narrow roads. Removing the shortcut forces traffic to
+              split again, clearing those roads and returning every trip to 65 minutes. This is
+              <strong>Braess’s paradox</strong>: individually sensible choices can create a worse
+              result for the whole group.
             </p>
           </section>
 
