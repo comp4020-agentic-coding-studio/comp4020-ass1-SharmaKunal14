@@ -231,20 +231,16 @@ locally and 404s on the deployed URL.
 
 **One More Road** — an interactive explainer of Braess's paradox. The visitor
 uses one transparent classroom network, one range slider, a prediction, one
-personal route choice and one causal close/reopen action. Eighty dots represent
-4,000 drivers. Moving the slider visibly transfers drivers to the shortcut while
-the old-route time, shortcut time and town average update from the same pure
-calculation in `src/braess.ts`. The interface has three zones: move the crowd,
-choose as one driver, then optionally check the arithmetic. Each metric appears
-once; the five equations remain in one native disclosure instead of competing
-with the main result.
+Play/Pause control and one causal close/reopen action. Eighty dots represent
+4,000 drivers. Dragging or playing changes the same range input; the town average,
+map and five visible equations all update from the pure calculation in
+`src/braess.ts`. There is no second animation model.
 
-**One idea, two viewpoints.** The route radio answers “what should I do now?”;
-the before/after comparison answers “what happened to everyone?”. Do not merge
-those questions. At the endpoint, staying on the shortcut takes 80 minutes and
-leaving alone takes 85, while the whole network changed from 65 to 80 minutes.
-That difference between an individually sensible choice and a worse group result
-is the reveal.
+**One controlled comparison.** The endpoint must say that the same 4,000 drivers
+take 65 minutes with the shortcut closed and 80 with it open; only road
+availability changes. Then explain why the bad state persists: staying on the
+shortcut takes 80 minutes while leaving alone takes 85. Do not present `80 vs 85`
+without the controlling `65 vs 80` comparison.
 
 Before adding anything, the question is *does this make the visitor understand
 the central idea more strongly?* If not, delete it. Prefer deleting UI over
@@ -319,17 +315,18 @@ make an equation look simpler.
 - Run `pnpm check` before every commit; run `pnpm check:evidence` after changing
   `PROCESS.md`, the reflection or commit citations.
 - Test the whole interaction at **1920×1080** and **390×844**, including the
-  slider midpoint and endpoint, both personal route choices and horizontal
-  overflow.
-- The public contract is one range input, one prediction group, one personal-route
-  group, one native calculation disclosure and one causal road toggle. There is
-  no staged Continue-button sequence. `spec/page.test.ts` makes that scope explicit.
+  slider midpoint and endpoint, Play/Pause/Replay and horizontal overflow.
+- The public contract is one range input, one prediction group, one Play control,
+  five always-visible equations and one causal road toggle. There is no staged
+  Continue-button sequence. `spec/page.test.ts` makes that scope explicit.
 - All displayed numbers must come from `calculateBraess`; browser tests check the
   start, midpoint and endpoint equations rather than only checking that values
   changed.
 - The eighty decorative driver dots stay `aria-hidden`. The meaningful counts and
   times remain text and are announced through the polite live region.
 - Reduced motion shortens transitions without changing values or interaction.
+  Play jumps directly to the same 4,000-driver endpoint when reduced motion is
+  requested.
 - Built assets remain relative for the GitHub Pages subpath, and the page loads
   no third-party runtime resources.
 

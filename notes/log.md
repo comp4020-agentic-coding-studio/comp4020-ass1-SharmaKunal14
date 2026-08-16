@@ -353,3 +353,18 @@ order: move the crowd, choose as one driver, and optionally inspect the arithmet
 Shared spacing tokens and a bordered map surface make those groups readable without
 adding another staged flow. The required desktop, phone, keyboard and reduced-motion
 paths still use the same controls and calculation.
+
+## Mon 17 Aug — the endpoint became the reveal
+
+The three-zone layout still made setup, personal choice and arithmetic compete for
+attention, and it separated the crucial `80 vs 85` individual incentive from the
+`65 vs 80` same-driver comparison. I removed the personal-route card rather than add
+another explanation. The experiment now keeps its five equations visible beside the
+slider, and reaching 4,000 shortcut users reveals one controlled comparison: same
+drivers, only the road changes.
+
+Play/Pause/Replay advances the existing slider in the same 100-driver steps; it does
+not introduce another model or result. Reduced-motion visitors jump to the identical
+endpoint. I also shortened the introduction, moved SVG labels away from road strokes,
+and added browser checks for the first-screen experiment position, label clearance and
+the complete play lifecycle.
