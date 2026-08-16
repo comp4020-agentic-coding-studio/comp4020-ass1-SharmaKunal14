@@ -201,23 +201,17 @@ Run it against every page, not just the home page.
 
 ## This machine's runtime
 
-`mise.toml` pins Node 24, and this shell's bare `node` is 22.14. Node 22 cannot
-execute a `.ts` file, so `pnpm check:evidence` --- which runs
-`node scripts/check-evidence.ts` --- dies with
-`ERR_UNKNOWN_FILE_EXTENSION` for reasons that have nothing to do with the work,
-and two of the template's own tests in `scripts/check-evidence.test.ts` fail
-with it too.
+`mise.toml` pins Node 24 and `package.json` pins pnpm 11.9.0. The current shell
+uses those versions, so `pnpm check` and `pnpm check:evidence` run directly.
+Using `mise exec --` remains valid and is the safest option on an unverified
+machine. If a TypeScript script fails before doing any work, check `node
+--version` before changing the script.
 
-Run everything through the pinned runtime: `mise exec -- pnpm check`,
-`mise exec -- pnpm check:evidence`. If a check fails, confirm the runtime
-before believing the failure. CI uses `mise.toml`, so CI is unaffected either
-way.
-
-One failure is expected until `PROCESS.md` and `reflections/assignment-1.md` are
-real: `check:evidence`. Don't put a live-URL assertion in `spec/*.test.ts`
-itself — that suite runs inside CI's `check` job, which gates `deploy`, so a
-check for the live site would never be able to pass on the push that first
-ships it. Verify the deployed URL with a one-off `curl`, not a spec test.
+`PROCESS.md` and `reflections/assignment-1.md` are complete. The evidence check
+may skip only its course-API lookup when the network is unavailable; that is not
+proof that the deployed site is ready. Don't put a live-URL assertion in
+`spec/*.test.ts`: that suite gates the first deployment. Verify the deployed URL
+after shipping with a one-off request instead.
 
 One stack fact worth remembering: `tsconfig.json` declares `lib: ["ES2022", …]`
 even though the runtime is Node 24, so ES2023 array methods like `toSorted`
@@ -236,28 +230,30 @@ locally and 404s on the deployed URL.
 ## Assignment 1: what this prototype is, and what it must stay
 
 **One More Road** — an interactive explainer of Braess's paradox. The visitor
-conducts one six-chapter investigation on a fixed synthetic road network. They
-trace both original routes, design the connector, predict a validated quiet-road
-control, stress-test peak demand, release deterministic traffic waves, choose a
-fair counterfactual and inspect both old bottlenecks. Only then is the paradox
-named.
+uses one transparent classroom network, one range slider and one personal route
+choice. Forty dots represent 4,000 drivers. Moving the slider visibly transfers
+drivers to the shortcut while the old-route time, shortcut time, town average
+and every equation update from the same pure calculation in `src/braess.ts`.
 
-**One idea, one experiment.** More clicks do not mean more unrelated mechanics.
-Every action observes, predicts or changes the same network: trace a route,
-select the connector endpoints, choose a prediction, release a traffic cohort or
-inspect a bridge. Closing the connector is the same experiment run backwards.
+**One idea, two viewpoints.** The route radio answers “what should I do now?”;
+the before/after comparison answers “what happened to everyone?”. Do not merge
+those questions. At the endpoint, staying on the shortcut takes 80 minutes and
+leaving alone takes 85, while the whole network changed from 65 to 80 minutes.
+That difference between an individually sensible choice and a worse group result
+is the reveal.
 
 Before adding anything, the question is *does this make the visitor understand
 the central idea more strongly?* If not, delete it. Prefer deleting UI over
-adding an explanatory control. There is no continuous demand slider, no second
-network, no network editor, no traffic lights, no lane changing, no chart and no
-claim about any real city. The only demand values exposed are the two validated
-configurations, 300 and 860 cars per hour.
+adding an explanatory control. There is no hidden traffic run, route learning,
+randomness, staged chapter sequence, network editor, chart or claim about a real
+city. The earlier microscopic simulator remains as process evidence but must not
+be imported into the public page.
 
-## Assignment 1: rules the simulation must not break
+## Assignment 1: boundaries for the retained simulation
 
-These exist because each one is a way of being wrong that would otherwise ship
-looking perfectly plausible.
+The earlier microscopic simulation is retained for process evidence and tests,
+not as the delivered explanation. These rules still protect that historical
+work, but they do not describe the arithmetic calculator in `src/braess.ts`.
 
 - **Never hard-code the outcome.** There is no `time = f(flow)` latency
   function, and no branch anywhere that reads "if the connector is open". Travel
@@ -300,43 +296,37 @@ looking perfectly plausible.
 
 ## Assignment 1: claims we are allowed to make
 
-The network is synthetic and the numbers are a controlled demonstration, not a
-measurement of anywhere. "Building roads makes traffic worse" is false and we
-never say it. What is true, and what the page says, is closer to: *under
-particular network, demand and routing conditions, adding a connection can
-change selfish route choices so that the resulting equilibrium is worse for
-the measured average.* Route-group averages do not prove every individual was
-worse off. The control configuration is the honest other half of that sentence,
-and it earns its one line on the page.
-
-Every simplification gets disclosed in the model note, with the model cited to
-its primary source.
+The network is made up and its numbers are an exact classroom calculation, not
+a measurement of a real place and not a prediction about road building. “More
+roads always make traffic worse” is false. The supported claim is narrower:
+*in this stated network, a shortcut makes the quickest individual choice produce
+a slower result for the whole group.* Keep the two visible rules beside the
+experiment and show every arithmetic step. Never describe 80 minutes as a
+five-minute saving from the original 65-minute network; it is five minutes
+better only than one driver leaving alone after the congested state exists.
 
 ## Assignment 1: verification that actually counts
 
-- Run everything through `mise exec --`.
-- The rendered page at **390×844** is a full marking environment, and the
-  simulation running there is part of what has to work — measure frame
-  behaviour at phone size with the real vehicle count, don't assume it.
-- **Resize mid-interaction** is explicitly in the artefact band. Test it while
-  the simulation is running, not while it is idle.
-- **Keyboard**: every route, endpoint, prediction, wave, comparison and bridge
-  action is reachable in logical order, native radio groups keep focus when their
-  value changes, and Enter/Space activation has a visible focus indicator. Major
-  checkpoints are announced through one polite live region.
-- **Reduced motion** removes moving vehicle dots and lands immediately on the
-  same deterministic checkpoints. It does **not** change the fixed-step physics,
-  route choices or quoted evidence.
-- Hundreds of SVG vehicles must never be traversable by a screen reader: the
-  vehicle layer is `aria-hidden`, and the meaningful state is exposed as text.
-- No text is allowed to appear before the main decision that a visitor would
-  have to read as a paragraph. There is a word budget on the pre-decision copy
-  and it is checked.
+- Run `pnpm check` before every commit; run `pnpm check:evidence` after changing
+  `PROCESS.md`, the reflection or commit citations.
+- Test the whole interaction at **1920×1080** and **390×844**, including the
+  slider midpoint and endpoint, both personal route choices and horizontal
+  overflow.
+- The public contract is one range input, one native two-option radio group and
+  no staged button sequence. `spec/page.test.ts` makes that scope explicit.
+- All displayed numbers must come from `calculateBraess`; browser tests check the
+  start, midpoint and endpoint equations rather than only checking that values
+  changed.
+- The forty decorative driver dots stay `aria-hidden`. The meaningful counts and
+  times remain text and are announced through the polite live region.
+- Reduced motion shortens transitions without changing values or interaction.
+- Built assets remain relative for the GitHub Pages subpath, and the page loads
+  no third-party runtime resources.
 
-## Assignment 1: what building this taught the harness
+## Assignment 1: historical simulator lessons retained as process evidence
 
-Rules earned the hard way. Each one is here because it caught something, or
-because not having it cost hours.
+These lessons explain earlier commits and the retained simulation tests. They are
+not the contract of the delivered calculator.
 
 - **A result must be horizon-invariant, and that is a gate.** Re-run any
   configuration over a longer horizon and require the same answer
@@ -361,10 +351,10 @@ because not having it cost hours.
   overtaking a long road's mean time exceeds free flow even when deserted.
   References for anything the page words come from a near-empty run, checked in
   via `scripts/snapshot.ts`.
-- **Numbers the page states come from a generated snapshot, and a test fails if
-  it is stale.** Never hand-type a figure into copy, and never compute the claim
-  in the visitor's browser — one live run is one sample and its average wanders
-  by more than the effect.
+- **Legacy simulation claims came from a generated snapshot.** A frozen snapshot
+  and freshness test prevented one wandering live sample from becoming evidence.
+  The delivered calculator is different: its exact values are intentionally
+  computed in the browser from the two stated rules.
 - **Copy is a claim, so it is checked.** The lede once said traffic was bad while
   the page's own readout showed every road free-flowing. If prose asserts a
   number or a state, a test ties it to the measurement.
@@ -376,11 +366,10 @@ because not having it cost hours.
   `?speed=N` scales the wall-clock compression, never `dt`, the seed or the
   schedule — so a browser test watches the same 900 simulated seconds in 14
   seconds instead of 142.
-- **Scope is guarded by a test, not by good intentions.** Every feature this
-  project rejected would have arrived as a control, so `spec/page.test.ts`
-  asserts one primary action, zero sliders, and a word budget on the copy before
-  the decision. Adding a control means deleting an assertion, which is a decision
-  you have to make on purpose.
+- **Scope is guarded by a test, not by good intentions.** The current
+  `spec/page.test.ts` permits one range slider and one personal-route radio group,
+  while rejecting a staged button sequence. Adding a control means changing that
+  contract deliberately.
 - **Browser-level facts need a browser.** jsdom has no layout, so it reports a
   page as fine while it scrolls sideways at 390 px. The viewport, keyboard,
   resize-mid-interaction and payload checks run Playwright against `dist/`.
@@ -388,7 +377,7 @@ because not having it cost hours.
   explicitly in `.stylelintrc.json`; class names are lower-case, so a class built
   from a link id needs `.toLowerCase()`.
 
-## Assignment 1: traps the redesign found
+## Assignment 1: historical interface traps retained as process evidence
 
 All five of these were invisible in the source and obvious the moment something
 measured them.
@@ -396,7 +385,8 @@ measured them.
 - **`[hidden]` loses to any class that sets `display`.** It is a user-agent rule,
   so `.metric { display: flex }` beat it and the before/after figure sat on screen
   through the opening beat reading "— before you built it" before anything had
-  been built. There is now a global `[hidden] { display: none !important }`.
+  been built. The discarded staged interface needed an explicit override; the
+  current reveal must continue to avoid any class rule that defeats `hidden`.
 - **One breakpoint, read by both sides.** The network arrangement was chosen in
   JavaScript from the measured aspect of the figure while CSS sized that figure
   from the viewport width. Capping the figure's height on a phone made its box
@@ -427,7 +417,7 @@ Two rules of judgement from the same pass:
   a minute quicker" when the measured empty-road saving is 31 seconds. A test now
   ties that phrase to the geometry.
 
-## Assignment 1: rendering is not simulation
+## Assignment 1: historical rendering lessons retained as process evidence
 
 - **Match rendering to the clock that drives it.** A continuous `LiveRun.advance`
   clock may interpolate `prevPos → pos` by its fractional accumulator; snapping
@@ -444,11 +434,10 @@ Two rules of judgement from the same pass:
   by draw order meant a given circle stood for a different car each frame as
   vehicles came and went, so its shade jumped for no reason and nothing on screen
   had a stable identity.
-- **Every checkpoint earns its controls.** The page once showed the network,
-  traffic, four metrics, a chart, a route table and the model note at once. The
-  current chapter contract lives in `src/story.ts`; `main.ts` renders only the
-  route, prediction, wave, comparison or bridge controls required by that beat.
-  Adding a generic Continue click does not count as interaction.
-- **A visually hidden equivalent is not subject to progressive disclosure.** The
-  road-state list is the map for a screen-reader user, so it stays present the whole
-  way through even while the visual panels come and go.
+- **Every checkpoint must earn its controls.** The discarded page once showed the
+  network, traffic, four metrics, a chart, a route table and the model note at
+  once. Its generic progression clicks hid causes instead of exposing them. That
+  failure is why the current page uses direct manipulation and no buttons.
+- **A visual explanation still needs a textual equivalent.** Decorative movement
+  may be hidden from assistive technology only when the meaningful counts, route
+  times and conclusion remain available as ordinary text.
