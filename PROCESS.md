@@ -47,12 +47,13 @@ interface as buttons causing unexplained events. I first responded by adding cha
 predictions, route tracing and evidence cards. That made the mechanism more defensible
 but also made the visitor learn the simulator before learning the paradox. I finally
 separated realism from clarity and deleted the staged interface. The delivered page has
-one range slider and two stated rules: a fixed road takes 45 minutes; a narrow road takes
-one minute per 100 cars. Moving the slider updates every route time and prints each
-equation. At 4,000 shortcut users, **40 + 40 = 80 minutes**, compared with the original
-**20 + 45 = 65**. Browser tests check the exact start, midpoint and endpoint arithmetic,
+two stated rules, one range slider, forty visible driver groups and one personal route
+choice. Moving the slider updates every route time and prints each equation. At 4,000
+shortcut users, **40 + 40 = 80 minutes**, compared with the original **20 + 45 = 65**.
+The personal choice then exposes the tension: staying on the shortcut takes 80 minutes,
+while leaving alone takes 85. Browser tests check the exact arithmetic, driver movement,
 phone layout, keyboard use and reduced motion
-([`5977880...41799c3`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-SharmaKunal14/compare/5977880...41799c3)).
+([`5977880...53b0846`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-SharmaKunal14/compare/5977880...53b0846)).
 
 Rules are in `CLAUDE.md`, prior commitments in `PLAN.md`, and the unedited working
 record is in `notes/log.md`.

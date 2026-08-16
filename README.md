@@ -1,8 +1,9 @@
 # One More Road
 
-One More Road is a one-slider explanation of Braess's paradox. The visitor moves
-4,000 drivers onto a shortcut and immediately sees the old-route time, shortcut time,
-town average and every arithmetic step update.
+One More Road is a transparent, interactive explanation of Braess's paradox. The
+visitor moves 4,000 drivers onto a shortcut, watches forty driver groups change route,
+and chooses a personal route to compare it with the result for the whole town. Every
+travel time and arithmetic step updates immediately.
 
 The presented network uses two explicit classroom rules:
 
@@ -50,9 +51,9 @@ mise exec -- pnpm check:evidence
 
 | Area | Responsibility |
 | --- | --- |
-| `index.html` | Semantic page, road diagram, slider, calculations and reveal |
-| `styles.css` | Responsive editorial layout, diagram styling and reduced motion |
-| `main.ts` | Reads one range value and updates every visible result |
+| `index.html` | Semantic page, road diagram, slider, personal choice, calculations and reveal |
+| `styles.css` | Responsive editorial layout, moving driver groups and reduced motion |
+| `main.ts` | Reads both direct interactions and updates every visible result |
 | `src/braess.ts` | Pure, deterministic textbook-network calculation |
 | `spec/braess.test.ts` | Exact arithmetic, bounds and individual-choice invariant |
 | `spec/page.test.ts` | Scope, copy, accessibility, delivery and assignment contracts |
