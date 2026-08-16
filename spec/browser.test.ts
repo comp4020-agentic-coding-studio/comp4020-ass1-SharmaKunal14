@@ -55,7 +55,18 @@ beforeAll(async () => {
   const address = server.address();
   if (address === null || typeof address === "string") throw new Error("no server address");
   origin = `http://127.0.0.1:${address.port}/`;
-  browser = await chromium.launch();
+  // Without these, a headless CI runner can treat the page as occluded and
+  // throttle/suspend the CSS transitions this suite polls with
+  // waitForFunction, hanging until the vitest timeout instead of a few
+  // hundred milliseconds — the same "backgrounded tab" trap noted in
+  // CLAUDE.md's simulator lessons, here on the browser side.
+  browser = await chromium.launch({
+    args: [
+      "--disable-backgrounding-occluded-windows",
+      "--disable-renderer-backgrounding",
+      "--disable-background-timer-throttling",
+    ],
+  });
 }, 90_000);
 
 afterAll(async () => {
