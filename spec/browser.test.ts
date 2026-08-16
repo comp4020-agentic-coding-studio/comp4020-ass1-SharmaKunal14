@@ -118,6 +118,15 @@ describe("transparent desktop experiment", () => {
     expect(await page.locator('.driver-dot[data-route="bottom"]').count()).toBe(40);
     expect(await page.locator('.driver-dot[data-route="shortcut"]').count()).toBe(0);
     expect(await page.locator('input[name="prediction"]').count()).toBe(3);
+    const predictionLayout = await page.locator(".prediction").evaluate((fieldset) => {
+      const legend = fieldset.querySelector("legend");
+      if (legend === null) throw new Error("missing prediction legend");
+      return {
+        fieldsetTop: fieldset.getBoundingClientRect().top,
+        legendTop: legend.getBoundingClientRect().top,
+      };
+    });
+    expect(predictionLayout.legendTop).toBeGreaterThan(predictionLayout.fieldsetTop + 8);
     expect(await page.locator("#experiment").evaluate((element) => element.getBoundingClientRect().top)).toBeLessThan(DESKTOP.height);
     expect(await text(page, "[data-average-time]")).toBe("65");
     expect(await page.locator("[data-narrow-math]").isVisible()).toBe(true);

@@ -179,13 +179,17 @@ h1 {
 }
 
 .prediction legend {
-  padding: 0 0.35rem;
+  width: 100%;
+  margin: 0 0 0.35rem;
+  padding: 0;
+  float: left;
   color: var(--gold);
   font-size: 0.72rem;
   font-weight: 800;
 }
 
 .prediction p {
+  clear: both;
   margin: 0.15rem 0 0.8rem;
   color: #dce2df;
   font-size: 0.7rem;
