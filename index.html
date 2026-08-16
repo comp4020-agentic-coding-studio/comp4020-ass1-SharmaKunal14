@@ -25,22 +25,50 @@
     <main id="top">
       <section class="intro" aria-labelledby="page-title">
         <div class="intro__copy">
-          <p class="eyebrow">A traffic puzzle you control</p>
+          <p class="eyebrow">A controlled traffic experiment</p>
           <h1 id="page-title">Can one shortcut slow the same 4,000 drivers?</h1>
           <p class="intro__lead">
-            Nothing else changes: same drivers, same roads, same rules. Move the crowd and
-            watch every calculation update.
+            Redistribute one fixed crowd between three routes. Your task is to find the
+            quickest result for the whole town.
           </p>
           <a class="start-link" href="#experiment">Try the experiment <span aria-hidden="true">↓</span></a>
         </div>
 
-        <div class="intro__setup">
-          <div class="rules" aria-label="The three road rules">
-            <article><span>1</span><strong>Grey road</strong><p>Always 45 minutes</p></article>
-            <article><span>2</span><strong>Narrow road</strong><p>1 minute per 100 cars</p></article>
-            <article><span>3</span><strong>Middle connector</strong><p>Adds 0 minutes in this model</p></article>
+        <section class="intro__setup" aria-labelledby="setup-title">
+          <header class="setup-header">
+            <p class="eyebrow">Before you begin</p>
+            <h2 class="setup-title" id="setup-title">Know the experiment.</h2>
+            <p class="setup-description">Only one input is yours to change. Everything else stays locked.</p>
+          </header>
+
+          <div class="setup-summary" aria-label="Experiment setup">
+            <article class="setup-summary__item">
+              <span>Fixed</span>
+              <strong>4,000 drivers</strong>
+              <p class="setup-summary__copy">Same start and destination. Nobody is added or removed.</p>
+            </article>
+            <article class="setup-summary__item">
+              <span>You control</span>
+              <strong>Shortcut use</strong>
+              <p class="setup-summary__copy">One slider moves drivers from the two old routes onto the shortcut.</p>
+            </article>
+            <article class="setup-summary__item setup-summary__item--last">
+              <span>Your goal</span>
+              <strong>Lowest town average</strong>
+              <p class="setup-summary__copy">Watch every route time recalculate as the crowd moves.</p>
+            </article>
           </div>
-        </div>
+
+          <div class="rules-heading">
+            <span>Three time rules</span>
+            <p class="rules-heading__copy">These formulas never change.</p>
+          </div>
+          <div class="rules" aria-label="The three road rules">
+            <article><span>1</span><strong>Grey road</strong><p>Always takes 45 minutes</p></article>
+            <article><span>2</span><strong>Narrow road</strong><p>Takes 1 minute per 100 drivers</p></article>
+            <article><span>3</span><strong>Middle connector</strong><p>Takes 0 minutes in this simplified model</p></article>
+          </div>
+        </section>
       </section>
 
       <section class="experiment" id="experiment" aria-labelledby="experiment-title">

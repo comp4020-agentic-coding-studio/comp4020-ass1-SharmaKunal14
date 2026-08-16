@@ -54,10 +54,20 @@ describe("transparent direct interactions", () => {
     const copy = (doc.body.textContent ?? "").replace(/\s+/g, " ");
     const rules = [...doc.querySelectorAll(".rules article")].map((rule) => rule.textContent?.replace(/\s+/g, " "));
     expect(rules).toEqual([
-      "1Grey roadAlways 45 minutes",
-      "2Narrow road1 minute per 100 cars",
-      "3Middle connectorAdds 0 minutes in this model",
+      "1Grey roadAlways takes 45 minutes",
+      "2Narrow roadTakes 1 minute per 100 drivers",
+      "3Middle connectorTakes 0 minutes in this simplified model",
     ]);
+    const setup = [...doc.querySelectorAll(".setup-summary article")].map((item) =>
+      item.textContent?.replace(/\s+/g, " ").trim(),
+    );
+    expect(setup).toEqual([
+      "Fixed 4,000 drivers Same start and destination. Nobody is added or removed.",
+      "You control Shortcut use One slider moves drivers from the two old routes onto the shortcut.",
+      "Your goal Lowest town average Watch every route time recalculate as the crowd moves.",
+    ]);
+    expect(doc.querySelector(".intro__setup")?.getAttribute("aria-labelledby")).toBe("setup-title");
+    expect(doc.querySelector(".setup-summary")?.getAttribute("aria-label")).toBe("Experiment setup");
     expect(copy).toContain("Same 4,000 drivers = 80 dots throughout");
     expect(copy).toContain("No dots are added or removed");
     expect(copy).toContain("Each 100-driver slider step moves two existing dots");

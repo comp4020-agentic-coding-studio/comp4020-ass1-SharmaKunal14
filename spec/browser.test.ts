@@ -185,6 +185,10 @@ describe("transparent desktop experiment", () => {
     expect(await page.locator('.driver-dot[data-route="shortcut"]').count()).toBe(0);
     expect(await page.locator('.driver-dot[data-origin="top"][data-route="top"]').count()).toBe(40);
     expect(await page.locator('.driver-dot[data-origin="bottom"][data-route="bottom"]').count()).toBe(40);
+    expect(await page.locator(".setup-summary article").count()).toBe(3);
+    expect(await text(page, ".setup-summary article:nth-child(1)")).toContain("Fixed 4,000 drivers");
+    expect(await text(page, ".setup-summary article:nth-child(2)")).toContain("You control Shortcut use");
+    expect(await text(page, ".setup-summary article:nth-child(3)")).toContain("Your goal Lowest town average");
     expect(await text(page, "[data-top-route-ledger]")).toBe("2,000 drivers · 40 dots");
     expect(await text(page, "[data-shortcut-route-ledger]")).toBe("0 drivers · 0 dots");
     expect(await text(page, "[data-bottom-route-ledger]")).toBe("2,000 drivers · 40 dots");
