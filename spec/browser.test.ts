@@ -117,6 +117,11 @@ describe("transparent desktop experiment", () => {
     expect(await page.locator('.driver-dot[data-route="top"]').count()).toBe(40);
     expect(await page.locator('.driver-dot[data-route="bottom"]').count()).toBe(40);
     expect(await page.locator('.driver-dot[data-route="shortcut"]').count()).toBe(0);
+    expect(await page.locator('.driver-dot[data-origin="top"][data-route="top"]').count()).toBe(40);
+    expect(await page.locator('.driver-dot[data-origin="bottom"][data-route="bottom"]').count()).toBe(40);
+    expect(await text(page, "[data-top-route-ledger]")).toBe("2,000 drivers · 40 dots");
+    expect(await text(page, "[data-shortcut-route-ledger]")).toBe("0 drivers · 0 dots");
+    expect(await text(page, "[data-bottom-route-ledger]")).toBe("2,000 drivers · 40 dots");
     expect(await page.locator('input[name="prediction"]').count()).toBe(3);
     const predictionLayout = await page.locator(".prediction").evaluate((fieldset) => {
       const legend = fieldset.querySelector("legend");
@@ -150,6 +155,31 @@ describe("transparent desktop experiment", () => {
     expect(await page.locator('.driver-dot[data-route="top"]').count()).toBe(20);
     expect(await page.locator('.driver-dot[data-route="bottom"]').count()).toBe(20);
     expect(await page.locator('.driver-dot[data-route="shortcut"]').count()).toBe(40);
+    expect(await page.locator('.driver-dot[data-origin="top"][data-route="shortcut"]').count()).toBe(20);
+    expect(await page.locator('.driver-dot[data-origin="bottom"][data-route="shortcut"]').count()).toBe(20);
+    expect(await text(page, "[data-top-route-ledger]")).toBe("1,000 drivers · 20 dots");
+    expect(await text(page, "[data-shortcut-route-ledger]")).toBe("2,000 drivers · 40 dots");
+    expect(await text(page, "[data-bottom-route-ledger]")).toBe("1,000 drivers · 20 dots");
+
+    healthy(observed);
+    await page.close();
+  });
+
+  it("moves two existing dots for each 100-driver step", async () => {
+    const observed = await open(DESKTOP);
+    const { page } = observed;
+    const dotCountBefore = await page.locator(".driver-dot").count();
+
+    await setUsers(page, 100);
+
+    expect(await page.locator(".driver-dot").count()).toBe(dotCountBefore);
+    expect(await page.locator('.driver-dot[data-origin="top"][data-route="top"]').count()).toBe(39);
+    expect(await page.locator('.driver-dot[data-origin="bottom"][data-route="bottom"]').count()).toBe(39);
+    expect(await page.locator('.driver-dot[data-origin="top"][data-route="shortcut"]').count()).toBe(1);
+    expect(await page.locator('.driver-dot[data-origin="bottom"][data-route="shortcut"]').count()).toBe(1);
+    expect(await text(page, "[data-top-route-ledger]")).toBe("1,950 drivers · 39 dots");
+    expect(await text(page, "[data-shortcut-route-ledger]")).toBe("100 drivers · 2 dots");
+    expect(await text(page, "[data-bottom-route-ledger]")).toBe("1,950 drivers · 39 dots");
 
     healthy(observed);
     await page.close();

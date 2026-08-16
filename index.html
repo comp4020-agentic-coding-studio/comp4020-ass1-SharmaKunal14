@@ -108,8 +108,8 @@
             </g>
           </svg>
           <p class="network-note">
-            <strong>Same 4,000 drivers throughout.</strong> Grey roads stay fixed; red roads slow
-            as more cars use them. Each dot represents 50 drivers.
+            <strong>Same 4,000 drivers = 80 dots throughout.</strong> Each dot represents 50 drivers.
+            No dots are added or removed.
           </p>
         </div>
 
@@ -136,6 +136,23 @@
                 aria-describedby="slider-help"
               />
               <div class="range-labels" aria-hidden="true"><span>none</span><span>half</span><span>all</span></div>
+              <dl class="route-ledger" aria-label="Where all 80 dots are now">
+                <div class="route-ledger__route">
+                  <dt>Top old route</dt>
+                  <dd><output data-top-route-ledger>2,000 drivers · 40 dots</output></dd>
+                </div>
+                <div class="route-ledger__route route-ledger__shortcut">
+                  <dt>Shortcut</dt>
+                  <dd><output data-shortcut-route-ledger>0 drivers · 0 dots</output></dd>
+                </div>
+                <div class="route-ledger__route">
+                  <dt>Bottom old route</dt>
+                  <dd><output data-bottom-route-ledger>2,000 drivers · 40 dots</output></dd>
+                </div>
+              </dl>
+              <p class="dot-rule">
+                Each 100-driver slider step moves two existing dots—one from each old route—onto the shortcut.
+              </p>
               <output class="discovery" data-discovery>Start moving drivers onto the shortcut.</output>
               <p id="slider-help" class="decision" data-decision>
                 The shortcut takes 40 minutes, so the first driver wants to switch.
@@ -143,12 +160,12 @@
             </div>
 
             <section class="town-comparison" data-town-comparison data-state="same" aria-label="Town average compared with before">
-              <div>
+              <div class="town-comparison__side">
                 <span class="town-comparison__label">Before the shortcut</span>
                 <strong class="town-comparison__value">65 min</strong>
               </div>
               <span class="town-comparison__arrow" aria-hidden="true">→</span>
-              <div>
+              <div class="town-comparison__side">
                 <span class="town-comparison__label">Town average now</span>
                 <strong class="town-comparison__value"><output data-average-time>65</output> min</strong>
                 <small data-average-change>same as before</small>

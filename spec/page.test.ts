@@ -49,8 +49,10 @@ describe("transparent direct interactions", () => {
       "2Narrow road1 minute per 100 cars",
       "3Middle connectorAdds 0 minutes in this model",
     ]);
-    expect(copy).toContain("Same 4,000 drivers throughout");
-    expect(copy).toContain("Each dot represents 50 drivers");
+    expect(copy).toContain("Same 4,000 drivers = 80 dots throughout");
+    expect(copy).toContain("No dots are added or removed");
+    expect(copy).toContain("Each 100-driver slider step moves two existing dots");
+    expect(doc.querySelector(".route-ledger")?.getAttribute("aria-label")).toBe("Where all 80 dots are now");
     expect(copy).toContain("find the lowest town average");
     expect(copy).toContain("Before the shortcut 65 min");
     expect(copy).toContain("Where the current times come from");
@@ -83,6 +85,7 @@ describe("transparent direct interactions", () => {
     }
     expect(mainSource).toContain('from "./src/braess"');
     expect(mainSource).toContain("const DRIVERS_PER_DOT = 50");
+    expect(mainSource).toContain('dot.dataset.origin = index < DOTS_PER_OLD_ROUTE ? "top" : "bottom"');
     expect(mainSource).toContain("BRAESS_LANDMARKS");
     expect(mainSource).toContain("BEST_RESULT.individualSavingMinutes");
     expect(mainSource).not.toContain("setTimeout");

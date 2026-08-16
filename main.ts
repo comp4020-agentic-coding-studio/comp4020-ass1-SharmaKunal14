@@ -15,6 +15,9 @@ function need<T extends Element>(selector: string): T {
 
 const input = need<HTMLInputElement>("#shortcut-users");
 const shortcutOutput = need<HTMLOutputElement>("[data-shortcut-output]");
+const topRouteLedger = need<HTMLOutputElement>("[data-top-route-ledger]");
+const shortcutRouteLedger = need<HTMLOutputElement>("[data-shortcut-route-ledger]");
+const bottomRouteLedger = need<HTMLOutputElement>("[data-bottom-route-ledger]");
 const averageTime = need<HTMLOutputElement>("[data-average-time]");
 const averageChange = need<HTMLElement>("[data-average-change]");
 const decision = need<HTMLElement>("[data-decision]");
@@ -51,14 +54,18 @@ const number = new Intl.NumberFormat("en-AU", { maximumFractionDigits: 1 });
 const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
 const DRIVERS_PER_DOT = 50;
 const DOTS = TOTAL_DRIVERS / DRIVERS_PER_DOT;
+const DOTS_PER_OLD_ROUTE = DOTS / 2;
 const BEST_RESULT = calculateBraess(BRAESS_LANDMARKS.bestShortcutUsers);
-const driverDots = Array.from({ length: DOTS }, () => {
+const driverDots = Array.from({ length: DOTS }, (_, index) => {
   const dot = document.createElementNS(SVG_NAMESPACE, "circle");
   dot.setAttribute("r", "5");
   dot.classList.add("driver-dot");
+  dot.dataset.origin = index < DOTS_PER_OLD_ROUTE ? "top" : "bottom";
   driverLayer.append(dot);
   return dot;
 });
+const topOriginDots = driverDots.slice(0, DOTS_PER_OLD_ROUTE);
+const bottomOriginDots = driverDots.slice(DOTS_PER_OLD_ROUTE);
 let selectedPrediction: "faster" | "same" | "slower" | null = null;
 let roadClosed = false;
 let resultRevealed = false;
@@ -85,14 +92,19 @@ function placeDots(
   }
 }
 
-function renderDriverDots(shortcutUsers: number): void {
-  const shortcutDotCount = Math.min(DOTS, Math.max(0, Math.round(shortcutUsers / DRIVERS_PER_DOT)));
-  const remainingDots = DOTS - shortcutDotCount;
-  const topEnd = Math.ceil(remainingDots / 2);
-  const bottomEnd = remainingDots;
-  placeDots(driverDots.slice(0, topEnd), topFlow, "top");
-  placeDots(driverDots.slice(topEnd, bottomEnd), bottomFlow, "bottom");
-  placeDots(driverDots.slice(bottomEnd), shortcutFlow, "shortcut");
+function renderDriverDots(shortcutUsers: number, usersPerOldRoute: number): void {
+  const oldRouteDots = usersPerOldRoute / DRIVERS_PER_DOT;
+  const topDotsOnShortcut = topOriginDots.slice(oldRouteDots);
+  const bottomDotsOnShortcut = bottomOriginDots.slice(oldRouteDots);
+
+  placeDots(topOriginDots.slice(0, oldRouteDots), topFlow, "top");
+  placeDots(bottomOriginDots.slice(0, oldRouteDots), bottomFlow, "bottom");
+  placeDots([...topDotsOnShortcut, ...bottomDotsOnShortcut], shortcutFlow, "shortcut");
+
+  topRouteLedger.value = `${drivers(usersPerOldRoute)} drivers · ${drivers(oldRouteDots)} dots`;
+  shortcutRouteLedger.value =
+    `${drivers(shortcutUsers)} drivers · ${drivers(shortcutUsers / DRIVERS_PER_DOT)} dots`;
+  bottomRouteLedger.value = `${drivers(usersPerOldRoute)} drivers · ${drivers(oldRouteDots)} dots`;
 }
 
 function renderDiscovery(result: BraessResult): void {
@@ -161,6 +173,7 @@ function render(result: BraessResult): void {
   const {
     shortcutUsers,
     oldRouteUsers,
+    usersPerOldRoute,
     narrowRoadUsers,
     narrowRoadMinutes,
     oldRouteMinutes,
@@ -179,7 +192,7 @@ function render(result: BraessResult): void {
   for (const label of narrowLabels) {
     label.textContent = `${drivers(narrowRoadUsers)} cars → ${minutes(narrowRoadMinutes)} min`;
   }
-  renderDriverDots(shortcutUsers);
+  renderDriverDots(shortcutUsers, usersPerOldRoute);
   renderDiscovery(result);
   renderPredictionFeedback();
 
