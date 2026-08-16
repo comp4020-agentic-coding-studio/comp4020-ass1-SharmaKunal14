@@ -211,7 +211,13 @@ describe("transparent desktop experiment", () => {
     expect(await page.locator("button").count()).toBe(13);
     const reset = page.locator("[data-reset-simulation]");
     expect(await reset.isDisabled()).toBe(true);
-    expect(await reset.getAttribute("aria-label")).toBe("Reset simulation");
+    expect(await reset.getAttribute("aria-label")).toBe("Reset experiment");
+    expect(await text(page, "[data-reset-simulation]")).toBe("↺ Reset experiment");
+    expect(await page.locator(".intro__actions > .start-link").count()).toBe(2);
+    const actionTops = await page.locator(".intro__actions > .start-link").evaluateAll((actions) =>
+      actions.map((action) => action.getBoundingClientRect().top),
+    );
+    expect(actionTops[0]).toBeCloseTo(actionTops[1], 0);
     const resetAppearance = await reset.evaluate((element) => {
       const style = getComputedStyle(element);
       const box = element.getBoundingClientRect();
@@ -670,6 +676,10 @@ describe("phone and keyboard", () => {
     const observed = await open(PHONE);
     const { page } = observed;
     expect(await page.locator("[data-reset-simulation]").isVisible()).toBe(true);
+    const actionTops = await page.locator(".intro__actions > .start-link").evaluateAll((actions) =>
+      actions.map((action) => action.getBoundingClientRect().top),
+    );
+    expect(actionTops[0]).toBeCloseTo(actionTops[1], 0);
     await noOverflow(page);
     await setUsers(page, 2_000);
     await noOverflow(page);

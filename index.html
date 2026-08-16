@@ -31,7 +31,12 @@
             Redistribute one fixed crowd between three routes. Your task is to find the
             quickest result for the whole town.
           </p>
-          <a class="start-link" href="#experiment">Try the experiment <span aria-hidden="true">↓</span></a>
+          <div class="intro__actions">
+            <a class="start-link" href="#experiment">Try the experiment <span aria-hidden="true">↓</span></a>
+            <button class="start-link reset-simulation" type="button" data-reset-simulation aria-label="Reset experiment" disabled>
+              <span aria-hidden="true">↺</span> Reset experiment
+            </button>
+          </div>
         </div>
 
         <section class="intro__setup" aria-labelledby="setup-title">
@@ -184,12 +189,7 @@
         <div class="calculator">
           <section class="explore-card" aria-labelledby="challenge-title">
             <header class="challenge">
-              <div>
-                <p class="step-label" data-challenge-step>Step 1 · Find the best point</p>
-                <button class="start-link reset-simulation" type="button" data-reset-simulation aria-label="Reset simulation" disabled>
-                  <span aria-hidden="true">↺</span> Reset
-                </button>
-              </div>
+              <p class="step-label" data-challenge-step>Step 1 · Find the best point</p>
               <h3 id="challenge-title" data-challenge-title>Can you make the town as fast as possible?</h3>
               <p data-challenge-copy>Drag slowly and watch the town average. Stop when it reaches its lowest value.</p>
             </header>

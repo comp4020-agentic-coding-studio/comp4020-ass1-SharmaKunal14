@@ -165,6 +165,12 @@ h1 {
   text-transform: uppercase;
 }
 
+.intro__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
 .intro__setup {
   border: 1px solid var(--rule);
   background: var(--paper);
@@ -607,15 +613,10 @@ body[data-road-closed="true"] .shortcut-label {
 }
 
 .challenge {
-  position: relative;
   padding: var(--space-4);
 }
 
 .reset-simulation {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  margin: 0;
   padding: 0.4rem 0.55rem;
   border: 1px solid;
   background: none;
