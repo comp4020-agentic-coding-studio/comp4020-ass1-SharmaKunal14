@@ -554,3 +554,17 @@ groups (`1,700 + 600 + 1,700 = 4,000`). The named map roads show overlapping pas
 loads, and the connector states that the same shortcut group uses both narrow roads. A
 browser contract fixes the 600-driver example, checks every label stays inside the SVG,
 and preserves the unchanged 80-dot population.
+
+## Mon 17 Aug — the map stated its direction and reused drivers
+
+The corrected route ledger still left one ambiguity on the map: `2,350` beside each
+narrow road and `700` beside the connector could look like three populations to add.
+The diagram also had no arrows, so a reverse bottom-to-top connector route looked
+possible even though the model never allows it.
+
+I made the directed topology explicit. Five arrows now show every road moving from Home
+to Work, with the connector only top to bottom. Each narrow-road label exposes its own
+breakdown (`1,650 old + same 700 shortcut = 2,350 passing`) and the connector note is
+split into two short lines in the central whitespace. Static and browser checks bind the
+one permitted shortcut path, the overlapping arithmetic, label bounds and both marking
+viewports.

@@ -241,8 +241,15 @@ Never present route membership and road load as if they are additive peers. The
 top, shortcut and bottom route groups contain unique drivers and must sum to
 4,000. A narrow-road label is instead a pass-through count: it combines the old
 route using that road with the same shortcut group that also passes through the
-other narrow road. Name every road, use “pass here” for road loads, and state
-plainly that those overlapping road labels must not be added.
+other narrow road. Name every road, show the old-route-plus-shortcut breakdown,
+use “passing” for road loads, and state plainly that those overlapping road
+labels must not be added.
+
+The classroom network is directed and one-way from Home to Work. The middle
+connector runs only from the top junction to the bottom junction, so there is
+exactly one shortcut path: top narrow road → connector → bottom narrow road.
+Keep direction arrows and this topology statement visible; never imply a reverse
+bottom-to-top shortcut route exists.
 
 The opening must establish the experiment before presenting its formulas. Keep
 three facts explicit and visually distinct: **Fixed** means the same 4,000 drivers
