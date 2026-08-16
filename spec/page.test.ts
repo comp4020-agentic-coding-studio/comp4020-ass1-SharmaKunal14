@@ -36,6 +36,7 @@ describe("transparent direct interactions", () => {
     expect(copy).toContain("Nothing is hidden");
     expect(copy).toContain("The quickest choice for each person can create a slower result for everyone");
     expect(copy).toContain("Each moving dot represents 50 drivers");
+    expect(copy).toContain("darker and wider means more congestion");
     expect(copy).toContain("Find the lowest town average");
     expect(copy).toContain("Before the shortcut 65 min");
     expect(copy).toContain("highlighted YOU marker trace your option");

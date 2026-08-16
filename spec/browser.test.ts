@@ -149,6 +149,7 @@ describe("transparent desktop experiment", () => {
     expect(await page.locator("[data-you-trace]").getAttribute("data-route")).toBe("old");
     expect(await page.locator("[data-you-driver]").getAttribute("data-route")).toBe("old");
     expect(await page.locator("[data-you-driver]").isVisible()).toBe(true);
+    await page.waitForFunction(() => Number.parseFloat(getComputedStyle(document.querySelector("[data-driver-layer]")!).opacity) < 0.3);
     expect(Number(await page.locator("[data-driver-layer]").evaluate((element) => getComputedStyle(element).opacity))).toBeLessThan(1);
     await page.locator('input[name="personal-route"][value="shortcut"]').check();
     expect(await text(page, "[data-personal-result]")).toContain(
@@ -202,7 +203,11 @@ describe("transparent desktop experiment", () => {
   it("closes and reopens the shortcut as a visible reversal", async () => {
     const observed = await open(DESKTOP);
     const { page } = observed;
+    const initialRoadWidth = Number.parseFloat(await page.locator(".road--narrow").first().evaluate((element) => getComputedStyle(element).strokeWidth));
     await setUsers(page, 4_000);
+    await page.waitForFunction(() => Number.parseFloat(getComputedStyle(document.querySelector(".road--narrow")!).strokeWidth) > 19);
+    const crowdedRoadWidth = Number.parseFloat(await page.locator(".road--narrow").first().evaluate((element) => getComputedStyle(element).strokeWidth));
+    expect(crowdedRoadWidth).toBeGreaterThan(initialRoadWidth);
     await page.locator("[data-toggle-road]").click();
     expect(await page.locator("body").getAttribute("data-road-closed")).toBe("true");
     expect(await page.locator("#shortcut-users").isDisabled()).toBe(true);
@@ -213,6 +218,9 @@ describe("transparent desktop experiment", () => {
     expect(await page.locator('.driver-dot[data-route="bottom"]').count()).toBe(40);
     expect(await page.locator('.driver-dot[data-route="shortcut"]').count()).toBe(0);
     expect(await page.locator(".times__shortcut").isHidden()).toBe(true);
+    await page.waitForFunction(() => Number.parseFloat(getComputedStyle(document.querySelector(".road--narrow")!).strokeWidth) < 9.01);
+    const clearedRoadWidth = Number.parseFloat(await page.locator(".road--narrow").first().evaluate((element) => getComputedStyle(element).strokeWidth));
+    expect(clearedRoadWidth).toBeCloseTo(initialRoadWidth, 1);
 
     await page.locator("[data-toggle-road]").click();
     expect(await page.locator("body").getAttribute("data-road-closed")).toBe("false");

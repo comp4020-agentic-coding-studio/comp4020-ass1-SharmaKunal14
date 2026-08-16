@@ -323,6 +323,10 @@ h2 {
 .road--narrow {
   stroke: var(--rust);
   stroke-opacity: calc(0.35 + var(--shortcut-share) * 0.65);
+  stroke-width: calc(9px + var(--shortcut-share) * 11px);
+  transition:
+    stroke-opacity 180ms ease,
+    stroke-width 180ms ease;
 }
 
 .road--shortcut {
