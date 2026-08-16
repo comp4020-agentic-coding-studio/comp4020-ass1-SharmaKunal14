@@ -27,10 +27,12 @@ describe("transparent direct interactions", () => {
     expect(sliders[0]).toMatchObject({ min: "0", max: "4000", step: "100", value: "0" });
   });
 
-  it("states both rules before asking for interaction", () => {
+  it("states all three rules before asking for interaction", () => {
     const copy = (doc.body.textContent ?? "").replace(/\s+/g, " ");
     expect(copy).toContain("The grey road always takes 45 minutes");
     expect(copy).toContain("The narrow road takes 1 minute per 100 cars");
+    expect(copy).toContain("The short middle connector adds 0 minutes");
+    expect(doc.querySelectorAll(".rules article")).toHaveLength(3);
     expect(copy).toContain("Every shortcut trip uses both narrow roads");
     expect(copy).toContain("nothing random is happening behind the scenes");
     expect(copy).toContain("Nothing is hidden");
@@ -49,9 +51,9 @@ describe("transparent direct interactions", () => {
   });
 
   it("contains the complete initial arithmetic and withholds the reveal", () => {
-    expect(doc.querySelector("[data-narrow-math]")?.textContent).toContain("(4,000 + 0) ÷ 2 = 2,000");
+    expect(doc.querySelector("[data-narrow-math]")?.textContent).toContain("0 + (4,000 ÷ 2) = 2,000");
     expect(doc.querySelector("[data-old-math]")?.textContent).toContain("20 + 45 = 65 min");
-    expect(doc.querySelector("[data-shortcut-math]")?.textContent).toContain("20 + 20 = 40 min");
+    expect(doc.querySelector("[data-shortcut-math]")?.textContent).toContain("20 + 0 + 20 = 40 min");
     expect(doc.querySelector("[data-reveal]")?.hasAttribute("hidden")).toBe(true);
   });
 

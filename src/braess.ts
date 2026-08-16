@@ -1,5 +1,6 @@
 export const TOTAL_DRIVERS = 4_000;
 export const FIXED_ROAD_MINUTES = 45;
+export const SHORTCUT_LINK_MINUTES = 0;
 export const CARS_PER_MINUTE = 100;
 export const BASELINE_MINUTES = 65;
 
@@ -35,7 +36,7 @@ export function calculateBraess(requestedShortcutUsers: number): BraessResult {
   const narrowRoadUsers = usersPerOldRoute + shortcutUsers;
   const narrowRoadMinutes = narrowRoadUsers / CARS_PER_MINUTE;
   const oldRouteMinutes = FIXED_ROAD_MINUTES + narrowRoadMinutes;
-  const shortcutRouteMinutes = narrowRoadMinutes * 2;
+  const shortcutRouteMinutes = narrowRoadMinutes * 2 + SHORTCUT_LINK_MINUTES;
   const averageMinutes =
     (oldRouteUsers * oldRouteMinutes + shortcutUsers * shortcutRouteMinutes) / TOTAL_DRIVERS;
 

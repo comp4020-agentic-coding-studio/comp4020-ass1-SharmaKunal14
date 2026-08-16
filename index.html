@@ -19,7 +19,7 @@
       <nav aria-label="Page">
         <a class="brand" href="#top" aria-label="One More Road, start">One More Road</a>
       </nav>
-      <p>One slider. Two rules. No hidden simulation.</p>
+      <p>One slider. Three rules. Every number shown.</p>
     </header>
 
     <main id="top">
@@ -27,11 +27,11 @@
         <p class="eyebrow">A traffic puzzle you can calculate yourself</p>
         <h1 id="page-title">Can a shortcut make everyone slower?</h1>
         <p class="intro__lead">
-          Move drivers onto the new road. Every time below comes from just two rules—nothing
+          Move drivers onto the new road. Every time below comes from just three rules—nothing
           random is happening behind the scenes.
         </p>
 
-        <div class="rules" aria-label="The two road rules">
+        <div class="rules" aria-label="The three road rules">
           <article>
             <span>Rule 1</span>
             <strong>The grey road always takes 45 minutes.</strong>
@@ -39,6 +39,10 @@
           <article>
             <span>Rule 2</span>
             <strong>The narrow road takes 1 minute per 100 cars using it.</strong>
+          </article>
+          <article>
+            <span>Rule 3</span>
+            <strong>The short middle connector adds 0 minutes in this classroom model.</strong>
           </article>
         </div>
 
@@ -108,7 +112,7 @@
               <text class="road-value" data-narrow-label x="600" y="431">2,000 cars → 20 min</text>
             </g>
             <g class="shortcut-label">
-              <text x="450" y="246">new shortcut</text>
+              <text x="450" y="246">0 min connector</text>
               <text data-shortcut-count x="450" y="275">0 drivers</text>
             </g>
           </svg>
@@ -199,10 +203,10 @@
             <summary>Show how these numbers are calculated</summary>
             <p class="math__note">Nothing is hidden. These five lines update with the slider.</p>
             <ol>
-              <li><span>Cars on each narrow road</span><code data-narrow-math>(4,000 + 0) ÷ 2 = 2,000</code></li>
+              <li><span>Cars on each narrow road</span><code data-narrow-math>0 + (4,000 ÷ 2) = 2,000</code></li>
               <li><span>Time on each narrow road</span><code data-narrow-time-math>2,000 ÷ 100 = 20 min</code></li>
               <li><span>Old route</span><code data-old-math>20 + 45 = 65 min</code></li>
-              <li><span>Shortcut route</span><code data-shortcut-math>20 + 20 = 40 min</code></li>
+              <li><span>Shortcut route</span><code data-shortcut-math>20 + 0 + 20 = 40 min</code></li>
               <li><span>Average of all 4,000 trips</span><code data-average-math>4,000 × 65 ÷ 4,000 = 65 min</code></li>
             </ol>
           </details>

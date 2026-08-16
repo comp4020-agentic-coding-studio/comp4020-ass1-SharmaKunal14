@@ -2,12 +2,17 @@ import { describe, expect, it } from "vitest";
 import {
   BASELINE_MINUTES,
   BRAESS_LANDMARKS,
+  SHORTCUT_LINK_MINUTES,
   TOTAL_DRIVERS,
   calculateBraess,
   findBraessLandmarks,
 } from "../src/braess.ts";
 
 describe("the transparent Braess calculation", () => {
+  it("states the connector assumption used by every shortcut trip", () => {
+    expect(SHORTCUT_LINK_MINUTES).toBe(0);
+  });
+
   it("starts with two balanced old routes", () => {
     expect(calculateBraess(0)).toMatchObject({
       shortcutUsers: 0,

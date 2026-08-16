@@ -135,7 +135,7 @@ describe("transparent desktop experiment", () => {
     expect(await text(page, "[data-old-time]")).toBe("75");
     expect(await text(page, "[data-shortcut-time]")).toBe("60");
     expect(await text(page, "[data-average-time]")).toBe("67.5");
-    expect(await text(page, "[data-narrow-math]")).toBe("(4,000 + 2,000) ÷ 2 = 3,000");
+    expect(await text(page, "[data-narrow-math]")).toBe("2,000 + (2,000 ÷ 2) = 3,000");
     expect(await text(page, "[data-average-math]")).toBe("(2,000 × 75 + 2,000 × 60) ÷ 4,000 = 67.5 min");
     expect(await text(page, "[data-decision]")).toContain("Switching right now looks 15 minutes better");
     expect(await page.locator('.driver-dot[data-route="top"]').count()).toBe(20);

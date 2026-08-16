@@ -1,6 +1,7 @@
 import {
   BASELINE_MINUTES,
   BRAESS_LANDMARKS,
+  SHORTCUT_LINK_MINUTES,
   TOTAL_DRIVERS,
   calculateBraess,
   type BraessResult,
@@ -272,10 +273,13 @@ function render(result: BraessResult): void {
       `${minutes(oldRouteMinutes)}. So nobody leaves—even though everyone used to take 65.`;
   }
 
-  narrowMath.textContent = `(${drivers(TOTAL_DRIVERS)} + ${drivers(shortcutUsers)}) ÷ 2 = ${drivers(narrowRoadUsers)}`;
+  narrowMath.textContent =
+    `${drivers(shortcutUsers)} + (${drivers(oldRouteUsers)} ÷ 2) = ${drivers(narrowRoadUsers)}`;
   narrowTimeMath.textContent = `${drivers(narrowRoadUsers)} ÷ 100 = ${minutes(narrowRoadMinutes)} min`;
   oldMath.textContent = `${minutes(narrowRoadMinutes)} + 45 = ${minutes(oldRouteMinutes)} min`;
-  shortcutMath.textContent = `${minutes(narrowRoadMinutes)} + ${minutes(narrowRoadMinutes)} = ${minutes(shortcutRouteMinutes)} min`;
+  shortcutMath.textContent =
+    `${minutes(narrowRoadMinutes)} + ${SHORTCUT_LINK_MINUTES} + ` +
+    `${minutes(narrowRoadMinutes)} = ${minutes(shortcutRouteMinutes)} min`;
   averageMath.textContent =
     `(${drivers(oldRouteUsers)} × ${minutes(oldRouteMinutes)} + ` +
     `${drivers(shortcutUsers)} × ${minutes(shortcutRouteMinutes)}) ÷ ` +
