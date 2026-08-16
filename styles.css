@@ -360,6 +360,7 @@ h2 {
   fill: none;
   stroke-linecap: round;
   stroke-width: 15;
+  transition: opacity 180ms ease;
 }
 
 .road--fixed {
@@ -371,6 +372,7 @@ h2 {
   stroke-opacity: calc(0.35 + var(--shortcut-share) * 0.65);
   stroke-width: calc(9px + var(--shortcut-share) * 11px);
   transition:
+    opacity 180ms ease,
     stroke-opacity 180ms ease,
     stroke-width 180ms ease;
 }
@@ -401,6 +403,17 @@ body[data-road-closed="true"] .shortcut-label {
   opacity: 0;
 }
 
+.network:is([data-focus="top"], [data-focus="bottom"], [data-focus="shortcut"], [data-focus="narrow"]) .road {
+  opacity: 0.14;
+}
+
+.network[data-focus="top"] .road--top,
+.network[data-focus="bottom"] .road--bottom,
+.network[data-focus="shortcut"] :is(.road--shortcut-leg, .road--connector),
+.network[data-focus="narrow"] .road--shortcut-leg {
+  opacity: 1;
+}
+
 .flow-path {
   fill: none;
   stroke: none;
@@ -421,7 +434,14 @@ body[data-road-closed="true"] .shortcut-label {
   stroke-width: 2;
   transition:
     transform 620ms cubic-bezier(0.22, 1, 0.36, 1),
-    fill 320ms ease;
+    fill 320ms ease,
+    opacity 180ms ease;
+}
+
+.driver-layer[data-focus="top"] .driver-dot:not([data-route="top"]),
+.driver-layer[data-focus="shortcut"] .driver-dot:not([data-route="shortcut"]),
+.driver-layer[data-focus="bottom"] .driver-dot:not([data-route="bottom"]) {
+  opacity: 0.12;
 }
 
 .driver-dot--shortcut {
@@ -621,13 +641,20 @@ input[type="range"] {
 .route-ledger__route {
   min-width: 0;
   padding: 0.7rem 0.75rem;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
 }
 
 .route-ledger__route + .route-ledger__route {
   border-left: 1px solid #66726e;
 }
 
-.route-ledger dt {
+.route-ledger__label {
+  display: block;
   color: #c9d0cd;
   font-size: 0.58rem;
   font-weight: 800;
@@ -635,8 +662,9 @@ input[type="range"] {
   text-transform: uppercase;
 }
 
-.route-ledger dd {
-  margin: 0.3rem 0 0;
+.route-ledger__value {
+  display: block;
+  margin-top: 0.3rem;
 }
 
 .route-ledger output {
@@ -648,6 +676,16 @@ input[type="range"] {
 
 .route-ledger__shortcut output {
   color: var(--gold);
+}
+
+.route-ledger__route:hover,
+.route-ledger__route:focus-visible,
+.route-ledger__route[aria-pressed="true"] {
+  background: rgb(243 174 43 / 12%);
+}
+
+.route-ledger__route[aria-pressed="true"] {
+  box-shadow: inset 0 -3px 0 var(--gold);
 }
 
 .dot-rule {
@@ -769,15 +807,32 @@ body[data-rescue="true"] .decision {
 }
 
 .live-math li {
-  padding: 0.55rem 0;
+  padding: 0;
   border-top: 1px solid var(--rule);
+}
+
+.live-math button {
+  width: 100%;
+  padding: 0.55rem 0;
+  border: 0;
+  background: transparent;
   display: grid;
   grid-template-columns: minmax(0, 0.7fr) minmax(0, 1.3fr);
   gap: var(--space-2);
   align-items: baseline;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
 }
 
-.live-math li span {
+.live-math button:hover,
+.live-math button:focus-visible,
+.live-math button[aria-pressed="true"] {
+  background: rgb(11 120 136 / 7%);
+  box-shadow: inset 4px 0 0 var(--teal);
+}
+
+.live-math button span {
   color: var(--ink-soft);
   font-size: 0.66rem;
 }
@@ -1360,7 +1415,7 @@ footer {
     border-left: 0;
   }
 
-  .route-ledger dd {
+  .route-ledger__value {
     margin: 0;
     text-align: right;
   }
@@ -1400,7 +1455,7 @@ footer {
     width: 100%;
   }
 
-  .live-math li {
+  .live-math button {
     grid-template-columns: minmax(0, 1fr);
     gap: 0.2rem;
   }

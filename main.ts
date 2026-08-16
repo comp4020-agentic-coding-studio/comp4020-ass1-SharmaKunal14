@@ -46,6 +46,9 @@ const roadControlCopy = need<HTMLElement>("[data-road-control-copy]");
 const toggleRoad = need<HTMLButtonElement>("[data-toggle-road]");
 const networkWrap = need<HTMLElement>("[data-network-wrap]");
 const mapProof = need<HTMLElement>("[data-map-proof]");
+const network = need<SVGSVGElement>("[data-network]");
+const spotlightCopy = need<HTMLElement>("[data-spotlight-copy]");
+const spotlightButtons = [...document.querySelectorAll<HTMLButtonElement>("[data-spotlight]")];
 const rescuePrompt = need<HTMLElement>("[data-rescue-prompt]");
 const rescueInstruction = need<HTMLElement>("[data-rescue-instruction]");
 const rescueResult = need<HTMLElement>("[data-rescue-result]");
@@ -81,6 +84,7 @@ let roadClosed = false;
 let resultRevealed = false;
 let rescueMode = false;
 let furthestShortcutUsers = 0;
+let activeSpotlight: string | null = null;
 
 function minutes(value: number): string {
   return number.format(value);
@@ -230,6 +234,63 @@ function renderRescue(result: BraessResult): void {
   rescueLoss.textContent = `${minutes(RESCUE_RESULT.individualSavingMinutes)} min worse for them`;
 }
 
+const SPOTLIGHTS: Record<string, { map: string; dots: string; copy: string }> = {
+  top: {
+    map: "top",
+    dots: "top",
+    copy: "These drivers use the upper narrow road and one fixed 45-minute road.",
+  },
+  shortcut: {
+    map: "shortcut",
+    dots: "shortcut",
+    copy: "These shortcut drivers use both narrow roads and the 0-minute connector.",
+  },
+  bottom: {
+    map: "bottom",
+    dots: "bottom",
+    copy: "These drivers use one fixed 45-minute road and the lower narrow road.",
+  },
+  "narrow-load": {
+    map: "narrow",
+    dots: "all",
+    copy: "Both narrow roads glow because the shortcut sends every shortcut driver through both of them.",
+  },
+  "narrow-time": {
+    map: "narrow",
+    dots: "all",
+    copy: "Both narrow roads use the same rule: 100 cars add 1 minute.",
+  },
+  "old-route": {
+    map: "top",
+    dots: "top",
+    copy: "One old route combines one narrow road with one fixed 45-minute road.",
+  },
+  "shortcut-route": {
+    map: "shortcut",
+    dots: "shortcut",
+    copy: "The shortcut route crosses both narrow roads plus the 0-minute connector.",
+  },
+  "town-average": {
+    map: "all",
+    dots: "all",
+    copy: "Every route and every driver count toward the town average.",
+  },
+};
+
+function renderSpotlight(): void {
+  const spotlight = activeSpotlight === null ? null : SPOTLIGHTS[activeSpotlight];
+  if (activeSpotlight !== null && spotlight === undefined) {
+    throw new Error(`Unknown spotlight: ${activeSpotlight}`);
+  }
+  network.dataset.focus = spotlight?.map ?? "";
+  driverLayer.dataset.focus = spotlight?.dots ?? "";
+  spotlightCopy.textContent = spotlight?.copy ??
+    "Each 100-driver slider step moves two existing dots—one from each old route—onto the shortcut.";
+  for (const button of spotlightButtons) {
+    button.setAttribute("aria-pressed", String(button.dataset.spotlight === activeSpotlight));
+  }
+}
+
 bestExplanation.textContent =
   `The town’s best balance was ${drivers(BRAESS_LANDMARKS.bestShortcutUsers)} shortcut users at ${minutes(BEST_RESULT.averageMinutes)} minutes. ` +
   `It could not last: the shortcut was still ${minutes(BEST_RESULT.individualSavingMinutes)} minutes quicker than an old route, so each next driver had a reason to join it.`;
@@ -261,6 +322,7 @@ function render(result: BraessResult): void {
   renderDiscovery(result);
   renderMilestones(result);
   renderRescue(result);
+  renderSpotlight();
 
   if (averageChangeMinutes > 0) {
     averageChange.textContent = `${minutes(averageChangeMinutes)} min slower than without the shortcut`;
@@ -358,6 +420,15 @@ finishRescue.addEventListener("click", () => {
   });
 });
 
+for (const button of spotlightButtons) {
+  button.addEventListener("click", () => {
+    const requested = button.dataset.spotlight;
+    if (requested === undefined || SPOTLIGHTS[requested] === undefined) return;
+    activeSpotlight = activeSpotlight === requested ? null : requested;
+    renderSpotlight();
+  });
+}
+
 showResult.addEventListener("click", () => {
   resultRevealed = true;
   render(calculateBraess(Number(input.value)));
@@ -369,6 +440,7 @@ showResult.addEventListener("click", () => {
 });
 
 toggleRoad.addEventListener("click", () => {
+  activeSpotlight = null;
   roadClosed = !roadClosed;
   input.disabled = roadClosed;
   input.value = roadClosed ? "0" : String(TOTAL_DRIVERS);

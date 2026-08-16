@@ -108,7 +108,7 @@ describe("transparent desktop experiment", () => {
   it("shows the rules and initial calculation before interaction", async () => {
     const observed = await open(DESKTOP);
     const { page } = observed;
-    expect(await page.locator("button").count()).toBe(4);
+    expect(await page.locator("button").count()).toBe(12);
     expect(await page.locator("[data-play]").count()).toBe(0);
     expect(await page.locator("[data-endpoint-prompt]").isHidden()).toBe(true);
     expect(await page.locator("[data-toggle-road]").isHidden()).toBe(true);
@@ -174,6 +174,40 @@ describe("transparent desktop experiment", () => {
     expect(await text(page, "[data-shortcut-route-ledger]")).toBe("100 drivers · 2 dots");
     expect(await text(page, "[data-bottom-route-ledger]")).toBe("1,950 drivers · 39 dots");
 
+    healthy(observed);
+    await page.close();
+  });
+
+  it("lets route groups and equations spotlight the same map", async () => {
+    const observed = await open(DESKTOP);
+    const { page } = observed;
+    await setUsers(page, 2_000);
+
+    const shortcutGroup = page.locator('.route-ledger [data-spotlight="shortcut"]');
+    await shortcutGroup.click();
+    expect(await shortcutGroup.getAttribute("aria-pressed")).toBe("true");
+    expect(await page.locator("[data-network]").getAttribute("data-focus")).toBe("shortcut");
+    expect(await page.locator("[data-driver-layer]").getAttribute("data-focus")).toBe("shortcut");
+    expect(await text(page, "[data-spotlight-copy]")).toBe(
+      "These shortcut drivers use both narrow roads and the 0-minute connector.",
+    );
+    const shortcutOpacity = Number.parseFloat(
+      await page.locator('.driver-dot[data-route="shortcut"]').first().evaluate((element) => getComputedStyle(element).opacity),
+    );
+    const oldOpacity = Number.parseFloat(
+      await page.locator('.driver-dot[data-route="top"]').first().evaluate((element) => getComputedStyle(element).opacity),
+    );
+    expect(shortcutOpacity).toBeGreaterThan(oldOpacity);
+
+    const oldRouteMath = page.locator('.live-math [data-spotlight="old-route"]');
+    await oldRouteMath.focus();
+    await page.keyboard.press("Space");
+    expect(await shortcutGroup.getAttribute("aria-pressed")).toBe("false");
+    expect(await oldRouteMath.getAttribute("aria-pressed")).toBe("true");
+    expect(await page.locator("[data-network]").getAttribute("data-focus")).toBe("top");
+    expect(await text(page, "[data-spotlight-copy]")).toBe(
+      "One old route combines one narrow road with one fixed 45-minute road.",
+    );
     healthy(observed);
     await page.close();
   });

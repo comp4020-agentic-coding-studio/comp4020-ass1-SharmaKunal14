@@ -64,6 +64,7 @@
 
           <svg
             class="network"
+            data-network
             viewBox="0 0 900 520"
             role="img"
             aria-labelledby="network-title network-description"
@@ -75,11 +76,11 @@
               the two middle junctions.
             </desc>
 
-            <line class="road road--narrow" x1="90" y1="260" x2="430" y2="90" />
-            <line class="road road--fixed" x1="430" y1="90" x2="810" y2="260" />
-            <line class="road road--fixed" x1="90" y1="260" x2="430" y2="430" />
-            <line class="road road--narrow" x1="430" y1="430" x2="810" y2="260" />
-            <line class="road road--shortcut" x1="430" y1="90" x2="430" y2="430" />
+            <line class="road road--narrow road--top road--shortcut-leg" x1="90" y1="260" x2="430" y2="90" />
+            <line class="road road--fixed road--top" x1="430" y1="90" x2="810" y2="260" />
+            <line class="road road--fixed road--bottom" x1="90" y1="260" x2="430" y2="430" />
+            <line class="road road--narrow road--bottom road--shortcut-leg" x1="430" y1="430" x2="810" y2="260" />
+            <line class="road road--shortcut road--connector" x1="430" y1="90" x2="430" y2="430" />
 
             <path id="top-flow" class="flow-path" d="M 90 260 L 430 90 L 810 260" />
             <path id="bottom-flow" class="flow-path" d="M 90 260 L 430 430 L 810 260" />
@@ -147,21 +148,21 @@
                 aria-describedby="slider-help"
               />
               <div class="range-labels" aria-hidden="true"><span>none</span><span>half</span><span>all</span></div>
-              <dl class="route-ledger" aria-label="Where all 80 dots are now">
-                <div class="route-ledger__route">
-                  <dt>Top old route</dt>
-                  <dd><output data-top-route-ledger>2,000 drivers · 40 dots</output></dd>
-                </div>
-                <div class="route-ledger__route route-ledger__shortcut">
-                  <dt>Shortcut</dt>
-                  <dd><output data-shortcut-route-ledger>0 drivers · 0 dots</output></dd>
-                </div>
-                <div class="route-ledger__route">
-                  <dt>Bottom old route</dt>
-                  <dd><output data-bottom-route-ledger>2,000 drivers · 40 dots</output></dd>
-                </div>
-              </dl>
-              <p class="dot-rule">
+              <div class="route-ledger" role="group" aria-label="Inspect where all 80 dots are now">
+                <button class="route-ledger__route" type="button" data-spotlight="top" aria-pressed="false">
+                  <span class="route-ledger__label">Top old route</span>
+                  <span class="route-ledger__value"><output data-top-route-ledger>2,000 drivers · 40 dots</output></span>
+                </button>
+                <button class="route-ledger__route route-ledger__shortcut" type="button" data-spotlight="shortcut" aria-pressed="false">
+                  <span class="route-ledger__label">Shortcut</span>
+                  <span class="route-ledger__value"><output data-shortcut-route-ledger>0 drivers · 0 dots</output></span>
+                </button>
+                <button class="route-ledger__route" type="button" data-spotlight="bottom" aria-pressed="false">
+                  <span class="route-ledger__label">Bottom old route</span>
+                  <span class="route-ledger__value"><output data-bottom-route-ledger>2,000 drivers · 40 dots</output></span>
+                </button>
+              </div>
+              <p class="dot-rule" data-spotlight-copy>
                 Each 100-driver slider step moves two existing dots—one from each old route—onto the shortcut.
               </p>
               <output class="discovery" data-discovery>Start moving drivers onto the shortcut.</output>
@@ -213,11 +214,11 @@
                 <h4 id="live-math-title">Where the current times come from</h4>
               </div>
               <ol>
-                <li><span>Narrow road load</span><code data-narrow-math>0 + (4,000 ÷ 2) = 2,000 cars</code></li>
-                <li><span>Narrow road time</span><code data-narrow-time-math>2,000 ÷ 100 = 20 min</code></li>
-                <li><span>Old route</span><code data-old-math>20 + 45 = 65 min</code></li>
-                <li><span>Shortcut route</span><code data-shortcut-math>20 + 0 + 20 = 40 min</code></li>
-                <li><span>Town average</span><code data-average-math>4,000 × 65 ÷ 4,000 = 65 min</code></li>
+                <li><button type="button" data-spotlight="narrow-load" aria-pressed="false"><span>Narrow road load</span><code data-narrow-math>0 + (4,000 ÷ 2) = 2,000 cars</code></button></li>
+                <li><button type="button" data-spotlight="narrow-time" aria-pressed="false"><span>Narrow road time</span><code data-narrow-time-math>2,000 ÷ 100 = 20 min</code></button></li>
+                <li><button type="button" data-spotlight="old-route" aria-pressed="false"><span>Old route</span><code data-old-math>20 + 45 = 65 min</code></button></li>
+                <li><button type="button" data-spotlight="shortcut-route" aria-pressed="false"><span>Shortcut route</span><code data-shortcut-math>20 + 0 + 20 = 40 min</code></button></li>
+                <li><button type="button" data-spotlight="town-average" aria-pressed="false"><span>Town average</span><code data-average-math>4,000 × 65 ÷ 4,000 = 65 min</code></button></li>
               </ol>
             </section>
 

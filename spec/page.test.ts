@@ -24,7 +24,7 @@ describe("transparent direct interactions", () => {
     expect(doc.querySelectorAll<HTMLInputElement>('input[name="prediction"]')).toHaveLength(0);
     expect(doc.querySelector(".prediction")).toBeNull();
     expect(doc.querySelector("[data-prediction-feedback]")).toBeNull();
-    expect(doc.querySelectorAll("button")).toHaveLength(4);
+    expect(doc.querySelectorAll("button")).toHaveLength(12);
     expect(doc.querySelector("[data-play]")).toBeNull();
     expect(doc.querySelector("[data-show-result]")).not.toBeNull();
     expect(doc.querySelector("[data-toggle-road]")).not.toBeNull();
@@ -54,7 +54,10 @@ describe("transparent direct interactions", () => {
     expect(copy).toContain("Same 4,000 drivers = 80 dots throughout");
     expect(copy).toContain("No dots are added or removed");
     expect(copy).toContain("Each 100-driver slider step moves two existing dots");
-    expect(doc.querySelector(".route-ledger")?.getAttribute("aria-label")).toBe("Where all 80 dots are now");
+    expect(doc.querySelector(".route-ledger")?.getAttribute("aria-label")).toBe("Inspect where all 80 dots are now");
+    expect(doc.querySelectorAll(".route-ledger [data-spotlight]")).toHaveLength(3);
+    expect(doc.querySelectorAll(".live-math [data-spotlight]")).toHaveLength(5);
+    expect(doc.querySelectorAll('[data-spotlight][aria-pressed="false"]')).toHaveLength(8);
     expect(copy).toContain("make the town as fast as possible");
     expect(copy).toContain("1Best pointFind it");
     expect(copy).toContain("2Break-evenLocked");
