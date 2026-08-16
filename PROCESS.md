@@ -43,21 +43,16 @@ the adjustment-period transient from the settled effect, and a test requires bot
 protocols to agree at equilibrium
 ([`c70f164`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-SharmaKunal14/commit/c70f164)).
 
-**4. A polished interaction can still hide its meaning.** The user rejected my
-collapsed Build/Close interface: one click started an opaque sequence instead of a
-chaptered investigation. I kept one network and added actions:
-trace both ways, draw the shortcut, predict the quiet result, watch choices, design a
-fair comparison and inspect both bridges. Screenshots exposed three more failures.
-Endpoint clicks made nothing connect; jargon and unexplained percentages hid the model;
-the quiet result appeared without showing its calculation. I drew the route onscreen,
-made shortcut cars larger and gold, renamed pauses for what they do, and split the quiet
-test into saved starts, totals, division and subtraction. The page now shows arithmetic —
-**46/90 ≈ 51%** during the illustration,
-**106/280 ≈ 38%** in the complete replay, and **92 + 106 = 198** at Riverside — and
-labels **5:05 → 4:34** honestly as a length-and-speed estimate rather than timed trips.
-Browser tests traverse all seventeen states at both marking sizes, by keyboard, through
-resize, reduced motion and delayed responses
-([`5977880...0e85d1a`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-SharmaKunal14/compare/5977880...0e85d1a)).
+**4. Clicking was not investigating.** The user rejected both a collapsed Build/Close
+sequence and my first chaptered version: buttons still advanced conclusions the visitor
+had not earned. I rebuilt the story around evidence collection. The visitor now draws
+the shortcut on the map, follows a real gold car, finds both queues, predicts the result,
+builds a one-change comparison, uncovers each average separately and orders the final
+causes. Keyboard equivalents preserve the same gates. Numbers expose their arithmetic:
+**46/90 ≈ 51%**, **106/280 ≈ 38%**, and **92 + 106 = 198**. I also labelled
+**5:05 → 4:34** as a map estimate, not timed trips. Browser tests cover both marking
+sizes, keyboard, resize, reduced motion and direct SVG gestures
+([`5977880...061cd90`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-SharmaKunal14/compare/5977880...061cd90)).
 
 Rules are in `CLAUDE.md`, prior commitments in `PLAN.md`, and the unedited working
 record is in `notes/log.md`.

@@ -1,10 +1,11 @@
 # One More Road
 
 One More Road is a six-chapter interactive investigation of Braess's paradox. The
-visitor traces the original routes, draws and traces a shortcut, predicts a quiet-road
-result, watches the same busy morning continue through four pauses, constructs a fair
-comparison and adds up both bridge loads before the phenomenon is named. The page
-shows the arithmetic behind every percentage and trip-time comparison.
+visitor traces the original routes, draws a shortcut directly on the map, follows a
+shortcut car, finds both queues, predicts the result, builds a fair comparison and puts
+the final causes in order before the phenomenon is named. Every conclusion is gated by
+evidence the visitor has collected, and every percentage or trip-time comparison shows
+its arithmetic.
 
 The traffic is produced by a deterministic, fixed-timestep Intelligent Driver
 Model (IDM) simulation with seeded departures and route learning. The page is a
