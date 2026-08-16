@@ -210,17 +210,20 @@ h1 {
   grid-template-areas: "controls map math";
   grid-template-columns: minmax(18rem, 0.78fr) minmax(32rem, 1.5fr) minmax(18rem, 0.82fr);
   gap: clamp(1rem, 1.6vw, 1.5rem);
-  align-items: start;
+  align-items: stretch;
 }
 
 .network-wrap {
   grid-area: map;
   position: sticky;
   top: 1rem;
+  height: 100%;
   min-width: 0;
   padding: clamp(1rem, 2.2vw, 2rem);
   border: 1px solid var(--rule);
   background: rgb(255 255 255 / 16%);
+  display: flex;
+  flex-direction: column;
 }
 
 .network-heading {
@@ -328,7 +331,7 @@ h2 {
   display: block;
   width: 100%;
   height: auto;
-  margin-top: var(--space-4);
+  margin-block: auto;
   overflow: visible;
 }
 
@@ -488,12 +491,14 @@ body[data-road-closed="true"] .shortcut-label {
 
 .calculator {
   grid-area: controls;
+  height: 100%;
   min-width: 0;
   display: grid;
   gap: var(--space-4);
 }
 
 .explore-card {
+  height: 100%;
   border: 1px solid var(--rule);
 }
 
@@ -795,6 +800,7 @@ body[data-rescue="true"] .decision {
   grid-area: math;
   position: sticky;
   top: 1rem;
+  height: 100%;
   min-width: 0;
   padding: var(--space-4);
   border: 1px solid var(--rule);
@@ -1404,6 +1410,17 @@ footer {
   .network-wrap,
   .live-math {
     position: static;
+    height: auto;
+  }
+
+  .calculator,
+  .explore-card {
+    height: auto;
+  }
+
+  .network {
+    margin-top: var(--space-4);
+    margin-bottom: 0;
   }
 }
 

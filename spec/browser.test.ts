@@ -109,7 +109,7 @@ describe("transparent desktop experiment", () => {
     const observed = await open(DESKTOP);
     const { page } = observed;
     const columns = await page.evaluate(() => {
-      const controls = document.querySelector<HTMLElement>(".calculator");
+      const controls = document.querySelector<HTMLElement>(".explore-card");
       const map = document.querySelector<HTMLElement>("[data-network-wrap]");
       const math = document.querySelector<HTMLElement>(".live-math");
       if (controls === null || map === null || math === null) throw new Error("missing experiment columns");
@@ -119,16 +119,26 @@ describe("transparent desktop experiment", () => {
       return {
         controlsLeft: controlsBox.left,
         controlsRight: controlsBox.right,
+        controlsTop: controlsBox.top,
+        controlsBottom: controlsBox.bottom,
         mapLeft: mapBox.left,
         mapRight: mapBox.right,
+        mapTop: mapBox.top,
+        mapBottom: mapBox.bottom,
         mathLeft: mathBox.left,
         mathRight: mathBox.right,
+        mathTop: mathBox.top,
+        mathBottom: mathBox.bottom,
       };
     });
     expect(columns.controlsLeft).toBeLessThan(columns.mapLeft);
     expect(columns.controlsRight).toBeLessThanOrEqual(columns.mapLeft);
     expect(columns.mapRight).toBeLessThanOrEqual(columns.mathLeft);
     expect(columns.mathLeft).toBeLessThan(columns.mathRight);
+    expect(columns.controlsTop).toBeCloseTo(columns.mapTop, 0);
+    expect(columns.mapTop).toBeCloseTo(columns.mathTop, 0);
+    expect(columns.controlsBottom).toBeCloseTo(columns.mapBottom, 0);
+    expect(columns.mapBottom).toBeCloseTo(columns.mathBottom, 0);
     await noOverflow(page);
     healthy(observed);
     await page.close();
