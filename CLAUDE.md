@@ -237,6 +237,13 @@ every 100-driver slider step transfers one from each origin to the shortcut.
 Dragging the slider updates the route ledger, town average, map and five visible
 equations from the pure calculation in `src/braess.ts`.
 
+Never present route membership and road load as if they are additive peers. The
+top, shortcut and bottom route groups contain unique drivers and must sum to
+4,000. A narrow-road label is instead a pass-through count: it combines the old
+route using that road with the same shortcut group that also passes through the
+other narrow road. Name every road, use “pass here” for road loads, and state
+plainly that those overlapping road labels must not be added.
+
 The opening must establish the experiment before presenting its formulas. Keep
 three facts explicit and visually distinct: **Fixed** means the same 4,000 drivers
 with one start and destination; **You control** means only the share using the

@@ -541,3 +541,16 @@ one slider controls shortcut use, and the goal is the lowest town average. The t
 rules now sit below that contract and are labelled as formulas that never change. This adds
 no new model claim or interaction. Static tests bind the exact setup, while the existing
 desktop and phone browser paths guard the first-screen layout and overflow.
+
+## Mon 17 Aug — route groups stopped looking like road totals
+
+At 600 shortcut users, the map showed `2,300` beside each narrow road and `600` beside
+the connector. Although the arithmetic was correct, those three similarly styled counts
+looked additive—suggesting 5,200 drivers in a fixed 4,000-driver experiment. Showing the
+shortcut group on only one narrow road would have hidden the actual causal mechanism.
+
+I separated the concepts instead. The ledger now owns the three mutually exclusive route
+groups (`1,700 + 600 + 1,700 = 4,000`). The named map roads show overlapping pass-through
+loads, and the connector states that the same shortcut group uses both narrow roads. A
+browser contract fixes the 600-driver example, checks every label stays inside the SVG,
+and preserves the unchanged 80-dot population.
