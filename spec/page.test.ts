@@ -36,11 +36,14 @@ describe("transparent direct interactions", () => {
     const experiment = doc.querySelector(".experiment");
     expect(explore).not.toBeNull();
     expect(explore?.querySelector("#shortcut-users")).not.toBeNull();
-    expect(explore?.querySelector("[data-town-comparison]")).not.toBeNull();
+    expect(explore?.querySelector("[data-town-comparison]")).toBeNull();
+    expect(explore?.querySelector(".route-ledger")).toBeNull();
     expect(explore?.querySelector(".live-math")).toBeNull();
     expect(experiment?.querySelector(".calculator")).not.toBeNull();
     expect(experiment?.querySelector("[data-network-wrap]")).not.toBeNull();
     expect(experiment?.querySelector(":scope > .live-math")).not.toBeNull();
+    expect(experiment?.querySelector(".live-math [data-town-comparison]")).not.toBeNull();
+    expect(experiment?.querySelector(".live-math .route-ledger")).not.toBeNull();
     expect(doc.querySelectorAll("[data-average-time]")).toHaveLength(1);
     expect(doc.querySelector(".times")).toBeNull();
     expect(doc.querySelector("details")).toBeNull();
@@ -60,7 +63,7 @@ describe("transparent direct interactions", () => {
     expect(copy).toContain("Each 100-driver slider step moves two existing dots");
     expect(doc.querySelector(".route-ledger")?.getAttribute("aria-label")).toBe("Inspect where all 80 dots are now");
     expect(doc.querySelectorAll(".route-ledger [data-spotlight]")).toHaveLength(3);
-    expect(doc.querySelectorAll(".live-math [data-spotlight]")).toHaveLength(5);
+    expect(doc.querySelectorAll(".calculation-equations [data-spotlight]")).toHaveLength(5);
     expect(doc.querySelectorAll('[data-spotlight][aria-pressed="false"]')).toHaveLength(8);
     expect(copy).toContain("make the town as fast as possible");
     expect(copy).toContain("1Best pointFind it");

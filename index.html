@@ -148,23 +148,6 @@
                 aria-describedby="slider-help"
               />
               <div class="range-labels" aria-hidden="true"><span>none</span><span>half</span><span>all</span></div>
-              <div class="route-ledger" role="group" aria-label="Inspect where all 80 dots are now">
-                <button class="route-ledger__route" type="button" data-spotlight="top" aria-pressed="false">
-                  <span class="route-ledger__label">Top old route</span>
-                  <span class="route-ledger__value"><output data-top-route-ledger>2,000 drivers · 40 dots</output></span>
-                </button>
-                <button class="route-ledger__route route-ledger__shortcut" type="button" data-spotlight="shortcut" aria-pressed="false">
-                  <span class="route-ledger__label">Shortcut</span>
-                  <span class="route-ledger__value"><output data-shortcut-route-ledger>0 drivers · 0 dots</output></span>
-                </button>
-                <button class="route-ledger__route" type="button" data-spotlight="bottom" aria-pressed="false">
-                  <span class="route-ledger__label">Bottom old route</span>
-                  <span class="route-ledger__value"><output data-bottom-route-ledger>2,000 drivers · 40 dots</output></span>
-                </button>
-              </div>
-              <p class="dot-rule" data-spotlight-copy>
-                Each 100-driver slider step moves two existing dots—one from each old route—onto the shortcut.
-              </p>
               <output class="discovery" data-discovery>Start moving drivers onto the shortcut.</output>
               <p id="slider-help" class="decision" data-decision>
                 The shortcut takes 40 minutes, so the first driver wants to switch.
@@ -193,37 +176,65 @@
                 <button type="button" data-finish-rescue hidden>Return to the paradox result</button>
               </section>
             </div>
-
-            <section class="town-comparison" data-town-comparison data-state="same" aria-label="Town average compared with before">
-              <div class="town-comparison__side">
-                <span class="town-comparison__label">Before the shortcut</span>
-                <strong class="town-comparison__value">65 min</strong>
-              </div>
-              <span class="town-comparison__arrow" aria-hidden="true">→</span>
-              <div class="town-comparison__side">
-                <span class="town-comparison__label">Town average now</span>
-                <strong class="town-comparison__value"><output data-average-time>65</output> min</strong>
-                <small data-average-change>same as before</small>
-              </div>
-              <output class="town-comparison__verdict" data-comparison-verdict>No change yet</output>
-            </section>
-
           </section>
         </div>
 
-        <section class="live-math" aria-labelledby="live-math-title">
-          <div class="live-math__heading">
-            <p class="step-label">Live calculation</p>
-            <h4 id="live-math-title">Where the current times come from</h4>
-            <p>Select a row to highlight those roads on the map.</p>
+        <section class="live-math" aria-labelledby="live-result-title">
+          <div class="live-result__heading">
+            <p class="step-label">Current result</p>
+            <h4 id="live-result-title">What the numbers mean now</h4>
           </div>
-          <ol>
-            <li><button type="button" data-spotlight="narrow-load" aria-pressed="false"><span>Narrow road load</span><code data-narrow-math>0 + (4,000 ÷ 2) = 2,000 cars</code></button></li>
-            <li><button type="button" data-spotlight="narrow-time" aria-pressed="false"><span>Narrow road time</span><code data-narrow-time-math>2,000 ÷ 100 = 20 min</code></button></li>
-            <li><button type="button" data-spotlight="old-route" aria-pressed="false"><span>Old route</span><code data-old-math>20 + 45 = 65 min</code></button></li>
-            <li><button type="button" data-spotlight="shortcut-route" aria-pressed="false"><span>Shortcut route</span><code data-shortcut-math>20 + 0 + 20 = 40 min</code></button></li>
-            <li><button type="button" data-spotlight="town-average" aria-pressed="false"><span>Town average</span><code data-average-math>4,000 × 65 ÷ 4,000 = 65 min</code></button></li>
-          </ol>
+
+          <section class="town-comparison" data-town-comparison data-state="same" aria-label="Town average compared with before">
+            <div class="town-comparison__side">
+              <span class="town-comparison__label">Before the shortcut</span>
+              <strong class="town-comparison__value">65 min</strong>
+            </div>
+            <span class="town-comparison__arrow" aria-hidden="true">→</span>
+            <div class="town-comparison__side">
+              <span class="town-comparison__label">Town average now</span>
+              <strong class="town-comparison__value"><output data-average-time>65</output> min</strong>
+              <small data-average-change>same as before</small>
+            </div>
+            <output class="town-comparison__verdict" data-comparison-verdict>No change yet</output>
+          </section>
+
+          <section class="calculation-ledger" aria-labelledby="route-ledger-title">
+            <p class="step-label">Where the drivers are</p>
+            <h4 id="route-ledger-title">The same 4,000 drivers</h4>
+            <div class="route-ledger" role="group" aria-label="Inspect where all 80 dots are now">
+              <button class="route-ledger__route" type="button" data-spotlight="top" aria-pressed="false">
+                <span class="route-ledger__label">Top old route</span>
+                <span class="route-ledger__value"><output data-top-route-ledger>2,000 drivers · 40 dots</output></span>
+              </button>
+              <button class="route-ledger__route route-ledger__shortcut" type="button" data-spotlight="shortcut" aria-pressed="false">
+                <span class="route-ledger__label">Shortcut</span>
+                <span class="route-ledger__value"><output data-shortcut-route-ledger>0 drivers · 0 dots</output></span>
+              </button>
+              <button class="route-ledger__route" type="button" data-spotlight="bottom" aria-pressed="false">
+                <span class="route-ledger__label">Bottom old route</span>
+                <span class="route-ledger__value"><output data-bottom-route-ledger>2,000 drivers · 40 dots</output></span>
+              </button>
+            </div>
+            <p class="dot-rule" data-spotlight-copy>
+              Each 100-driver slider step moves two existing dots—one from each old route—onto the shortcut.
+            </p>
+          </section>
+
+          <section class="calculation-equations" aria-labelledby="live-math-title">
+            <div class="live-math__heading">
+              <p class="step-label">Live calculation</p>
+              <h4 id="live-math-title">Where the current times come from</h4>
+              <p>Select a row to highlight those roads on the map.</p>
+            </div>
+            <ol>
+              <li><button type="button" data-spotlight="narrow-load" aria-pressed="false"><span>Narrow road load</span><code data-narrow-math>0 + (4,000 ÷ 2) = 2,000 cars</code></button></li>
+              <li><button type="button" data-spotlight="narrow-time" aria-pressed="false"><span>Narrow road time</span><code data-narrow-time-math>2,000 ÷ 100 = 20 min</code></button></li>
+              <li><button type="button" data-spotlight="old-route" aria-pressed="false"><span>Old route</span><code data-old-math>20 + 45 = 65 min</code></button></li>
+              <li><button type="button" data-spotlight="shortcut-route" aria-pressed="false"><span>Shortcut route</span><code data-shortcut-math>20 + 0 + 20 = 40 min</code></button></li>
+              <li><button type="button" data-spotlight="town-average" aria-pressed="false"><span>Town average</span><code data-average-math>4,000 × 65 ÷ 4,000 = 65 min</code></button></li>
+            </ol>
+          </section>
         </section>
 
         <p class="sr-only" aria-live="polite" data-live-summary></p>
