@@ -517,15 +517,27 @@ describe("transparent desktop experiment", () => {
   });
 
   it("closes and reopens the shortcut as a visible reversal", async () => {
+    const step = (label: string): void => console.log(`[reversal-test] ${Date.now()} ${label}`);
     const observed = await open(DESKTOP);
     const { page } = observed;
+    step("opened");
     const initialRoadWidth = Number.parseFloat(await page.locator(".road--narrow").first().evaluate((element) => getComputedStyle(element).strokeWidth));
     await setUsers(page, 4_000);
+    step("users set");
     await page.locator("[data-show-result]").click();
-    await page.waitForFunction(() => Number.parseFloat(getComputedStyle(document.querySelector(".road--narrow")!).strokeWidth) > 19);
+    step("show-result clicked, waiting for crowded width");
+    try {
+      await page.waitForFunction(() => Number.parseFloat(getComputedStyle(document.querySelector(".road--narrow")!).strokeWidth) > 19, undefined, { timeout: 8000 });
+    } catch (error) {
+      const currentWidth = await page.locator(".road--narrow").first().evaluate((element) => getComputedStyle(element).strokeWidth);
+      step(`crowded-width wait FAILED, current strokeWidth=${currentWidth}`);
+      throw error;
+    }
+    step("crowded width reached");
     const crowdedRoadWidth = Number.parseFloat(await page.locator(".road--narrow").first().evaluate((element) => getComputedStyle(element).strokeWidth));
     expect(crowdedRoadWidth).toBeGreaterThan(initialRoadWidth);
     await page.locator("[data-toggle-road]").click();
+    step("toggle-road clicked (close)");
     expect(await page.locator("body").getAttribute("data-road-closed")).toBe("true");
     expect(await page.locator("[data-toggle-road]").getAttribute("aria-checked")).toBe("false");
     expect(await text(page, "[data-network-state]")).toBe("Closed");
@@ -538,17 +550,29 @@ describe("transparent desktop experiment", () => {
       "One road removed. The same 4,000 drivers are now 15 minutes faster.",
     );
     expect(await page.locator("[data-map-proof]").evaluate((element) => element === document.activeElement)).toBe(true);
+    step("post-close assertions passed");
     await reversalLinkStaysOnOneLine(page);
-    await page.waitForFunction(() => document.querySelector("[data-network-wrap]")!.getBoundingClientRect().top >= 0);
+    step("reversal link geometry passed, waiting for network-wrap to be onscreen");
+    await page.waitForFunction(() => document.querySelector("[data-network-wrap]")!.getBoundingClientRect().top >= 0, undefined, { timeout: 8000 });
+    step("network-wrap onscreen");
     expect(await page.locator('.driver-dot[data-route="top"]').count()).toBe(40);
     expect(await page.locator('.driver-dot[data-route="bottom"]').count()).toBe(40);
     expect(await page.locator('.driver-dot[data-route="shortcut"]').count()).toBe(0);
     expect(await page.locator("[data-reveal]").isVisible()).toBe(true);
-    await page.waitForFunction(() => Number.parseFloat(getComputedStyle(document.querySelector(".road--narrow")!).strokeWidth) < 9.01);
+    step("waiting for cleared width");
+    try {
+      await page.waitForFunction(() => Number.parseFloat(getComputedStyle(document.querySelector(".road--narrow")!).strokeWidth) < 9.01, undefined, { timeout: 8000 });
+    } catch (error) {
+      const currentWidth = await page.locator(".road--narrow").first().evaluate((element) => getComputedStyle(element).strokeWidth);
+      step(`cleared-width wait FAILED, current strokeWidth=${currentWidth}`);
+      throw error;
+    }
+    step("cleared width reached");
     const clearedRoadWidth = Number.parseFloat(await page.locator(".road--narrow").first().evaluate((element) => getComputedStyle(element).strokeWidth));
     expect(clearedRoadWidth).toBeCloseTo(initialRoadWidth, 1);
 
     await page.locator("[data-toggle-road]").click();
+    step("toggle-road clicked (reopen)");
     expect(await page.locator("body").getAttribute("data-road-closed")).toBe("false");
     expect(await page.locator("[data-toggle-road]").getAttribute("aria-checked")).toBe("true");
     expect(await text(page, "[data-network-state]")).toBe("Open");
