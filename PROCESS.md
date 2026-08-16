@@ -2,11 +2,10 @@
 
 ## What I built
 
-**One More Road** is an interactive explainer of Braess's paradox. A town has two
-routes to work; a new connector appears to shorten the trip. You build it, drivers
-adapt, and the average commute becomes worse. Closing it removes the shortcut from
-new choices. Only then is the paradox named. The outcome comes from a seeded
-Intelligent Driver Model simulation rather than a scripted animation.
+**One More Road** is a transparent, one-slider explainer of Braess's paradox. The
+visitor moves 4,000 drivers onto a shortcut and watches both individual travel times
+and the town average change. Two road rules and every arithmetic step stay visible;
+there is no random or hidden calculation in the presented model.
 
 ## The moments that mattered
 
@@ -43,16 +42,17 @@ the adjustment-period transient from the settled effect, and a test requires bot
 protocols to agree at equilibrium
 ([`c70f164`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-SharmaKunal14/commit/c70f164)).
 
-**4. Clicking was not investigating.** The user rejected both a collapsed Build/Close
-sequence and my first chaptered version: buttons still advanced conclusions the visitor
-had not earned. I rebuilt the story around evidence collection. The visitor now draws
-the shortcut on the map, follows a real gold car, finds both queues, predicts the result,
-builds a one-change comparison, uncovers each average separately and orders the final
-causes. Keyboard equivalents preserve the same gates. Numbers expose their arithmetic:
-**46/90 ≈ 51%**, **106/280 ≈ 38%**, and **92 + 106 = 198**. I also labelled
-**5:05 → 4:34** as a map estimate, not timed trips. Browser tests cover both marking
-sizes, keyboard, resize, reduced motion and direct SVG gestures
-([`5977880...061cd90`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-SharmaKunal14/compare/5977880...061cd90)).
+**4. More explanation made the explanation worse.** The user repeatedly described the
+interface as buttons causing unexplained events. I first responded by adding chapters,
+predictions, route tracing and evidence cards. That made the mechanism more defensible
+but also made the visitor learn the simulator before learning the paradox. I finally
+separated realism from clarity and deleted the staged interface. The delivered page has
+one range slider and two stated rules: a fixed road takes 45 minutes; a narrow road takes
+one minute per 100 cars. Moving the slider updates every route time and prints each
+equation. At 4,000 shortcut users, **40 + 40 = 80 minutes**, compared with the original
+**20 + 45 = 65**. Browser tests check the exact start, midpoint and endpoint arithmetic,
+phone layout, keyboard use and reduced motion
+([`5977880...41799c3`](https://github.com/comp4020-agentic-coding-studio/comp4020-ass1-SharmaKunal14/compare/5977880...41799c3)).
 
 Rules are in `CLAUDE.md`, prior commitments in `PLAN.md`, and the unedited working
 record is in `notes/log.md`.
