@@ -14,6 +14,7 @@ function need<T extends Element>(selector: string, root: ParentNode = document):
 }
 
 const input = need<HTMLInputElement>("#shortcut-users");
+const resetSimulation = need<HTMLButtonElement>("[data-reset-simulation]");
 const shortcutOutput = need<HTMLOutputElement>("[data-shortcut-output]");
 const topRouteLedger = need<HTMLOutputElement>("[data-top-route-ledger]");
 const shortcutRouteLedger = need<HTMLOutputElement>("[data-shortcut-route-ledger]");
@@ -341,6 +342,7 @@ function render(result: BraessResult): void {
   document.documentElement.style.setProperty("--shortcut-share", String(shortcutUsers / TOTAL_DRIVERS));
   document.body.dataset.complete = String(shortcutUsers === TOTAL_DRIVERS && !roadClosed);
   document.body.dataset.roadClosed = String(roadClosed);
+  resetSimulation.disabled = shortcutUsers === 0 && furthestShortcutUsers === 0;
   shortcutOutput.value = `${drivers(shortcutUsers)} of ${drivers(TOTAL_DRIVERS)}`;
   averageTime.value = minutes(averageMinutes);
   shortcutCount.textContent = `${drivers(shortcutUsers)} shortcut drivers`;
@@ -448,7 +450,6 @@ startRescue.addEventListener("click", () => {
   render(calculateBraess(TOTAL_DRIVERS));
   input.focus({ preventScroll: true });
   input.scrollIntoView({
-    behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
     block: "center",
   });
 });
@@ -461,7 +462,6 @@ finishRescue.addEventListener("click", () => {
   render(calculateBraess(TOTAL_DRIVERS));
   reveal.focus({ preventScroll: true });
   reveal.scrollIntoView({
-    behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
     block: "start",
   });
 });
@@ -481,7 +481,6 @@ showResult.addEventListener("click", () => {
   render(calculateBraess(Number(input.value)));
   reveal.focus({ preventScroll: true });
   reveal.scrollIntoView({
-    behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
     block: "start",
   });
 });
@@ -496,7 +495,6 @@ toggleRoad.addEventListener("click", () => {
   const destination = roadClosed ? mapProof : townComparison;
   destination.focus({ preventScroll: true });
   destination.scrollIntoView({
-    behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
     block: "start",
   });
 });
@@ -505,6 +503,18 @@ returnExplanation.addEventListener("click", () => {
   activeResultHighlight = null;
   mapProof.dataset.resultHighlight = "false";
   reveal.focus({ preventScroll: true });
+});
+
+resetSimulation.addEventListener("click", () => {
+  roadClosed = resultRevealed = rescueMode = false;
+  furthestShortcutUsers = 0;
+  activeSpotlight = null;
+  activeResultHighlight = null;
+  input.disabled = false;
+  input.value = "0";
+  render(calculateBraess(0));
+  input.focus({ preventScroll: true });
+  input.scrollIntoView({ block: "center" });
 });
 
 render(calculateBraess(Number(input.value)));

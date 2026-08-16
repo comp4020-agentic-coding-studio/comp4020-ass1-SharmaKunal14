@@ -24,7 +24,8 @@ describe("transparent direct interactions", () => {
     expect(doc.querySelectorAll<HTMLInputElement>('input[name="prediction"]')).toHaveLength(0);
     expect(doc.querySelector(".prediction")).toBeNull();
     expect(doc.querySelector("[data-prediction-feedback]")).toBeNull();
-    expect(doc.querySelectorAll("button")).toHaveLength(12);
+    expect(doc.querySelectorAll("button")).toHaveLength(13);
+    expect(doc.querySelector("[data-reset-simulation]")?.hasAttribute("disabled")).toBe(true);
     expect(doc.querySelector("[data-play]")).toBeNull();
     expect(doc.querySelector("[data-show-result]")).not.toBeNull();
     expect(doc.querySelector("[data-toggle-road]")).not.toBeNull();

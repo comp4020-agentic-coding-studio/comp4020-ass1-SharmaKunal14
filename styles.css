@@ -607,7 +607,22 @@ body[data-road-closed="true"] .shortcut-label {
 }
 
 .challenge {
+  position: relative;
   padding: var(--space-4);
+}
+
+.reset-simulation {
+  position: absolute;
+  top: var(--space-4);
+  right: var(--space-4);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+}
+
+.reset-simulation:disabled {
+  opacity: 0.35;
 }
 
 .step-label {

@@ -208,7 +208,8 @@ describe("transparent desktop experiment", () => {
   it("shows the rules and initial calculation before interaction", async () => {
     const observed = await open(DESKTOP);
     const { page } = observed;
-    expect(await page.locator("button").count()).toBe(12);
+    expect(await page.locator("button").count()).toBe(13);
+    expect(await page.locator("[data-reset-simulation]").isDisabled()).toBe(true);
     expect(await page.locator("[data-play]").count()).toBe(0);
     expect(await page.locator("[data-endpoint-prompt]").isHidden()).toBe(true);
     expect(await page.locator("[data-toggle-road]").isHidden()).toBe(true);
@@ -609,12 +610,55 @@ describe("transparent desktop experiment", () => {
     await page.close();
   });
 
+  it("resets the complete experiment and can be used again", async () => {
+    const observed = await open(DESKTOP, true);
+    const { page } = observed;
+    const reset = page.locator("[data-reset-simulation]");
+    const slider = page.locator("#shortcut-users");
+
+    await setUsers(page, 4_000);
+    await page.locator("[data-show-result]").click();
+    await page.locator("[data-toggle-road]").click();
+    await page.locator('.live-math [data-spotlight="old-route"]').click();
+    expect(await reset.isEnabled()).toBe(true);
+
+    await reset.click();
+    expect(await slider.inputValue()).toBe("0");
+    expect(await slider.isEnabled()).toBe(true);
+    expect(await slider.evaluate((element) => element === document.activeElement)).toBe(true);
+    expect(await reset.isDisabled()).toBe(true);
+    expect(await text(page, "[data-shortcut-output]")).toBe("0 of 4,000");
+    expect(await text(page, "[data-average-time]")).toBe("65");
+    expect(await page.locator("[data-reveal]").isHidden()).toBe(true);
+    expect(await page.locator("[data-map-proof]").isHidden()).toBe(true);
+    expect(await page.locator("[data-toggle-road]").isHidden()).toBe(true);
+    expect(await page.locator("[data-network]").getAttribute("data-focus")).toBe("");
+    expect(await page.locator("[data-driver-layer]").getAttribute("data-focus")).toBe("");
+    expect(await page.locator('[data-milestone="best"]').getAttribute("data-state")).toBe("active");
+    expect(await page.locator('[data-milestone="break-even"]').getAttribute("data-state")).toBe("locked");
+    expect(await page.locator('[data-milestone="paradox"]').getAttribute("data-state")).toBe("locked");
+    expect(await page.locator('.driver-dot[data-route="shortcut"]').count()).toBe(0);
+
+    await setUsers(page, 4_000);
+    await page.locator("[data-show-result]").click();
+    await page.locator("[data-start-rescue]").click();
+    expect(await page.locator("[data-rescue-prompt]").isVisible()).toBe(true);
+    await reset.click();
+    expect(await page.locator("[data-rescue-prompt]").isHidden()).toBe(true);
+    expect(await page.locator("[data-rescue-result]").isHidden()).toBe(true);
+    expect(await slider.inputValue()).toBe("0");
+    await noOverflow(page);
+    healthy(observed);
+    await page.close();
+  });
+
 });
 
 describe("phone and keyboard", () => {
   it("fits the marking viewport at the start, middle and reveal", async () => {
     const observed = await open(PHONE);
     const { page } = observed;
+    expect(await page.locator("[data-reset-simulation]").isVisible()).toBe(true);
     await noOverflow(page);
     await setUsers(page, 2_000);
     await noOverflow(page);
