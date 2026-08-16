@@ -409,6 +409,18 @@ body:is(
   will-change: opacity, transform;
 }
 
+/* Applied only while a chapter-boundary fold is in flight (see animatePanels
+   in main.ts). An explicit background plus a shadow is what reads as a sheet
+   of paper lifting off the page mid-turn, rather than text simply fading in
+   place -- toggled on/off, not animated per frame, so it costs one repaint at
+   each end rather than any compositor work. */
+.story.is-turning,
+.measure.is-turning,
+.control.is-turning {
+  background: var(--paper);
+  box-shadow: 0 22px 40px -20px rgb(23 35 31 / 32%);
+}
+
 .choices {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

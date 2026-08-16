@@ -272,3 +272,48 @@ horizontal overflow: a real phone has no reserved-width scrollbar at all, and
 since the grid/flex chain feeding the radio-group quiz options was missing it
 and the project already has a standing rule about exactly this trap -- cheap
 insurance, not a claimed fix for the scrollbar artifact.
+
+## Sat 16 Aug — the fold was invisible because of its own easing
+
+Reported: "I can't see the animation." Screenshotted the first ~120ms after a
+chapter click and the opacity fade WAS visible, but the panel never looked
+tilted -- just faded in flat. Two separate problems, found in order:
+
+1. The rotation itself was too shallow to read as a fold: -18deg at a 1200px
+   perspective distance foreshortens a text block by only a few pixels.
+   Steepened to -78deg at 640px.
+
+2. The real bug. Scrubbing the animation's own `currentTime` (rather than
+   racing real timers) and reading `getComputedStyle().transform` at each
+   point showed the rotation at 12% real-time progress was ~-0.7 degrees --
+   essentially already flat -- when the authored keyframe offsets (0, 0.22,
+   0.62, 1) call for about -60 degrees there. The overall animation `easing`
+   was `cubic-bezier(0.16, 1, 0.3, 1)`, an aggressive ease-out, applied ON TOP
+   of the keyframe offsets that were already shaping the pacing. An eased-out
+   curve front-loads nearly all visual progress into the first ~10% of the
+   real duration, so a fold authored to open gradually over 620ms actually
+   completed within about the first 60ms and was gone before a human eye could
+   register it -- what remained for the other 560ms was just the already-flat,
+   already-opaque resting state, which reads as "it faded in," exactly the
+   complaint.
+
+Fixed by setting the chapter transition's overall easing to `linear` and
+letting the three keyframe offsets do 100% of the pacing work themselves.
+Re-scrubbing confirmed the fix numerically: rotation at 12%/25%/50%/75% now
+lands at -60.5/-42.0/-8.9/+4.6 degrees, matching hand-calculated linear
+interpolation between the authored offsets to within rounding. Also added a
+box-shadow + opaque background toggled only while a chapter fold is in flight,
+so the panel reads as a lifted sheet of paper rather than text alone rotating
+in space -- and removed the per-panel stagger for chapter transitions (all
+three now start in perfect sync) so the group reads as one page turning
+instead of three pieces moving independently.
+
+Two things this is NOT: not a rendering bug (the transform was always being
+computed correctly, just interpolated into a curve that made it invisible),
+and not something the earlier `getAnimations()` inspection could have caught,
+since duration/easing/keyframe-count all looked correct in isolation -- only
+sampling actual interpolated values at real progress points exposed it.
+
+Reverified after the fix: reduced motion still produces zero animations, no
+new overflow at 390px at any point during the now-steeper fold, and keyboard
+focus still lands on the headline through a chapter transition.

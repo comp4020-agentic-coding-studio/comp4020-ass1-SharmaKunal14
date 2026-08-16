@@ -266,9 +266,15 @@ function enter(next: StateId, focusHeading = false): void {
 type PanelTransition = "chapter" | "step" | "delayed-step";
 
 const UNFOLD_KEYFRAMES: Keyframe[] = [
-  { opacity: 0, transform: "perspective(1200px) rotateX(-18deg) scaleY(0.86)" },
-  { opacity: 1, offset: 0.62, transform: "perspective(1200px) rotateX(2deg) scaleY(1.01)" },
-  { opacity: 1, transform: "perspective(1200px) rotateX(0deg) scaleY(1)" },
+  // A short perspective distance and a steep starting angle are what make a
+  // rotateX actually read as a fold instead of a fade -- the first version used
+  // -18deg at 1200px, which foreshortens a text block by only a few pixels and
+  // is masked entirely by the accompanying opacity fade. -78deg at 640px swings
+  // the panel up from flat, hinged at its own top edge.
+  { opacity: 0, transform: "perspective(640px) rotateX(-78deg)" },
+  { opacity: 1, offset: 0.22, transform: "perspective(640px) rotateX(-46deg)" },
+  { opacity: 1, offset: 0.62, transform: "perspective(640px) rotateX(7deg)" },
+  { opacity: 1, transform: "perspective(640px) rotateX(0deg)" },
 ];
 
 const STEP_KEYFRAMES: Keyframe[] = [
@@ -279,26 +285,41 @@ const STEP_KEYFRAMES: Keyframe[] = [
 function animatePanels(kind: PanelTransition = "step"): void {
   for (const animation of panelAnimations) animation.cancel();
   panelAnimations = [];
+  // Strip the lifted-sheet look unconditionally: a superseded chapter
+  // animation is cancelled above, but cancel() alone would leave its shadow
+  // class stuck on the panel forever if we didn't also clear it here.
+  for (const panel of [ui.story, ui.measure, ui.control]) panel.classList.remove("is-turning");
   if (reducesMotion) return;
 
   const isChapterChange = kind === "chapter";
   const panels = [ui.story, ui.measure, ui.control];
   const keyframes = isChapterChange ? UNFOLD_KEYFRAMES : STEP_KEYFRAMES;
-  const duration = isChapterChange ? 560 : 320;
-  const stagger = isChapterChange ? 70 : 35;
-  // easeOutExpo-ish for the unfold: a fast, decisive open rather than a bounce.
-  const easing = isChapterChange
-    ? "cubic-bezier(0.16, 1, 0.3, 1)"
-    : "cubic-bezier(0.22, 1, 0.36, 1)";
+  const duration = isChapterChange ? 620 : 320;
+  // Chapter panels fold together, hinged at the same instant, so the group
+  // reads as one page turning rather than three pieces moving independently.
+  // Only the quieter in-chapter step keeps a stagger.
+  const stagger = isChapterChange ? 0 : 35;
+  // Linear for the chapter fold, deliberately. An eased-out curve (found by
+  // testing: rotateX at frac=0.12 came out ~-0.7deg instead of the ~-60deg the
+  // keyframe offsets call for) front-loads almost all visual change into the
+  // first ~10% of the real duration, so a fold authored to unfold gradually
+  // collapses into a blink and reads as a plain fade -- which is exactly what
+  // was reported. The keyframe offsets (0, 0.22, 0.62, 1) already shape the
+  // pacing; the overall timing function must not re-shape it again on top.
+  const easing = isChapterChange ? "linear" : "cubic-bezier(0.22, 1, 0.36, 1)";
 
   for (const [index, panel] of panels.entries()) {
     if (panel.hidden || typeof panel.animate !== "function") continue;
     const delay = kind === "delayed-step" && index > 0 ? 300 : index * stagger;
+    // A shadow while the sheet is mid-turn is what sells the fold as paper
+    // lifting off the page, rather than the text simply fading in place.
+    if (isChapterChange) panel.classList.add("is-turning");
     const animation = panel.animate(keyframes, { duration, delay, easing, fill: "both" });
     animation.addEventListener(
       "finish",
       () => {
         animation.cancel();
+        panel.classList.remove("is-turning");
         panelAnimations = panelAnimations.filter((candidate) => candidate !== animation);
       },
       { once: true },
