@@ -248,6 +248,11 @@ shortcut closed and 80 with it open, then explains why the bad state persists:
 staying takes 80 minutes while leaving alone takes 85. Do not present `80 vs 85`
 without the controlling `65 vs 80` comparison.
 
+The close-road action must return to this same map; never render a second simulation.
+Retract the connector, redistribute the existing 80 dots, and show `80 → 65` beside
+the map. Do not add Play, Animate or replay controls. Preserve focus and provide a
+link back to the result chapter after the reversal.
+
 Before adding anything, the question is *does this make the visitor understand
 the central idea more strongly?* If not, delete it. Prefer deleting UI over
 adding an explanatory control. There is no hidden traffic run, route learning,
@@ -323,7 +328,7 @@ make an equation look simpler.
 - Test the whole interaction at **1920×1080** and **390×844**, including the
   slider midpoint and endpoint, deliberate reveal and horizontal overflow.
 - The public contract is one range input, one endpoint comparison action attached to
-  that input, five always-visible equations and one causal road toggle. There is no
+  that input, five equations and one causal road toggle returning to the original map. There is no
   prediction survey and no staged
   Continue-button sequence. `spec/page.test.ts` makes that scope explicit.
 - All displayed numbers must come from `calculateBraess`; browser tests check the

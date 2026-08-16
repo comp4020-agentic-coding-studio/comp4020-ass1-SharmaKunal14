@@ -442,3 +442,18 @@ the result chapter's dominant heading, then separated the plain-language meaning
 extra road made the same crowd slower—from the causal explanation below it. A browser
 geometry assertion now requires the endpoint card to remain inside the slider surface;
 phone, keyboard, focus, reduced-motion and no-overlap paths remain unchanged.
+
+## Mon 17 Aug — the reversal returned to the same map
+
+The close-road action changed the original calculation, but it left the visitor in the
+result chapter while the evidence changed off-screen. Adding another diagram below the
+button would have looked like a second run and weakened the controlled comparison. I
+kept one map and one set of 80 persistent dots.
+
+Closing the shortcut now returns to that map, retracts the connector and redistributes
+the existing dots onto the two old routes. A compact banner beside the map states the
+invariant and outcome: same experiment, same 4,000 drivers, `80 → 65` minutes. It also
+links back to the explanation. The reverse section no longer duplicates that result or
+inherits the oversized paradox heading. No Play or Animate control was added; reduced
+motion applies the identical state without the visual transition. Browser tests require
+the banner, focus transfer, unchanged dot count and original map reuse.
