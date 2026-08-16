@@ -256,7 +256,11 @@ presentation filters only and must never change a calculation or driver allocati
 or open the result automatically. It offers one compact comparison action; only
 that deliberate action reveals an inline result chapter after the experiment.
 The action belongs inside the slider panel, where the endpoint is reached. The
-chapter must introduce **Braess's paradox** as its dominant heading before explaining it.
+endpoint prompt is a narrow-rail component even on a wide screen: stack its
+heading, explanation and full-width action vertically rather than using an
+internal desktop column layout. Verify that exact state at both marking viewports.
+The chapter must introduce **Braess's paradox** as its dominant heading before
+explaining it.
 The sticky map must end before this chapter begins; the two surfaces may never
 overlap. The chapter shows that the same 4,000 drivers take 65 minutes with the
 shortcut closed and 80 with it open, then explains why the bad state persists:

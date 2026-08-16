@@ -515,3 +515,16 @@ The left rail now contains only the challenge, discoveries, slider and immediate
 Its dark slider surface flexes to the shared column height rather than ending above an empty
 strip. The controls kept their original selectors and semantics, so the browser suite could
 verify that route and equation spotlights still affect the same centre map.
+
+## Mon 17 Aug — the endpoint action respected its rail
+
+The completed-slider prompt still carried an old two-column desktop layout. Inside the new
+compact left rail, that left only a few characters per line for the conclusion while the
+button consumed the other column. The phone happened to stack correctly, so a generic
+responsive check did not catch the desktop failure.
+
+I made the prompt intrinsically vertical at every viewport: conclusion, one sentence of
+context, then a full-width deliberate reveal action. A browser geometry check now requires
+the heading to retain most of the card width and the action to sit below the explanation at
+both 1920×1080 and 390×844. This changed presentation only; the reveal remains user-triggered
+and the calculation state is unchanged.
