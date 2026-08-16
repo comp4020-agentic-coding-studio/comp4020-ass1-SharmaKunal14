@@ -31,12 +31,16 @@ describe("transparent direct interactions", () => {
     expect(sliders[0]).toMatchObject({ min: "0", max: "4000", step: "100", value: "0" });
   });
 
-  it("keeps the live experiment and its arithmetic together", () => {
+  it("keeps the controls, map and arithmetic in one experiment", () => {
     const explore = doc.querySelector(".explore-card");
+    const experiment = doc.querySelector(".experiment");
     expect(explore).not.toBeNull();
     expect(explore?.querySelector("#shortcut-users")).not.toBeNull();
     expect(explore?.querySelector("[data-town-comparison]")).not.toBeNull();
-    expect(explore?.querySelector(".live-math")).not.toBeNull();
+    expect(explore?.querySelector(".live-math")).toBeNull();
+    expect(experiment?.querySelector(".calculator")).not.toBeNull();
+    expect(experiment?.querySelector("[data-network-wrap]")).not.toBeNull();
+    expect(experiment?.querySelector(":scope > .live-math")).not.toBeNull();
     expect(doc.querySelectorAll("[data-average-time]")).toHaveLength(1);
     expect(doc.querySelector(".times")).toBeNull();
     expect(doc.querySelector("details")).toBeNull();

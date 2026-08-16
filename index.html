@@ -208,22 +208,23 @@
               <output class="town-comparison__verdict" data-comparison-verdict>No change yet</output>
             </section>
 
-            <section class="live-math" aria-labelledby="live-math-title">
-              <div class="live-math__heading">
-                <p class="step-label">Live calculation</p>
-                <h4 id="live-math-title">Where the current times come from</h4>
-              </div>
-              <ol>
-                <li><button type="button" data-spotlight="narrow-load" aria-pressed="false"><span>Narrow road load</span><code data-narrow-math>0 + (4,000 ÷ 2) = 2,000 cars</code></button></li>
-                <li><button type="button" data-spotlight="narrow-time" aria-pressed="false"><span>Narrow road time</span><code data-narrow-time-math>2,000 ÷ 100 = 20 min</code></button></li>
-                <li><button type="button" data-spotlight="old-route" aria-pressed="false"><span>Old route</span><code data-old-math>20 + 45 = 65 min</code></button></li>
-                <li><button type="button" data-spotlight="shortcut-route" aria-pressed="false"><span>Shortcut route</span><code data-shortcut-math>20 + 0 + 20 = 40 min</code></button></li>
-                <li><button type="button" data-spotlight="town-average" aria-pressed="false"><span>Town average</span><code data-average-math>4,000 × 65 ÷ 4,000 = 65 min</code></button></li>
-              </ol>
-            </section>
-
           </section>
         </div>
+
+        <section class="live-math" aria-labelledby="live-math-title">
+          <div class="live-math__heading">
+            <p class="step-label">Live calculation</p>
+            <h4 id="live-math-title">Where the current times come from</h4>
+            <p>Select a row to highlight those roads on the map.</p>
+          </div>
+          <ol>
+            <li><button type="button" data-spotlight="narrow-load" aria-pressed="false"><span>Narrow road load</span><code data-narrow-math>0 + (4,000 ÷ 2) = 2,000 cars</code></button></li>
+            <li><button type="button" data-spotlight="narrow-time" aria-pressed="false"><span>Narrow road time</span><code data-narrow-time-math>2,000 ÷ 100 = 20 min</code></button></li>
+            <li><button type="button" data-spotlight="old-route" aria-pressed="false"><span>Old route</span><code data-old-math>20 + 45 = 65 min</code></button></li>
+            <li><button type="button" data-spotlight="shortcut-route" aria-pressed="false"><span>Shortcut route</span><code data-shortcut-math>20 + 0 + 20 = 40 min</code></button></li>
+            <li><button type="button" data-spotlight="town-average" aria-pressed="false"><span>Town average</span><code data-average-math>4,000 × 65 ÷ 4,000 = 65 min</code></button></li>
+          </ol>
+        </section>
 
         <p class="sr-only" aria-live="polite" data-live-summary></p>
       </section>

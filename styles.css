@@ -207,12 +207,14 @@ h1 {
   padding: clamp(2rem, 5vh, 4rem) 0 3rem;
   border-top: 1px solid var(--rule);
   display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(22rem, 0.8fr);
-  gap: clamp(2rem, 4vw, 4rem);
+  grid-template-areas: "controls map math";
+  grid-template-columns: minmax(18rem, 0.78fr) minmax(32rem, 1.5fr) minmax(18rem, 0.82fr);
+  gap: clamp(1rem, 1.6vw, 1.5rem);
   align-items: start;
 }
 
 .network-wrap {
+  grid-area: map;
   position: sticky;
   top: 1rem;
   min-width: 0;
@@ -485,6 +487,7 @@ body[data-road-closed="true"] .shortcut-label {
 }
 
 .calculator {
+  grid-area: controls;
   min-width: 0;
   display: grid;
   gap: var(--space-4);
@@ -521,7 +524,7 @@ body[data-road-closed="true"] .shortcut-label {
   padding: 0;
   border-top: 1px solid var(--rule);
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   list-style: none;
 }
 
@@ -535,7 +538,7 @@ body[data-road-closed="true"] .shortcut-label {
 }
 
 .milestone + .milestone {
-  border-left: 1px solid var(--rule);
+  border-top: 1px solid var(--rule);
 }
 
 .milestone__number {
@@ -635,7 +638,7 @@ input[type="range"] {
   margin: var(--space-3) 0 0;
   border-block: 1px solid #66726e;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .route-ledger__route {
@@ -650,7 +653,7 @@ input[type="range"] {
 }
 
 .route-ledger__route + .route-ledger__route {
-  border-left: 1px solid #66726e;
+  border-top: 1px solid #66726e;
 }
 
 .route-ledger__label {
@@ -789,8 +792,13 @@ body[data-rescue="true"] .decision {
 }
 
 .live-math {
+  grid-area: math;
+  position: sticky;
+  top: 1rem;
+  min-width: 0;
   padding: var(--space-4);
-  border-top: 1px solid var(--rule);
+  border: 1px solid var(--rule);
+  background: rgb(255 255 255 / 16%);
 }
 
 .live-math__heading h4 {
@@ -798,6 +806,13 @@ body[data-rescue="true"] .decision {
   font-family: Newsreader, Georgia, serif;
   font-size: 1.25rem;
   font-weight: 500;
+}
+
+.live-math__heading > p:last-child {
+  margin: var(--space-2) 0 0;
+  color: var(--ink-soft);
+  font-size: 0.68rem;
+  line-height: 1.45;
 }
 
 .live-math ol {
@@ -1373,16 +1388,21 @@ footer {
   border-bottom: 0;
 }
 
-@media (width < 62rem) {
+@media (width < 78rem) {
   .intro {
     grid-template-columns: minmax(0, 1fr);
   }
 
   .experiment {
+    grid-template-areas:
+      "map"
+      "controls"
+      "math";
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .network-wrap {
+  .network-wrap,
+  .live-math {
     position: static;
   }
 }
@@ -1471,15 +1491,6 @@ footer {
 
   .route-ledger {
     grid-template-columns: minmax(0, 1fr);
-  }
-
-  .milestone-trail {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .milestone + .milestone {
-    border-top: 1px solid var(--rule);
-    border-left: 0;
   }
 
   .route-ledger__route {
