@@ -16,6 +16,12 @@ export interface BraessResult {
   averageChangeMinutes: number;
 }
 
+export interface BraessLandmarks {
+  bestShortcutUsers: number;
+  bestAverageMinutes: number;
+  breakEvenShortcutUsers: number;
+}
+
 /**
  * Non-shortcut drivers split evenly between the two identical old routes.
  * Every shortcut driver uses both narrow roads, so each narrow road carries
@@ -46,3 +52,33 @@ export function calculateBraess(requestedShortcutUsers: number): BraessResult {
     averageChangeMinutes: averageMinutes - BASELINE_MINUTES,
   };
 }
+
+/**
+ * Finds the important points a visitor can discover with the 100-driver slider.
+ * Deriving these from the same model prevents explanatory copy drifting away
+ * from the arithmetic it describes.
+ */
+export function findBraessLandmarks(): BraessLandmarks {
+  let best = calculateBraess(0);
+  let breakEvenShortcutUsers: number | null = null;
+
+  for (let shortcutUsers = CARS_PER_MINUTE; shortcutUsers <= TOTAL_DRIVERS; shortcutUsers += CARS_PER_MINUTE) {
+    const result = calculateBraess(shortcutUsers);
+    if (result.averageMinutes < best.averageMinutes) best = result;
+    if (breakEvenShortcutUsers === null && Math.abs(result.averageMinutes - BASELINE_MINUTES) < Number.EPSILON) {
+      breakEvenShortcutUsers = shortcutUsers;
+    }
+  }
+
+  if (breakEvenShortcutUsers === null) {
+    throw new Error("The configured network has no post-opening break-even point");
+  }
+
+  return Object.freeze({
+    bestShortcutUsers: best.shortcutUsers,
+    bestAverageMinutes: best.averageMinutes,
+    breakEvenShortcutUsers,
+  });
+}
+
+export const BRAESS_LANDMARKS = findBraessLandmarks();

@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
   BASELINE_MINUTES,
+  BRAESS_LANDMARKS,
   TOTAL_DRIVERS,
   calculateBraess,
+  findBraessLandmarks,
 } from "../src/braess.ts";
 
 describe("the transparent Braess calculation", () => {
@@ -50,6 +52,20 @@ describe("the transparent Braess calculation", () => {
       expect(result.shortcutRouteMinutes).toBeLessThan(result.oldRouteMinutes);
     }
     expect(calculateBraess(TOTAL_DRIVERS).averageMinutes).toBeGreaterThan(BASELINE_MINUTES);
+  });
+
+  it("derives the discovery landmarks from the same arithmetic", () => {
+    expect(BRAESS_LANDMARKS).toEqual({
+      bestShortcutUsers: 500,
+      bestAverageMinutes: 64.6875,
+      breakEvenShortcutUsers: 1_000,
+    });
+    expect(findBraessLandmarks()).toEqual(BRAESS_LANDMARKS);
+
+    const beforeBreakEven = calculateBraess(900);
+    const afterBreakEven = calculateBraess(1_100);
+    expect(beforeBreakEven.averageMinutes).toBeLessThan(BASELINE_MINUTES);
+    expect(afterBreakEven.averageMinutes).toBeGreaterThan(BASELINE_MINUTES);
   });
 
   it("normalises malformed and out-of-range input", () => {
