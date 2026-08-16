@@ -106,6 +106,8 @@ describe("transparent direct interactions", () => {
     expect(doc.querySelector("[data-network-switch]")).toBeNull();
     expect(doc.querySelector("[data-map-proof]")?.getAttribute("data-result-highlight")).toBe("false");
     expect(doc.querySelector("[data-rescue-result]")?.getAttribute("data-result-highlight")).toBe("false");
+    expect(doc.querySelector("[data-town-comparison]")?.getAttribute("data-result-highlight")).toBe("false");
+    expect(doc.querySelector("[data-town-comparison]")?.getAttribute("tabindex")).toBe("-1");
     expect(doc.querySelector("[data-return-explanation]")).not.toBeNull();
     expect(doc.querySelector("[data-closure-result]")).toBeNull();
     expect(doc.querySelector("[data-play], [data-animate]")).toBeNull();

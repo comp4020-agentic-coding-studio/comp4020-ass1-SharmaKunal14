@@ -47,7 +47,6 @@ const roadControlTitle = need<HTMLElement>("[data-road-control-title]");
 const roadControlCopy = need<HTMLElement>("[data-road-control-copy]");
 const toggleRoad = need<HTMLButtonElement>("[data-toggle-road]");
 const networkState = need<HTMLElement>("[data-network-state]");
-const networkWrap = need<HTMLElement>("[data-network-wrap]");
 const mapProof = need<HTMLElement>("[data-map-proof]");
 const network = need<SVGSVGElement>("[data-network]");
 const spotlightCopy = need<HTMLElement>("[data-spotlight-copy]");
@@ -91,6 +90,7 @@ let resultRevealed = false;
 let rescueMode = false;
 let furthestShortcutUsers = 0;
 let activeSpotlight: string | null = null;
+let activeResultHighlight: "road-closed" | "road-open" | null = null;
 
 function minutes(value: number): string {
   return number.format(value);
@@ -393,7 +393,8 @@ function render(result: BraessResult): void {
   reveal.hidden = !showResultChapter;
   roadControl.hidden = !showResultChapter;
   mapProof.hidden = !roadClosed;
-  mapProof.dataset.resultHighlight = String(showResultChapter && roadClosed);
+  mapProof.dataset.resultHighlight = String(activeResultHighlight === "road-closed" && roadClosed);
+  townComparison.dataset.resultHighlight = String(activeResultHighlight === "road-open" && !roadClosed);
   toggleRoad.setAttribute("aria-checked", String(!roadClosed));
   toggleRoad.setAttribute(
     "aria-label",
@@ -420,6 +421,7 @@ function render(result: BraessResult): void {
 
 input.addEventListener("input", () => {
   roadClosed = false;
+  activeResultHighlight = null;
   const result = calculateBraess(Number(input.value));
   input.value = String(result.shortcutUsers);
   furthestShortcutUsers = Math.max(furthestShortcutUsers, result.shortcutUsers);
@@ -429,6 +431,7 @@ input.addEventListener("input", () => {
 
 startRescue.addEventListener("click", () => {
   roadClosed = false;
+  activeResultHighlight = null;
   rescueMode = true;
   resultRevealed = false;
   input.disabled = false;
@@ -443,6 +446,7 @@ startRescue.addEventListener("click", () => {
 
 finishRescue.addEventListener("click", () => {
   rescueMode = false;
+  activeResultHighlight = null;
   resultRevealed = true;
   input.value = String(TOTAL_DRIVERS);
   render(calculateBraess(TOTAL_DRIVERS));
@@ -464,6 +468,7 @@ for (const button of spotlightButtons) {
 
 showResult.addEventListener("click", () => {
   resultRevealed = true;
+  activeResultHighlight = null;
   render(calculateBraess(Number(input.value)));
   reveal.focus({ preventScroll: true });
   reveal.scrollIntoView({
@@ -475,10 +480,11 @@ showResult.addEventListener("click", () => {
 toggleRoad.addEventListener("click", () => {
   activeSpotlight = null;
   roadClosed = !roadClosed;
+  activeResultHighlight = roadClosed ? "road-closed" : "road-open";
   input.disabled = roadClosed;
   input.value = roadClosed ? "0" : String(TOTAL_DRIVERS);
   render(calculateBraess(Number(input.value)));
-  const destination = roadClosed ? mapProof : networkWrap;
+  const destination = roadClosed ? mapProof : townComparison;
   destination.focus({ preventScroll: true });
   destination.scrollIntoView({
     behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
@@ -487,6 +493,7 @@ toggleRoad.addEventListener("click", () => {
 });
 
 returnExplanation.addEventListener("click", () => {
+  activeResultHighlight = null;
   mapProof.dataset.resultHighlight = "false";
   reveal.focus({ preventScroll: true });
 });

@@ -1503,7 +1503,8 @@ h3 {
 
 .slider-action[data-next-action="true"],
 .map-proof[data-result-highlight="true"],
-.rescue-result[data-result-highlight="true"] {
+.rescue-result[data-result-highlight="true"],
+.town-comparison[data-result-highlight="true"] {
   outline: 3px solid var(--gold);
   outline-offset: 5px;
   box-shadow:

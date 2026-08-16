@@ -547,6 +547,7 @@ describe("transparent desktop experiment", () => {
     expect(await text(page, "[data-average-time]")).toBe("65");
     expect(await page.locator("[data-map-proof]").isVisible()).toBe(true);
     expect(await page.locator("[data-map-proof]").getAttribute("data-result-highlight")).toBe("true");
+    expect(await page.locator("[data-town-comparison]").getAttribute("data-result-highlight")).toBe("false");
     expect(Number.parseFloat(await page.locator("[data-map-proof]").evaluate((element) => getComputedStyle(element).outlineWidth))).toBe(3);
     expect(await page.locator("[data-return-explanation]").evaluate((element) => getComputedStyle(element).outlineStyle)).toBe("none");
     expect(await text(page, "[data-map-proof]")).toContain("80 → 65 min");
@@ -578,6 +579,10 @@ describe("transparent desktop experiment", () => {
     expect(await page.locator("#shortcut-users").inputValue()).toBe("4000");
     expect(await text(page, "[data-average-time]")).toBe("80");
     expect(await page.locator("[data-reveal]").isVisible()).toBe(true);
+    expect(await page.locator("[data-map-proof]").getAttribute("data-result-highlight")).toBe("false");
+    expect(await page.locator("[data-town-comparison]").getAttribute("data-result-highlight")).toBe("true");
+    expect(Number.parseFloat(await page.locator("[data-town-comparison]").evaluate((element) => getComputedStyle(element).outlineWidth))).toBe(3);
+    expect(await page.locator("[data-town-comparison]").evaluate((element) => element === document.activeElement)).toBe(true);
     healthy(observed);
     await page.close();
   });
