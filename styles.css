@@ -74,8 +74,9 @@ body[data-input="pointer"] :focus-visible {
   padding: 0;
   overflow: hidden;
   clip-path: inset(50%);
-  white-space: nowrap;
+  overflow-wrap: anywhere;
   border: 0;
+  contain: strict;
 }
 
 .skip-link {
@@ -185,8 +186,9 @@ main {
   padding: 0;
   overflow: hidden;
   clip-path: inset(50%);
-  white-space: nowrap;
+  overflow-wrap: anywhere;
   border: 0;
+  contain: strict;
 }
 
 .chapters__label,
@@ -298,6 +300,54 @@ main {
   font-size: clamp(1.03rem, 0.95rem + 0.28vw, 1.22rem);
   line-height: 1.55;
   text-wrap: pretty;
+}
+
+.discoveries {
+  margin-top: 1rem;
+  font-family: var(--sans);
+}
+
+.discoveries__label {
+  margin: 0 0 0.35rem;
+  color: var(--ink-faint);
+  font-size: 0.61rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.discoveries ol {
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.35rem;
+  list-style: none;
+}
+
+.discoveries li {
+  min-width: 0;
+  padding: 0.42rem;
+  border-top: 2px solid var(--rule);
+  color: var(--ink-faint);
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.35rem;
+  font-size: 0.58rem;
+  line-height: 1.25;
+}
+
+.discoveries li > span {
+  font-variant-numeric: tabular-nums;
+}
+
+.discoveries li[data-found="true"] {
+  border-color: var(--connector);
+  color: var(--ink);
+}
+
+.discoveries li[data-found="true"] > span {
+  color: var(--connector);
 }
 
 .measure {
@@ -501,6 +551,57 @@ body:is(
   gap: 0.45rem;
 }
 
+.builder {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.builder--fair {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.builder--fair .choice:last-child {
+  grid-column: 1 / -1;
+}
+
+/* stylelint-disable no-descending-specificity -- placed causal cards intentionally
+   override the shared choice-card surface below the fair-test variants. */
+.causal-slots {
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.4rem;
+  list-style: none;
+  counter-reset: causes;
+}
+
+.causal-slots li {
+  min-height: 4rem;
+  padding: 0.5rem;
+  border: 1px dashed var(--rule);
+  color: var(--ink-faint);
+  font-family: var(--sans);
+  font-size: 0.65rem;
+  counter-increment: causes;
+}
+
+.causal-slots .choice {
+  width: 100%;
+  min-height: 100%;
+  padding: 0.35rem;
+  border: 0;
+  box-shadow: inset 3px 0 0 var(--connector);
+}
+
+.causal-bank {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.4rem;
+}
+/* stylelint-enable no-descending-specificity */
+
 .option {
   position: relative;
   min-height: 3.1rem;
@@ -639,8 +740,9 @@ body:is(
   padding: 0;
   overflow: hidden;
   clip-path: inset(50%);
-  white-space: nowrap;
+  overflow-wrap: anywhere;
   border: 0;
+  contain: strict;
 }
 
 .network {
@@ -778,6 +880,68 @@ body:not([data-state="map"]) .throat__label {
   opacity: 1;
 }
 
+.network[data-interaction="follow"] .vehicle--shortcut {
+  cursor: crosshair;
+  pointer-events: all;
+  filter: drop-shadow(0 0 3px var(--paper));
+}
+
+.network--following .vehicle--shortcut:not(.vehicle--followed) {
+  opacity: 0.22;
+}
+
+.vehicle--followed {
+  stroke-width: 3px;
+  filter: drop-shadow(0 0 5px var(--shortcut-car));
+}
+
+.road-hit {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 38px;
+  pointer-events: none;
+}
+
+.network[data-interaction="queues"] .road-hit {
+  cursor: crosshair;
+  pointer-events: stroke;
+}
+
+.draw-handle {
+  fill: color-mix(in srgb, var(--connector) 16%, transparent);
+  stroke: var(--connector);
+  stroke-width: 2px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.network[data-interaction="draw"] .draw-handle {
+  cursor: crosshair;
+  opacity: 1;
+  pointer-events: all;
+  animation: handle-pulse 1.4s ease-in-out infinite;
+}
+
+.network[data-interaction="draw"] .draw-handle.is-start {
+  fill: color-mix(in srgb, var(--connector) 35%, transparent);
+  animation: none;
+}
+
+.shortcut-gesture {
+  stroke: var(--connector);
+  stroke-dasharray: 8 6;
+  stroke-linecap: round;
+  stroke-width: 5px;
+  pointer-events: none;
+}
+
+@keyframes handle-pulse {
+  50% {
+    opacity: 0.45;
+    stroke-width: 5px;
+  }
+}
+
 .network-note {
   fill: var(--road-crawl);
   font-size: 15px;
@@ -837,18 +1001,24 @@ body[data-state="proposal"] .road-label:not(.road-label--ab),
 body[data-state="map"] .vehicle,
 body[data-state="proposal"] .vehicle,
 body[data-state="quiet"] .vehicle,
+body[data-state="quiet_closed"] .vehicle,
+body[data-state="quiet_open"] .vehicle,
 body[data-state="quiet_result"] .vehicle,
 body[data-state="peak"] .vehicle,
-body[data-state="compare"] .vehicle {
+body[data-state="compare"] .vehicle,
+body[data-state="verdict"] .vehicle {
   display: none;
 }
 
 body[data-state="map"] .road:not(.road--connector),
 body[data-state="proposal"] .road:not(.road--connector),
 body[data-state="quiet"] .road:not(.road--connector),
+body[data-state="quiet_closed"] .road:not(.road--connector),
+body[data-state="quiet_open"] .road:not(.road--connector),
 body[data-state="quiet_result"] .road:not(.road--connector),
 body[data-state="peak"] .road:not(.road--connector),
-body[data-state="compare"] .road:not(.road--connector) {
+body[data-state="compare"] .road:not(.road--connector),
+body[data-state="verdict"] .road:not(.road--connector) {
   stroke: var(--road);
   stroke-width: 7px;
 }
@@ -1045,12 +1215,13 @@ body[data-state="compare"] .road:not(.road--connector) {
   }
 
   .comparison {
-    width: max-content;
+    width: 100%;
+    grid-template-columns: minmax(0, 1fr) min-content minmax(0, 1fr);
     gap: 0.25rem 0.4rem;
   }
 
   .comparison__value {
-    font-size: 2.35rem;
+    font-size: clamp(1.9rem, 10vw, 2.35rem);
   }
 
   .comparison__arrow {
@@ -1068,7 +1239,7 @@ body[data-state="compare"] .road:not(.road--connector) {
 
   .control {
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr);
     gap: 0.7rem;
     align-items: center;
   }
@@ -1079,7 +1250,8 @@ body[data-state="compare"] .road:not(.road--connector) {
   }
 
   .action {
-    min-width: 10.8rem;
+    width: 100%;
+    min-width: 0;
     min-height: 3.25rem;
     padding-inline: 1rem;
     font-size: 0.68rem;

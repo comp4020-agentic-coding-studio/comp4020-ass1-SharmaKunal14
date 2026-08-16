@@ -126,7 +126,7 @@ describe("the page quotes controlled evidence", () => {
     expect(Math.round(north)).toBe(305);
     expect(Math.round(shortcut)).toBe(274);
     expect(Math.round(saving)).toBe(31);
-    expect(STORY.map.headline).toBe("The map says both ways take 5:05.");
+    expect(STORY.map.headline).toMatch(/find two equally quick ways/i);
     expect(STORY.map.body).toMatch(/road lengths and speed limits/i);
     expect(mainSource).toContain(
       'ui.metricContext.textContent = "305 − 274 = 31 seconds. These are estimates, not timed trips."',
@@ -218,13 +218,16 @@ describe("one investigation carried through six chapters", () => {
 
   it("makes the proposal a route trace rather than two mandatory endpoint cards", () => {
     expect(STORY.proposal.eyebrow).toMatch(/add a shortcut/i);
-    expect(STORY.proposal.headline).toMatch(/build a third way/i);
+    expect(STORY.proposal.headline).toMatch(/draw a quicker-looking way/i);
     expect(STORY.proposal.body).toMatch(/Riverside to Millbrook/i);
-    expect(STORY.proposal.action).toBe("Draw the shortcut");
+    expect(STORY.proposal.action).toBe("Draw it with the keyboard");
 
     expect(mainSource).toContain("let shortcutTraced = false");
     expect(mainSource).toContain('state === "proposal" && !shortcutTraced');
     expect(mainSource).toContain("scene.traceRoute(currentTrace())");
+    expect(sceneSource).toContain('onShortcutDraw?: () => void');
+    expect(sceneSource).toContain('data-draw-node');
+    expect(sceneSource).toContain('finishShortcutGesture');
     expect(mainSource).not.toContain("endpointsSelected");
     expect(mainSource).not.toMatch(/choiceButton\(\s*["']A["']/);
     expect(mainSource).not.toMatch(/choiceButton\(\s*["']B["']/);
@@ -249,6 +252,28 @@ describe("one investigation carried through six chapters", () => {
     expect(shortcutVehicleRule).toContain("stroke: var(--ink)");
   });
 
+  it("uses different discovery interactions instead of a chain of continue buttons", () => {
+    expect(mainSource).toContain("completeShortcutDraw");
+    expect(mainSource).toContain("followShortcutVehicle");
+    expect(mainSource).toContain("inspectBridgeFromMap");
+    expect(mainSource).toContain("fairTestBuilder");
+    expect(mainSource).toContain("renderVerdictStep");
+    expect(mainSource).toContain("causalBuilder");
+    expect(sceneSource).toContain('this.interaction !== "draw"');
+    expect(sceneSource).toContain('this.interaction !== "follow"');
+    expect(sceneSource).toContain('this.interaction === "queues"');
+    expect(doc.querySelectorAll("[data-discovery]")).toHaveLength(3);
+  });
+
+  it("asks for observations before stating the busy-morning explanation", () => {
+    expect(STORY.wave_one.headline).toMatch(/pick one gold car/i);
+    expect(STORY.wave_three.headline).toMatch(/where are the two queues/i);
+    expect(STORY.wave_four.headline).toMatch(/what will happen/i);
+    expect(STORY.compare.headline).toMatch(/build a test/i);
+    expect(STORY.diagnose.headline).toMatch(/why did/i);
+    expect(STORY.synthesis.headline).toMatch(/causal order/i);
+  });
+
   it("keeps the interaction surface bounded and dashboard-free", () => {
     expect(doc.querySelectorAll("[data-action]")).toHaveLength(1);
     expect(doc.querySelectorAll("button")).toHaveLength(1);
@@ -267,12 +292,12 @@ describe("one investigation carried through six chapters", () => {
   });
 
   it("uses the second wave to explain topology instead of repeating route share", () => {
-    expect(STORY.wave_two.headline).toBe("One shortcut car uses both old bridges.");
-    expect(STORY.wave_two.body).toMatch(/enters on Riverside Road/i);
-    expect(STORY.wave_two.body).toMatch(/leaves on Millbrook Road/i);
-    expect(STORY.wave_two.action).toBe("Let the next cars choose");
+    expect(STORY.wave_two.headline).toBe("What did that gold car use?");
+    expect(STORY.wave_two.body).toMatch(/begins on Riverside Road/i);
+    expect(STORY.wave_two.body).toMatch(/finishes on Millbrook Road/i);
+    expect(STORY.wave_two.action).toBe("Keep watching the morning");
     expect(mainSource).toContain('ui.metric.textContent = "1 car → 2 bridges"');
-    expect(mainSource).toContain('ui.metricLabel.textContent = "every shortcut trip does this"');
+    expect(mainSource).toContain('ui.metricLabel.textContent = "your followed route"');
   });
 
   it("keeps the main story child-friendly while the evidence disclosure stays technical", () => {
@@ -301,7 +326,7 @@ describe("one investigation carried through six chapters", () => {
       "${EXPERIMENT.control.routeCountsOpen.shortcut} ÷ ` +",
     );
     expect(mainSource).toContain(
-      "${EXPERIMENT.target.routeCountsOpen.shortcut} ÷ ` +",
+      "`${EXPERIMENT.target.routeCountsOpen.shortcut} ÷ ${EXPERIMENT.target.cohortSize} ≈ `",
     );
     expect(mainSource).toContain(
       "`${oldWay} + ${target.routeCountsOpen.shortcut} = ${counts.open}`",
@@ -328,8 +353,8 @@ describe("one investigation carried through six chapters", () => {
     expect(STORY.quiet_closed.body).toMatch(/not running the simulation now/i);
     expect(STORY.quiet_closed.action).toMatch(/^Show\b/);
     expect(STORY.quiet_open.action).toMatch(/^Reuse\b/);
-    expect(STORY.compare.action).toBe("Show the two full replays");
-    expect(STORY.compare.action).toMatch(/^Show\b/);
+    expect(STORY.compare.action).toBe("Use this test");
+    expect(STORY.verdict.action).toMatch(/^Reveal\b/);
     expect(STORY.quiet_closed.action).not.toMatch(/^Run\b/);
     expect(STORY.compare.action).not.toMatch(/^Run\b/);
   });
@@ -369,7 +394,7 @@ describe("one investigation carried through six chapters", () => {
     expect(STORY.verdict.body).toContain(String(EXPERIMENT.target.demandPerHour));
     expect(mainSource).toContain('ui.metric.textContent = "860"');
     expect(mainSource).toContain("`${Math.abs(EXPERIMENT.control.deltaSeconds)} seconds saved, rounded to 8. `");
-    expect(STORY.compare.body).toMatch(/change only whether the shortcut is open/i);
+    expect(STORY.compare.body).toMatch(/only whether the shortcut is open should change/i);
   });
 });
 

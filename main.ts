@@ -20,8 +20,18 @@ const PRESENTATION_TIME_SCALE = 140;
 const LINKS: readonly LinkId[] = ["SA", "BT", "AT", "SB", "AB"];
 
 type QuietPrediction = "help" | "same" | "hurt";
-type ComparisonChoice = "road-only" | "different-morning" | "different-demand";
+type BusyPrediction = "shorter" | "same" | "longer";
+type FairCondition =
+  | "same-starts"
+  | "same-rules"
+  | "shortcut-only"
+  | "different-starts"
+  | "more-cars";
+type CauseId = "tempting" | "shared" | "queues";
 type BridgeId = "SA" | "BT";
+
+const FAIR_CONDITIONS = new Set<FairCondition>(["same-starts", "same-rules", "shortcut-only"]);
+const CAUSAL_ORDER: readonly CauseId[] = ["tempting", "shared", "queues"];
 
 function need<T extends Element>(selector: string): T {
   const element = document.querySelector<T>(selector);
@@ -47,6 +57,8 @@ const ui = {
   chapterNumber: need<HTMLElement>("[data-chapter-number]"),
   chapterItems: Array.from(document.querySelectorAll<HTMLElement>("[data-chapter]")),
   story: need<HTMLElement>(".story"),
+  discoveries: need<HTMLElement>("[data-discoveries]"),
+  discoveryItems: Array.from(document.querySelectorAll<HTMLElement>("[data-discovery]")),
   figure: need<HTMLElement>("[data-figure]"),
   eyebrow: need<HTMLElement>("[data-eyebrow]"),
   headline: need<HTMLElement>("[data-headline]"),
@@ -87,7 +99,11 @@ const ui = {
 };
 
 const network = networkOf(TARGET);
-const scene = new Scene(ui.figure);
+const scene = new Scene(ui.figure, {
+  onShortcutDraw: () => completeShortcutDraw(false),
+  onShortcutVehicle: (vehicleId) => followShortcutVehicle(vehicleId, false),
+  onBridge: (bridge) => inspectBridgeFromMap(bridge, false),
+});
 
 let run = freshTargetRun();
 let state: StateId = "map";
@@ -104,12 +120,17 @@ let panelAnimations: Animation[] = [];
 
 const routesVisited = new Set<"north" | "south">();
 const bridgesInspected = new Set<BridgeId>();
+const queuesFound = new Set<BridgeId>();
+const fairConditions = new Set<FairCondition>();
 let selectedRoute: "north" | "south" | null = null;
 let selectedBridge: BridgeId | null = null;
 let shortcutTraced = false;
 let quietPrediction: QuietPrediction | null = null;
 let personalRoute: RouteId | null = null;
-let comparisonChoice: ComparisonChoice | null = null;
+let busyPrediction: BusyPrediction | null = null;
+let followedVehicleId: number | null = null;
+let verdictStep: 0 | 1 | 2 = 0;
+let causalChain: CauseId[] = [];
 
 function freshTargetRun(): LiveRun {
   const next = new LiveRun(TARGET, requestedTimeScale());
@@ -123,12 +144,17 @@ function freshTargetRun(): LiveRun {
 function resetInvestigation(): void {
   routesVisited.clear();
   bridgesInspected.clear();
+  queuesFound.clear();
+  fairConditions.clear();
   selectedRoute = null;
   selectedBridge = null;
   shortcutTraced = false;
   quietPrediction = null;
   personalRoute = null;
-  comparisonChoice = null;
+  busyPrediction = null;
+  followedVehicleId = null;
+  verdictStep = 0;
+  causalChain = [];
   animationTarget = null;
   animationNextState = null;
   animationFocusHeading = false;
@@ -137,6 +163,8 @@ function resetInvestigation(): void {
   peakOpenedAt = 0;
   run = freshTargetRun();
   scene.setConnectorOpen(false);
+  scene.followVehicle(null);
+  scene.setInteractionMode(null);
 }
 
 function applyLayout(): void {
@@ -152,6 +180,8 @@ function applyLayout(): void {
   scene.spotlight(currentSpotlight());
   scene.traceRoute(currentTrace());
   scene.setNarrative(state, narrativeShare());
+  scene.setInteractionMode(interactionForState());
+  scene.followVehicle(followedVehicleId);
 }
 
 function fillEvidence(): void {
@@ -186,9 +216,45 @@ function announce(message: string): void {
   }, 20);
 }
 
+function syncMeasureMode(): void {
+  const showsComparison =
+    state === "quiet_result" || state === "reveal" || (state === "verdict" && verdictStep === 2);
+  ui.comparison.hidden = !showsComparison;
+  ui.liveMeasure.hidden = showsComparison;
+}
+
+function renderDiscoveries(): void {
+  const visible = STORY[state].chapter >= 5;
+  ui.discoveries.hidden = !visible;
+  const found = {
+    route: followedVehicleId !== null,
+    queues: queuesFound.size === 2,
+    result: verdictStep === 2 || STATES_AFTER_VERDICT.has(state),
+  } as const;
+  const labels = {
+    route: found.route ? "Gold route: both bridges" : "Follow a gold car",
+    queues: found.queues ? "Queues: both bridges" : "Find both queues",
+    result: found.result ? "Open morning: 13s slower" : "Which morning wins?",
+  } as const;
+  for (const item of ui.discoveryItems) {
+    const key = item.dataset.discovery as keyof typeof found | undefined;
+    if (key === undefined) continue;
+    item.dataset.found = String(found[key]);
+    const label = item.querySelector("strong");
+    if (label !== null) label.textContent = labels[key];
+  }
+}
+
+const STATES_AFTER_VERDICT = new Set<StateId>(["diagnose", "recovery", "synthesis", "reveal"]);
+
 function enter(next: StateId, focusHeading = false): void {
   const previousChapter = STORY[state]?.chapter;
   state = next;
+  if (next === "verdict") verdictStep = 0;
+  if (next === "diagnose") {
+    selectedBridge = null;
+    bridgesInspected.clear();
+  }
   document.body.dataset.state = next;
   (window as unknown as { storyState?: StateId }).storyState = next;
 
@@ -200,20 +266,30 @@ function enter(next: StateId, focusHeading = false): void {
   ui.afterword.hidden = next !== "reveal";
   ui.measure.hidden = false;
 
-  const showsComparison = next === "quiet_result" || next === "verdict" || next === "reveal";
-  ui.comparison.hidden = !showsComparison;
-  ui.liveMeasure.hidden = showsComparison;
+  syncMeasureMode();
 
   renderChapterProgress();
   renderControls();
   renderStateCopy();
+  renderDiscoveries();
   scene.setConnectorOpen(connectorLooksOpen());
   scene.spotlight(currentSpotlight());
   scene.traceRoute(currentTrace());
   scene.setNarrative(next, narrativeShare());
+  scene.setInteractionMode(interactionForState());
+  scene.followVehicle(followedVehicleId);
 
+  const chapterChanged = STORY[next].chapter !== previousChapter;
   if (hasEntered) {
-    animatePanels(STORY[next].chapter !== previousChapter ? "chapter" : "step");
+    animatePanels(chapterChanged ? "chapter" : "step");
+    if (chapterChanged) {
+      ui.story.scrollIntoView({
+        // Keep the pointer geometry stable for direct SVG gestures. The panels
+        // provide the visual transition; viewport motion must finish instantly.
+        behavior: "auto",
+        block: "start",
+      });
+    }
   }
   hasEntered = true;
 
@@ -226,22 +302,14 @@ function enter(next: StateId, focusHeading = false): void {
         `used the shortcut, which rounds to ${EXPERIMENT.control.sharesOpen.shortcut} percent.`,
     );
   } else if (next === "verdict") {
-    announce(
-      `Peak result: ${formatDuration(EXPERIMENT.target.closedSeconds)} without the road, ` +
-        `${formatDuration(EXPERIMENT.target.openSeconds)} with it: ` +
-        `${Math.round(EXPERIMENT.target.deltaSeconds)} seconds longer. ` +
-        `${EXPERIMENT.target.routeCountsOpen.shortcut} of ${EXPERIMENT.target.cohortSize} trips ` +
-        `used the shortcut, which rounds to ${EXPERIMENT.target.sharesOpen.shortcut} percent.`,
-    );
+    announce("The fair test is ready. Reveal the shortcut-closed morning first.");
   } else if (next === "wave_one" || next === "wave_three") {
     const shortcut = run.choicesSinceAnchorFor("shortcut");
     const total = run.choiceCountSinceAnchor;
     const share = Math.round(run.choiceShareSinceAnchor("shortcut") * 100);
     announce(`${shortcut} of ${total} cars chose the shortcut, which rounds to ${share} percent.`);
   } else if (next === "synthesis") {
-    announce(
-      `Zero of ${run.choiceCountSinceAnchor} new cars chose the closed shortcut: zero percent.`,
-    );
+    announce("Three evidence cards are ready. Put the causes in order before the reveal.");
   } else {
     announce(`${beat.eyebrow}. ${beat.headline}`);
   }
@@ -403,6 +471,92 @@ function radioGroup<T extends string>(
   return fieldset;
 }
 
+function fairTestBuilder(): HTMLElement {
+  const host = document.createElement("div");
+  host.className = "builder builder--fair";
+  host.setAttribute("role", "group");
+  host.setAttribute("aria-label", "Conditions kept the same in the fair test");
+  const options: readonly {
+    readonly value: FairCondition;
+    readonly label: string;
+    readonly detail: string;
+  }[] = [
+    { value: "same-starts", label: "Same 280 start times", detail: "keep who leaves when" },
+    { value: "same-rules", label: "Same driving rules", detail: "cars choose the same way" },
+    { value: "shortcut-only", label: "Change only the shortcut", detail: "closed once, open once" },
+    { value: "different-starts", label: "Different start times", detail: "a different morning" },
+    { value: "more-cars", label: "Add more cars", detail: "changes traffic as well" },
+  ];
+  for (const option of options) {
+    const button = choiceButton(
+      option.value,
+      option.label,
+      option.detail,
+      fairConditions.has(option.value),
+    );
+    button.dataset.fairCondition = option.value;
+    host.append(button);
+  }
+  return host;
+}
+
+function causalBuilder(): HTMLElement {
+  const host = document.createElement("div");
+  host.className = "builder builder--causal";
+  const ordered = document.createElement("ol");
+  ordered.className = "causal-slots";
+  ordered.setAttribute("aria-label", "Your cause and effect order");
+  for (let index = 0; index < 3; index += 1) {
+    const item = document.createElement("li");
+    const cause = causalChain[index];
+    if (cause === undefined) {
+      item.textContent = `${index + 1}. Choose a card`;
+    } else {
+      const button = causeButton(cause);
+      button.dataset.causePlaced = "true";
+      button.setAttribute("aria-label", `Remove step ${index + 1}: ${causeLabel(cause)}`);
+      item.append(button);
+    }
+    ordered.append(item);
+  }
+  const bank = document.createElement("div");
+  bank.className = "causal-bank";
+  bank.setAttribute("role", "group");
+  bank.setAttribute("aria-label", "Available cause cards");
+  for (const cause of CAUSAL_ORDER) {
+    if (!causalChain.includes(cause)) bank.append(causeButton(cause));
+  }
+  host.append(ordered, bank);
+  return host;
+}
+
+function causeButton(cause: CauseId): HTMLButtonElement {
+  const detail =
+    cause === "tempting"
+      ? "what drivers see"
+      : cause === "shared"
+        ? "where gold cars go"
+        : "what happens to traffic";
+  const button = choiceButton(cause, causeLabel(cause), detail, false);
+  button.dataset.cause = cause;
+  return button;
+}
+
+function causeLabel(cause: CauseId): string {
+  if (cause === "tempting") return "The shortcut looks quickest";
+  if (cause === "shared") return "Gold cars use both bridges";
+  return "Both bridge queues grow";
+}
+
+function fairTestReady(): boolean {
+  return fairConditions.size === FAIR_CONDITIONS.size &&
+    [...FAIR_CONDITIONS].every((condition) => fairConditions.has(condition));
+}
+
+function causalOrderReady(): boolean {
+  return CAUSAL_ORDER.every((cause, index) => causalChain[index] === cause);
+}
+
 function renderControls(): void {
   ui.choices.replaceChildren();
   ui.action.disabled = false;
@@ -453,32 +607,52 @@ function renderControls(): void {
       ),
     );
     ui.action.disabled = personalRoute === null;
-  } else if (state === "compare") {
+  } else if (state === "wave_one") {
     ui.choices.append(
-      radioGroup<ComparisonChoice>(
-        "comparison-design",
-        "Choose the fair test",
-        [
-          {
-            value: "road-only",
-            label: "Change only the shortcut",
-            detail: "keep the same traffic and start times",
-          },
-          {
-            value: "different-morning",
-            label: "Use different start times",
-            detail: "that changes the morning too",
-          },
-          {
-            value: "different-demand",
-            label: "Add more cars",
-            detail: "that changes two things at once",
-          },
-        ],
-        comparisonChoice,
+      choiceButton(
+        "follow-car",
+        followedVehicleId === null ? "Follow a gold car" : "Gold car selected",
+        followedVehicleId === null ? "keyboard alternative" : "trail shown on the map",
+        followedVehicleId !== null,
+        followedVehicleId !== null,
       ),
     );
-    ui.action.disabled = comparisonChoice !== "road-only";
+    ui.action.disabled = followedVehicleId === null;
+  } else if (state === "wave_three") {
+    ui.choices.append(
+      choiceButton(
+        "SA",
+        "Inspect Riverside",
+        "north bridge road",
+        selectedBridge === "SA",
+        queuesFound.has("SA"),
+      ),
+      choiceButton(
+        "BT",
+        "Inspect Millbrook",
+        "south bridge road",
+        selectedBridge === "BT",
+        queuesFound.has("BT"),
+      ),
+    );
+    ui.action.disabled = queuesFound.size < 2;
+  } else if (state === "wave_four") {
+    ui.choices.append(
+      radioGroup<BusyPrediction>(
+        "busy-prediction",
+        "Your prediction",
+        [
+          { value: "shorter", label: "Average gets shorter", detail: "the new route still helps" },
+          { value: "same", label: "Almost no change", detail: "the effects balance out" },
+          { value: "longer", label: "Average gets longer", detail: "the bridge queues dominate" },
+        ],
+        busyPrediction,
+      ),
+    );
+    ui.action.disabled = busyPrediction === null;
+  } else if (state === "compare") {
+    ui.choices.append(fairTestBuilder());
+    ui.action.disabled = !fairTestReady();
   } else if (state === "diagnose") {
     ui.choices.append(
       choiceButton(
@@ -497,6 +671,9 @@ function renderControls(): void {
       ),
     );
     ui.action.disabled = bridgesInspected.size < 2;
+  } else if (state === "synthesis") {
+    ui.choices.append(causalBuilder());
+    ui.action.disabled = !causalOrderReady();
   }
 
   if (isAdvancing) {
@@ -565,7 +742,7 @@ function renderStateCopy(): void {
     ui.metricContext.textContent = "305 − 274 = 31 seconds. These are estimates, not timed trips.";
     ui.status.textContent = shortcutTraced
       ? "Now check whether it still helps after cars appear."
-      : "Draw the missing road to complete the shortcut.";
+      : "Drag between the two pulsing junctions, or use the keyboard button.";
     ui.caption.textContent = shortcutTraced
       ? "Highlighted path: Eastgate → Riverside → shortcut → Millbrook → Central."
       : "The shortcut will connect Riverside directly to Millbrook.";
@@ -648,24 +825,16 @@ function renderStateCopy(): void {
   }
 
   if (state === "compare") {
-    ui.metric.textContent = "2";
-    ui.metricLabel.textContent = "replays of the same morning";
-    ui.metricContext.textContent = "Same car start times. Shortcut closed once, open once.";
-    ui.status.textContent = comparisonStatus();
-    ui.caption.textContent = "The moving example is paused. The answer comes from two complete replays.";
+    ui.metric.textContent = `${fairConditions.size} of 3`;
+    ui.metricLabel.textContent = "fair-test conditions selected";
+    ui.metricContext.textContent = "Choose three. Wrong cards can be switched off.";
+    ui.status.textContent = fairTestStatus();
+    ui.caption.textContent = "The moving example is paused while you construct the comparison.";
     return;
   }
 
   if (state === "verdict") {
-    renderComparison(EXPERIMENT.target);
-    ui.metricContext.textContent =
-      `We add ${EXPERIMENT.target.cohortSize} trip times and divide by ` +
-      `${EXPERIMENT.target.cohortSize} for each average. ` +
-      `5:44 − 5:31 = 13 seconds longer. ${EXPERIMENT.target.routeCountsOpen.shortcut} ÷ ` +
-      `${EXPERIMENT.target.cohortSize} ≈ ${EXPERIMENT.target.sharesOpen.shortcut}% used the shortcut.`;
-    ui.status.textContent = `The 38% came out of the replay; it was not chosen beforehand. ${personalChoiceReflection()}`;
-    ui.caption.textContent =
-      "The teal shortcut stays attractive while both old bridge roads carry its traffic.";
+    renderVerdictStep();
     return;
   }
 
@@ -684,14 +853,11 @@ function renderStateCopy(): void {
   }
 
   if (state === "synthesis") {
-    const total = run.choiceCountSinceAnchor;
-    const shortcut = run.choicesSinceAnchorFor("shortcut");
-    const share = Math.round(run.choiceShareSinceAnchor("shortcut") * 100);
-    ui.metric.textContent = `${shortcut} of ${total}`;
-    ui.metricLabel.textContent = `new cars picked the shortcut · ${share}%`;
-    ui.metricContext.textContent = `${shortcut} ÷ ${total} = ${share}%. The old two-way map is back.`;
-    ui.status.textContent = "Closing the shortcut removed it from every new car's choices.";
-    ui.caption.textContent = "Any car still on the shortcut chose it before it closed.";
+    ui.metric.textContent = `${causalChain.length} of 3`;
+    ui.metricLabel.textContent = "causes placed";
+    ui.metricContext.textContent = "Start with what drivers see; finish with what happens to traffic.";
+    ui.status.textContent = causalStatus();
+    ui.caption.textContent = "The three evidence cards above are the clues for this final explanation.";
     return;
   }
 
@@ -707,24 +873,44 @@ function renderStateCopy(): void {
 function renderWaveCopy(): void {
   if (state === "wave_two") {
     ui.metric.textContent = "1 car → 2 bridges";
-    ui.metricLabel.textContent = "every shortcut trip does this";
-    ui.metricContext.textContent = "The shortcut joins the old roads. It does not skip them.";
+    ui.metricLabel.textContent = "your followed route";
+    ui.metricContext.textContent = "Riverside Road → shortcut → Millbrook Road.";
     ui.status.textContent = isAdvancing
       ? "The same morning is continuing. No road or rule changed."
-      : "Next, let more cars choose and watch both old bridges.";
+      : "You found the route. Continue and look for where cars begin to bunch up.";
     ui.caption.textContent =
       "The highlighted journey runs from Riverside, across the shortcut, to Millbrook.";
     return;
   }
 
   if (state === "wave_four") {
-    ui.metric.textContent = "2";
-    ui.metricLabel.textContent = "old bridge roads are slowing";
-    ui.metricContext.textContent = "Every gold shortcut trip adds a car to both of them.";
+    ui.metric.textContent = "?";
+    ui.metricLabel.textContent = "average trip after both queues grow";
+    ui.metricContext.textContent = "Commit to shorter, unchanged or longer before the full test.";
     ui.status.textContent = isAdvancing
       ? "The same morning is continuing. No road or rule changed."
-      : "The moving example suggests a problem. Now measure it fairly.";
+      : busyPrediction === null
+        ? "Make your prediction from the route and queue evidence you collected."
+        : `Prediction locked: the average gets ${busyPrediction}.`;
     ui.caption.textContent = "Time is sped up, but every car still follows the same road rules.";
+    return;
+  }
+
+  if (state === "wave_three") {
+    ui.metric.textContent = `${queuesFound.size} of 2`;
+    ui.metricLabel.textContent = "bridge queues found";
+    ui.metricContext.textContent =
+      queuesFound.size === 2
+        ? "Riverside and Millbrook are both slowing."
+        : "Select the roads where cars are packed closely together.";
+    ui.status.textContent =
+      queuesFound.size === 2
+        ? "Both queues found. Now let the morning continue."
+        : "Tap the crowded roads on the map or use the keyboard controls.";
+    ui.caption.textContent =
+      selectedBridge === null
+        ? "Look for cars sitting close together near a narrow bridge."
+        : `${selectedBridge === "SA" ? "Riverside" : "Millbrook"} queue found.`;
     return;
   }
 
@@ -738,24 +924,60 @@ function renderWaveCopy(): void {
   if (state === "wave_one") {
     ui.status.textContent = isAdvancing
       ? "The same morning is continuing. No road or rule changed."
-      : "This button only lets the same morning continue. No road or rule changes.";
+      : followedVehicleId === null
+        ? "Select a gold car on the map, or use the keyboard alternative."
+        : "Gold car selected. Its whole route is now highlighted.";
     ui.caption.textContent =
-      "This counts choices when cars are ready to leave, including trips that have not finished yet.";
-  } else {
-    ui.status.textContent = isAdvancing
-      ? "The same morning is continuing. No road or rule changed."
-      : "Finished trip times changed what later cars were likely to pick.";
-    ui.caption.textContent = "This moving count is separate from the later two-replay result.";
+      followedVehicleId === null
+        ? "Gold marks shortcut cars. Pick one to reveal its trail."
+        : "The highlighted trail follows the chosen gold car's complete route.";
   }
+}
+
+function renderVerdictStep(): void {
+  syncMeasureMode();
+  if (verdictStep === 0) {
+    ui.metric.textContent = String(EXPERIMENT.target.cohortSize);
+    ui.metricLabel.textContent = "same saved start times in both replays";
+    ui.metricContext.textContent = "No average is shown yet. Reveal the shortcut-closed replay first.";
+    ui.action.textContent = "Reveal the closed morning";
+    ui.status.textContent = "The checked results were generated beforehand; these clicks uncover them.";
+    ui.caption.textContent = "Replay one keeps the shortcut closed.";
+    return;
+  }
+  if (verdictStep === 1) {
+    ui.metric.textContent = formatDuration(EXPERIMENT.target.closedSeconds);
+    ui.metricLabel.textContent = "average with shortcut closed";
+    ui.metricContext.textContent =
+      `${EXPERIMENT.target.closedTotalSeconds.toLocaleString("en-AU")} ÷ ` +
+      `${EXPERIMENT.target.cohortSize} = ${EXPERIMENT.target.closedSeconds} seconds.`;
+    ui.action.textContent = "Reuse the starts with shortcut open";
+    ui.status.textContent = "Now change one thing: open the shortcut for the second replay.";
+    ui.caption.textContent = "Replay one complete. The same 280 starts will be reused.";
+    return;
+  }
+  renderComparison(EXPERIMENT.target);
+  ui.metricContext.textContent =
+    `Open: ${EXPERIMENT.target.openTotalSeconds.toLocaleString("en-AU")} ÷ ` +
+    `${EXPERIMENT.target.cohortSize} = ${EXPERIMENT.target.openSeconds} seconds. ` +
+    `${EXPERIMENT.target.openSeconds} − ${EXPERIMENT.target.closedSeconds} = ` +
+    `${EXPERIMENT.target.deltaSeconds} seconds longer, rounded to 13. ` +
+    `${EXPERIMENT.target.routeCountsOpen.shortcut} ÷ ${EXPERIMENT.target.cohortSize} ≈ ` +
+    `${EXPERIMENT.target.sharesOpen.shortcut}% chose the shortcut.`;
+  ui.action.textContent = "Investigate why the open morning lost";
+  ui.status.textContent =
+    `Your prediction was ${busyPrediction ?? "not recorded"}. The measured average got longer. ` +
+    personalChoiceReflection();
+  ui.caption.textContent = "The result is now visible. Next, use the route counts to explain it.";
 }
 
 function renderDiagnosis(): void {
   if (selectedBridge === null) {
-    ui.metric.textContent = "2";
-    ui.metricLabel.textContent = "old bridges to tap";
-    ui.metricContext.textContent = "Every shortcut trip crosses both bridges.";
-    ui.status.textContent = "Tap Riverside and Millbrook to add up their trips.";
-    ui.caption.textContent = "Cars bunch up just before each narrow bridge.";
+    ui.metric.textContent = "0 of 2";
+    ui.metricLabel.textContent = "bridge totals inspected";
+    ui.metricContext.textContent = "Use the complete route counts to find where the extra trips went.";
+    ui.status.textContent = "Tap Riverside and Millbrook on the map, or use the keyboard controls.";
+    ui.caption.textContent = "The moving example is paused; these counts come from the complete replays.";
     return;
   }
 
@@ -793,15 +1015,22 @@ function bridgeCounts(bridge: BridgeId): { readonly closed: number; readonly ope
   };
 }
 
-function comparisonStatus(): string {
-  if (comparisonChoice === null) return "Pick the test that changes only one thing.";
-  if (comparisonChoice === "road-only") {
-    return "Right: same car start times and same numbered dice rolls; only the shortcut changes.";
+function fairTestStatus(): string {
+  if (fairTestReady()) return "Fair test built: the shortcut is the only difference.";
+  if (fairConditions.has("different-starts")) {
+    return "Different starts would make it a different morning. Switch that card off.";
   }
-  if (comparisonChoice === "different-morning") {
-    return "That changes the car start times too, so it would not be the same morning.";
+  if (fairConditions.has("more-cars")) {
+    return "Adding cars changes traffic and the road. Switch that card off.";
   }
-  return "That changes both the number of cars and the shortcut, so we could not tell which mattered.";
+  return "Keep the starts and driving rules the same; change only the shortcut.";
+}
+
+function causalStatus(): string {
+  if (causalOrderReady()) return "The chain is complete. You earned the final reveal.";
+  if (causalChain.length === 3) return "That order does not explain the result. Remove a step and try again.";
+  if (causalChain.length === 0) return "Begin with what made the shortcut attractive to drivers.";
+  return `Choose what happens after “${causeLabel(causalChain.at(-1) ?? "tempting")}”.`;
 }
 
 function predictionLabel(prediction: QuietPrediction): string {
@@ -835,7 +1064,9 @@ function currentSpotlight(): readonly LinkId[] {
     if (shortcutTraced) return ["SA", "AB", "BT"];
     return [];
   }
-  if (state === "diagnose" && selectedBridge !== null) return [selectedBridge];
+  if ((state === "wave_three" || state === "diagnose") && selectedBridge !== null) {
+    return [selectedBridge];
+  }
   return STORY[state].spotlight;
 }
 
@@ -845,10 +1076,21 @@ function currentTrace(): readonly LinkId[] {
     if (selectedRoute === "south") return ["SB", "BT"];
   }
   if (state === "proposal" && shortcutTraced) return ["SA", "AB", "BT"];
+  if ((state === "wave_one" && followedVehicleId !== null) || state === "wave_two") {
+    return ["SA", "AB", "BT"];
+  }
   return [];
 }
 
+function interactionForState(): "draw" | "follow" | "queues" | null {
+  if (state === "proposal" && !shortcutTraced) return "draw";
+  if (state === "wave_one" && followedVehicleId === null) return "follow";
+  if (state === "wave_three" || state === "diagnose") return "queues";
+  return null;
+}
+
 function connectorLooksOpen(): boolean {
+  if (state === "verdict") return verdictStep === 2;
   return run.connectorOpen || state === "quiet_result";
 }
 
@@ -896,11 +1138,67 @@ function showsLiveTraffic(): boolean {
     state === "wave_two" ||
     state === "wave_three" ||
     state === "wave_four" ||
-    state === "verdict" ||
     state === "diagnose" ||
     state === "recovery" ||
     state === "synthesis" ||
     state === "reveal"
+  );
+}
+
+function completeShortcutDraw(keyboardActivation: boolean): void {
+  if (state !== "proposal" || shortcutTraced) return;
+  shortcutTraced = true;
+  scene.setInteractionMode(null);
+  scene.spotlight(currentSpotlight());
+  scene.traceRoute(currentTrace());
+  renderControls();
+  renderStateCopy();
+  animatePanels("delayed-step");
+  if (keyboardActivation) ui.action.focus();
+  announce(
+    "Shortcut drawn. The map estimate falls from 5 minutes 5 seconds to 4 minutes 34 seconds.",
+  );
+}
+
+function followShortcutVehicle(vehicleId: number, keyboardActivation: boolean): void {
+  if (state !== "wave_one") return;
+  followedVehicleId = vehicleId;
+  scene.followVehicle(vehicleId);
+  scene.setInteractionMode(null);
+  scene.spotlight(currentSpotlight());
+  scene.traceRoute(currentTrace());
+  renderControls();
+  renderStateCopy();
+  renderDiscoveries();
+  if (keyboardActivation) {
+    ui.choices.querySelector<HTMLButtonElement>('[data-choice="follow-car"]')?.focus();
+  }
+  announce("Gold car selected. Its trail uses Riverside Road, the shortcut and Millbrook Road.");
+}
+
+function inspectBridgeFromMap(bridge: BridgeId, keyboardActivation: boolean): void {
+  if (state === "wave_three") {
+    selectedBridge = bridge;
+    queuesFound.add(bridge);
+    scene.spotlight(currentSpotlight());
+    renderControls();
+    renderStateCopy();
+    renderDiscoveries();
+    restoreChoiceFocus(bridge, keyboardActivation);
+    announce(`${bridge === "SA" ? "Riverside" : "Millbrook"} queue found.`);
+    return;
+  }
+  if (state !== "diagnose") return;
+  selectedBridge = bridge;
+  bridgesInspected.add(bridge);
+  scene.spotlight(currentSpotlight());
+  renderControls();
+  renderStateCopy();
+  restoreChoiceFocus(bridge, keyboardActivation);
+  const counts = bridgeCounts(bridge);
+  announce(
+    `${bridge === "SA" ? "Riverside" : "Millbrook"} bridge: ` +
+      `${counts.closed} trips with the shortcut closed, ${counts.open} with it open.`,
   );
 }
 
@@ -912,6 +1210,33 @@ function onChoice(event: Event): void {
     source instanceof Element ? source.closest<HTMLButtonElement>("[data-choice]") : null;
   if (target === null) return;
   const choice = target.dataset.choice;
+
+  if (state === "wave_one" && choice === "follow-car") {
+    scene.followFirstShortcutVehicle();
+    restoreChoiceFocus("follow-car", keyboardActivation);
+    return;
+  }
+
+  if (state === "compare" && target.dataset.fairCondition !== undefined) {
+    const condition = target.dataset.fairCondition as FairCondition;
+    if (fairConditions.has(condition)) fairConditions.delete(condition);
+    else fairConditions.add(condition);
+    renderControls();
+    renderStateCopy();
+    restoreChoiceFocus(condition, keyboardActivation);
+    return;
+  }
+
+  if (state === "synthesis" && target.dataset.cause !== undefined) {
+    const cause = target.dataset.cause as CauseId;
+    const index = causalChain.indexOf(cause);
+    if (index >= 0) causalChain.splice(index, 1);
+    else if (causalChain.length < 3) causalChain.push(cause);
+    renderControls();
+    renderStateCopy();
+    restoreChoiceFocus(cause, keyboardActivation);
+    return;
+  }
 
   if (state === "map" && (choice === "north" || choice === "south")) {
     selectedRoute = choice;
@@ -925,18 +1250,8 @@ function onChoice(event: Event): void {
     return;
   }
 
-  if (state === "diagnose" && (choice === "SA" || choice === "BT")) {
-    selectedBridge = choice;
-    bridgesInspected.add(choice);
-    scene.spotlight(currentSpotlight());
-    renderControls();
-    renderStateCopy();
-    restoreChoiceFocus(choice, keyboardActivation);
-    const counts = bridgeCounts(choice);
-    announce(
-      `${choice === "SA" ? "Riverside" : "Millbrook"} bridge: ` +
-        `${counts.closed} trips with the shortcut closed, ${counts.open} with it open.`,
-    );
+  if ((state === "wave_three" || state === "diagnose") && (choice === "SA" || choice === "BT")) {
+    inspectBridgeFromMap(choice, keyboardActivation);
   }
 }
 
@@ -954,15 +1269,15 @@ function onRadio(event: Event): void {
     quietPrediction = input.value as QuietPrediction;
   } else if (state === "peak" && group === "personal-route") {
     personalRoute = input.value as RouteId;
-  } else if (state === "compare" && group === "comparison-design") {
-    comparisonChoice = input.value as ComparisonChoice;
+  } else if (state === "wave_four" && group === "busy-prediction") {
+    busyPrediction = input.value as BusyPrediction;
   } else {
     return;
   }
   ui.action.disabled =
     (state === "quiet" && quietPrediction === null) ||
     (state === "peak" && personalRoute === null) ||
-    (state === "compare" && comparisonChoice !== "road-only");
+    (state === "wave_four" && busyPrediction === null);
   renderStateCopy();
 }
 
@@ -972,15 +1287,7 @@ function onAction(event: MouseEvent): void {
 
   if (state === "map") enter("proposal", keyboardActivation);
   else if (state === "proposal" && !shortcutTraced) {
-    shortcutTraced = true;
-    scene.spotlight(currentSpotlight());
-    scene.traceRoute(currentTrace());
-    renderControls();
-    renderStateCopy();
-    animatePanels("delayed-step");
-    announce(
-      "Shortcut drawn. The map estimate falls from 5 minutes 5 seconds to 4 minutes 34 seconds.",
-    );
+    completeShortcutDraw(keyboardActivation);
   } else if (state === "proposal") enter("quiet", keyboardActivation);
   else if (state === "quiet") enter("quiet_closed", keyboardActivation);
   else if (state === "quiet_closed") enter("quiet_open", keyboardActivation);
@@ -992,7 +1299,22 @@ function onAction(event: MouseEvent): void {
   else if (state === "wave_three") startPeakCheckpoint(3, "wave_four", keyboardActivation);
   else if (state === "wave_four") enter("compare", keyboardActivation);
   else if (state === "compare") enter("verdict", keyboardActivation);
-  else if (state === "verdict") enter("diagnose", keyboardActivation);
+  else if (state === "verdict" && verdictStep < 2) {
+    verdictStep = verdictStep === 0 ? 1 : 2;
+    syncMeasureMode();
+    renderControls();
+    renderStateCopy();
+    renderDiscoveries();
+    scene.setConnectorOpen(verdictStep === 2);
+    animatePanels("delayed-step");
+    announce(
+      verdictStep === 1
+        ? `Shortcut closed average: ${formatDuration(EXPERIMENT.target.closedSeconds)}.`
+        : `Shortcut open average: ${formatDuration(EXPERIMENT.target.openSeconds)}. ` +
+            `${Math.round(EXPERIMENT.target.deltaSeconds)} seconds longer.`,
+    );
+    if (keyboardActivation) ui.headline.focus({ preventScroll: true });
+  } else if (state === "verdict") enter("diagnose", keyboardActivation);
   else if (state === "diagnose") {
     run.setConnectorOpen(false);
     run.setAnchor(run.simTime);

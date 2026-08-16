@@ -46,6 +46,13 @@ const SHORTCUT_VEHICLE_RADIUS = 5.8;
 
 type NarrativeMode = StateId;
 type RenderRun = Pick<LiveRun, "congestionOf" | "vehiclesOn">;
+export type SceneInteraction = "draw" | "follow" | "queues" | null;
+
+export type SceneHandlers = {
+  readonly onShortcutDraw?: () => void;
+  readonly onShortcutVehicle?: (vehicleId: number) => void;
+  readonly onBridge?: (bridge: "SA" | "BT") => void;
+};
 
 function el<K extends keyof SVGElementTagNameMap>(
   name: K,
@@ -65,6 +72,10 @@ export class Scene {
   private readonly nodeLayer = el("g", { class: "nodes" });
   private readonly labelLayer = el("g", { class: "road-labels" });
   private readonly annotationLayer = el("g", { class: "annotations", "aria-hidden": "true" });
+  private readonly interactionLayer = el("g", {
+    class: "map-interactions",
+    "aria-hidden": "true",
+  });
 
   private readonly roads = new Map<LinkId, SVGPathElement>();
   private readonly labels = new Map<LinkId, SVGTextElement>();
@@ -80,9 +91,16 @@ export class Scene {
    */
   private readonly dots = new Map<number, SVGCircleElement>();
   private readonly spare: SVGCircleElement[] = [];
+  private readonly handlers: SceneHandlers;
+  private readonly drawNodes = new Map<"A" | "B", Point>();
+  private interaction: SceneInteraction = null;
+  private drawStart: "A" | "B" | null = null;
+  private drawLine: SVGLineElement | null = null;
+  private followedVehicle: number | null = null;
   private layout: LayoutKind | null = null;
 
-  constructor(host: HTMLElement) {
+  constructor(host: HTMLElement, handlers: SceneHandlers = {}) {
+    this.handlers = handlers;
     this.svg = el("svg", {
       class: "network",
       role: "img",
@@ -102,7 +120,11 @@ export class Scene {
       this.nodeLayer,
       this.labelLayer,
       this.annotationLayer,
+      this.interactionLayer,
     );
+    this.svg.addEventListener("pointermove", (event) => this.moveShortcutGesture(event));
+    this.svg.addEventListener("pointerup", (event) => this.finishShortcutGesture(event));
+    this.svg.addEventListener("pointercancel", () => this.resetShortcutGesture());
     host.append(this.svg);
   }
 
@@ -130,6 +152,7 @@ export class Scene {
     this.nodeLayer.replaceChildren();
     this.labelLayer.replaceChildren();
     this.annotationLayer.replaceChildren();
+    this.interactionLayer.replaceChildren();
     for (const dot of this.dots.values()) dot.remove();
     for (const dot of this.spare) dot.remove();
     this.dots.clear();
@@ -137,6 +160,8 @@ export class Scene {
     this.roads.clear();
     this.labels.clear();
     this.shortcutNote = null;
+    this.drawLine = null;
+    this.drawNodes.clear();
     this.samples = new Map();
 
     for (const id of LINK_ORDER) {
@@ -149,6 +174,18 @@ export class Scene {
       this.roadLayer.append(path);
       this.roads.set(id, path);
       this.samples.set(id, sampleSegment(segment, kind));
+
+      if (id === "SA" || id === "BT") {
+        const hit = el("path", {
+          class: "road-hit",
+          d: pathData(segment, kind),
+          "data-bridge-hit": id,
+        });
+        hit.addEventListener("pointerdown", () => {
+          if (this.interaction === "queues") this.handlers.onBridge?.(id);
+        });
+        this.interactionLayer.append(hit);
+      }
 
     }
 
@@ -214,6 +251,35 @@ export class Scene {
       label.textContent = NODE_NAMES[id] ?? id;
       group.append(label);
       this.nodeLayer.append(group);
+
+      if (id === "A" || id === "B") {
+        this.drawNodes.set(id, { x: cx, y: cy });
+        const handle = el("circle", {
+          class: "draw-handle",
+          cx: String(cx),
+          cy: String(cy),
+          r: "24",
+          "data-draw-node": id,
+        });
+        handle.addEventListener("pointerdown", (event) => {
+          if (this.interaction !== "draw") return;
+          event.preventDefault();
+          if (this.drawStart !== null && this.drawStart !== id) {
+            this.completeShortcutGesture();
+            return;
+          }
+          this.drawStart = id;
+          this.updateDrawHandleState();
+          const point = this.drawNodes.get(id);
+          if (point !== undefined && this.drawLine !== null) {
+            this.drawLine.setAttribute("x1", String(point.x));
+            this.drawLine.setAttribute("y1", String(point.y));
+            this.drawLine.setAttribute("x2", String(point.x));
+            this.drawLine.setAttribute("y2", String(point.y));
+          }
+        });
+        this.interactionLayer.append(handle);
+      }
     }
 
     for (const id of LINK_ORDER) {
@@ -263,8 +329,42 @@ export class Scene {
       this.annotationLayer.append(this.shortcutNote);
     }
 
-    this.svg.append(this.vehicleLayer, this.nodeLayer, this.labelLayer, this.annotationLayer);
+    this.drawLine = el("line", { class: "shortcut-gesture" });
+    this.interactionLayer.prepend(this.drawLine);
+
+    this.svg.append(
+      this.vehicleLayer,
+      this.nodeLayer,
+      this.labelLayer,
+      this.annotationLayer,
+      this.interactionLayer,
+    );
     this.keepLabelsInFrame();
+  }
+
+  setInteractionMode(interaction: SceneInteraction): void {
+    this.interaction = interaction;
+    if (interaction === null) delete this.svg.dataset.interaction;
+    else this.svg.dataset.interaction = interaction;
+    if (interaction !== "draw") this.resetShortcutGesture();
+  }
+
+  followVehicle(vehicleId: number | null): void {
+    this.followedVehicle = vehicleId;
+    this.svg.classList.toggle("network--following", vehicleId !== null);
+    for (const [id, dot] of this.dots) {
+      dot.classList.toggle("vehicle--followed", id === vehicleId);
+    }
+  }
+
+  followFirstShortcutVehicle(): number | null {
+    for (const [id, dot] of this.dots) {
+      if (dot.classList.contains("vehicle--shortcut") && dot.style.display !== "none") {
+        this.handlers.onShortcutVehicle?.(id);
+        return id;
+      }
+    }
+    return null;
   }
 
   /**
@@ -423,11 +523,69 @@ export class Scene {
     // and a pooled circle may next represent a driver on any route.
     const onShortcut = route === "shortcut";
     dot.classList.toggle("vehicle--shortcut", onShortcut);
+    dot.classList.toggle("vehicle--followed", id === this.followedVehicle);
+    dot.dataset.vehicleId = String(id);
+    if (dot.dataset.followBound !== "true") {
+      dot.dataset.followBound = "true";
+      dot.addEventListener("pointerdown", () => {
+        if (this.interaction !== "follow" || !dot.classList.contains("vehicle--shortcut")) return;
+        const vehicleId = Number(dot.dataset.vehicleId);
+        if (Number.isFinite(vehicleId)) this.handlers.onShortcutVehicle?.(vehicleId);
+      });
+    }
     dot.setAttribute("r", String(onShortcut ? SHORTCUT_VEHICLE_RADIUS : VEHICLE_RADIUS));
     dot.style.display = "";
     if (dot.parentNode === null) this.vehicleLayer.append(dot);
     this.dots.set(id, dot);
     return dot;
+  }
+
+  private svgPoint(event: PointerEvent): Point {
+    const bounds = this.svg.getBoundingClientRect();
+    const box = this.svg.viewBox.baseVal;
+    return {
+      x: ((event.clientX - bounds.left) / bounds.width) * box.width,
+      y: ((event.clientY - bounds.top) / bounds.height) * box.height,
+    };
+  }
+
+  private moveShortcutGesture(event: PointerEvent): void {
+    if (this.interaction !== "draw" || this.drawStart === null || this.drawLine === null) return;
+    const point = this.svgPoint(event);
+    this.drawLine.setAttribute("x2", point.x.toFixed(1));
+    this.drawLine.setAttribute("y2", point.y.toFixed(1));
+  }
+
+  private finishShortcutGesture(event: PointerEvent): void {
+    if (this.interaction !== "draw" || this.drawStart === null) return;
+    const point = this.svgPoint(event);
+    const destination = this.drawStart === "A" ? "B" : "A";
+    const target = this.drawNodes.get(destination);
+    if (target !== undefined && Math.hypot(point.x - target.x, point.y - target.y) <= 42) {
+      this.completeShortcutGesture();
+    }
+  }
+
+  private completeShortcutGesture(): void {
+    this.resetShortcutGesture();
+    this.handlers.onShortcutDraw?.();
+  }
+
+  private resetShortcutGesture(): void {
+    this.drawStart = null;
+    this.updateDrawHandleState();
+    this.drawLine?.removeAttribute("x1");
+    this.drawLine?.removeAttribute("y1");
+    this.drawLine?.removeAttribute("x2");
+    this.drawLine?.removeAttribute("y2");
+  }
+
+  private updateDrawHandleState(): void {
+    for (const handle of this.interactionLayer.querySelectorAll<SVGCircleElement>(
+      "[data-draw-node]",
+    )) {
+      handle.classList.toggle("is-start", handle.dataset.drawNode === this.drawStart);
+    }
   }
 }
 
