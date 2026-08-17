@@ -858,6 +858,25 @@ input[type="range"] {
   line-height: 1.5;
 }
 
+.slider-block .reopen-shortcut {
+  width: 100%;
+  margin-top: var(--space-3);
+  background: var(--gold);
+  color: var(--ink);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.reopen-shortcut:hover,
+.reopen-shortcut:focus-visible {
+  background: var(--paper);
+}
+
+.reopen-shortcut[hidden] {
+  display: none;
+}
+
 body[data-complete="true"] .discovery,
 body[data-complete="true"] .decision,
 body[data-rescue="true"] .discovery,
@@ -1034,6 +1053,23 @@ h3 {
 
 /* stylelint-disable no-descending-specificity -- endpoint and result components
    intentionally override the page's shared text/button primitives. */
+.endpoint-prompt button,
+.rescue-prompt button,
+.rescue-invitation button,
+.road-control button,
+.reopen-shortcut {
+  min-height: 3rem;
+  padding: 0.8rem 1rem;
+  border: 0;
+  background: var(--ink);
+  color: var(--paper);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
 .endpoint-prompt {
   margin-top: var(--space-4);
   padding: var(--space-4);
@@ -1065,16 +1101,6 @@ h3 {
 
 .endpoint-prompt button {
   width: 100%;
-  min-height: 3rem;
-  padding: 0.8rem 1.1rem;
-  border: 0;
-  background: var(--ink);
-  color: var(--paper);
-  font-size: 0.66rem;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  cursor: pointer;
 }
 
 .endpoint-prompt button:hover {
@@ -1158,16 +1184,7 @@ h3 {
 
 .rescue-prompt button {
   width: 100%;
-  min-height: 2.8rem;
   margin-top: var(--space-3);
-  border: 0;
-  background: var(--ink);
-  color: var(--paper);
-  font-size: 0.64rem;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  cursor: pointer;
 }
 
 .reveal {
@@ -1384,16 +1401,7 @@ h3 {
 }
 
 .rescue-invitation button {
-  min-height: 3rem;
-  padding: 0.8rem 1rem;
-  border: 0;
   background: var(--teal);
-  color: var(--paper);
-  font-size: 0.66rem;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  cursor: pointer;
 }
 
 .road-control {
@@ -1426,19 +1434,6 @@ h3 {
   color: var(--ink-soft);
   font-size: 0.76rem;
   line-height: 1.5;
-}
-
-.road-control button {
-  min-height: 3rem;
-  padding: 0.8rem 1rem;
-  border: 0;
-  background: var(--ink);
-  color: var(--paper);
-  font-size: 0.68rem;
-  font-weight: 800;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-  cursor: pointer;
 }
 
 .road-control button:hover {

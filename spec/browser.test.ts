@@ -208,7 +208,7 @@ describe("transparent desktop experiment", () => {
   it("shows the rules and initial calculation before interaction", async () => {
     const observed = await open(DESKTOP);
     const { page } = observed;
-    expect(await page.locator("button").count()).toBe(13);
+    expect(await page.locator("button").count()).toBe(14);
     const reset = page.locator("[data-reset-simulation]");
     expect(await reset.isDisabled()).toBe(true);
     expect(await reset.getAttribute("aria-label")).toBe("Reset experiment");
@@ -546,6 +546,7 @@ describe("transparent desktop experiment", () => {
     expect(await page.locator(".network-switch").evaluate((element) => getComputedStyle(element).outlineStyle)).toBe("none");
     expect(await page.locator("[data-toggle-road]").getAttribute("role")).toBe("switch");
     expect(await page.locator("[data-toggle-road]").getAttribute("aria-checked")).toBe("true");
+    expect(await page.locator("[data-reopen-shortcut]").isHidden()).toBe(true);
     expect(await text(page, ".driver-lock")).toBe("Drivers locked 4,000");
     expect(await page.locator("[data-reveal]").evaluate((element) => element === document.activeElement)).toBe(true);
     expect(await page.locator("[data-reveal] > [data-road-control]").count()).toBe(1);
@@ -589,6 +590,8 @@ describe("transparent desktop experiment", () => {
     expect(await page.locator("body").getAttribute("data-road-closed")).toBe("true");
     expect(await page.locator("[data-toggle-road]").getAttribute("aria-checked")).toBe("false");
     expect(await text(page, "[data-network-state]")).toBe("Closed");
+    expect(await page.locator("[data-reopen-shortcut]").isVisible()).toBe(true);
+    expect(await text(page, "[data-reopen-shortcut]")).toBe("Open the shortcut again →");
     expect(await page.locator("#shortcut-users").isDisabled()).toBe(true);
     expect(await page.locator("#shortcut-users").inputValue()).toBe("0");
     expect(await text(page, "[data-average-time]")).toBe("65");
@@ -618,10 +621,11 @@ describe("transparent desktop experiment", () => {
     const clearedRoadWidth = Number.parseFloat(await page.locator(".road--narrow").first().evaluate((element) => getComputedStyle(element).strokeWidth));
     expect(clearedRoadWidth).toBeCloseTo(initialRoadWidth, 1);
 
-    await page.locator("[data-toggle-road]").click();
+    await page.locator("[data-reopen-shortcut]").click();
     expect(await page.locator("body").getAttribute("data-road-closed")).toBe("false");
     expect(await page.locator("[data-toggle-road]").getAttribute("aria-checked")).toBe("true");
     expect(await text(page, "[data-network-state]")).toBe("Open");
+    expect(await page.locator("[data-reopen-shortcut]").isHidden()).toBe(true);
     expect(await page.locator("#shortcut-users").isEnabled()).toBe(true);
     expect(await page.locator("#shortcut-users").inputValue()).toBe("4000");
     expect(await text(page, "[data-average-time]")).toBe("80");
@@ -725,6 +729,12 @@ describe("phone and keyboard", () => {
     expect(await text(page, "[data-average-time]")).toBe("65");
     expect(await page.locator("[data-map-proof]").evaluate((element) => element === document.activeElement)).toBe(true);
     await reversalLinkStaysOnOneLine(page);
+    expect(await page.locator("[data-reopen-shortcut]").isVisible()).toBe(true);
+    await page.locator("[data-reopen-shortcut]").focus();
+    await page.keyboard.press("Enter");
+    expect(await text(page, "[data-average-time]")).toBe("80");
+    expect(await page.locator("[data-toggle-road]").getAttribute("aria-checked")).toBe("true");
+    expect(await page.locator("[data-town-comparison]").evaluate((element) => element === document.activeElement)).toBe(true);
     healthy(observed);
     await page.close();
   });

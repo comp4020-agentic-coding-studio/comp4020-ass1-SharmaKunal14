@@ -24,7 +24,7 @@ describe("transparent direct interactions", () => {
     expect(doc.querySelectorAll<HTMLInputElement>('input[name="prediction"]')).toHaveLength(0);
     expect(doc.querySelector(".prediction")).toBeNull();
     expect(doc.querySelector("[data-prediction-feedback]")).toBeNull();
-    expect(doc.querySelectorAll("button")).toHaveLength(13);
+    expect(doc.querySelectorAll("button")).toHaveLength(14);
     expect(doc.querySelector("[data-reset-simulation]")?.hasAttribute("disabled")).toBe(true);
     expect(doc.querySelector("[data-reset-simulation]")?.getAttribute("aria-label")).toBe("Reset experiment");
     expect(doc.querySelector("[data-reset-simulation]")?.textContent).toContain("Reset");
@@ -32,6 +32,8 @@ describe("transparent direct interactions", () => {
     expect(doc.querySelector("[data-play]")).toBeNull();
     expect(doc.querySelector("[data-show-result]")).not.toBeNull();
     expect(doc.querySelector("[data-toggle-road]")).not.toBeNull();
+    expect(doc.querySelector("[data-reopen-shortcut]")?.hasAttribute("hidden")).toBe(true);
+    expect(doc.querySelector("[data-reopen-shortcut]")?.textContent).toContain("Open the shortcut again");
     expect(sliders[0]).toMatchObject({ min: "0", max: "4000", step: "100", value: "0" });
   });
 

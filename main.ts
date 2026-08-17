@@ -47,6 +47,7 @@ const roadControl = need<HTMLElement>("[data-road-control]");
 const roadControlTitle = need<HTMLElement>("[data-road-control-title]");
 const roadControlCopy = need<HTMLElement>("[data-road-control-copy]");
 const toggleRoad = need<HTMLButtonElement>("[data-toggle-road]");
+const reopenShortcut = need<HTMLButtonElement>("[data-reopen-shortcut]");
 const networkState = need<HTMLElement>("[data-network-state]");
 const mapProof = need<HTMLElement>("[data-map-proof]");
 const network = need<SVGSVGElement>("[data-network]");
@@ -404,6 +405,7 @@ function render(result: BraessResult): void {
   reveal.hidden = !showResultChapter;
   roadControl.hidden = !showResultChapter;
   mapProof.hidden = !roadClosed;
+  reopenShortcut.hidden = !roadClosed;
   mapProof.dataset.resultHighlight = String(activeResultHighlight === "road-closed" && roadClosed);
   townComparison.dataset.resultHighlight = String(activeResultHighlight === "road-open" && !roadClosed);
   toggleRoad.setAttribute("aria-checked", String(!roadClosed));
@@ -497,6 +499,10 @@ toggleRoad.addEventListener("click", () => {
   destination.scrollIntoView({
     block: "start",
   });
+});
+
+reopenShortcut.addEventListener("click", () => {
+  toggleRoad.click();
 });
 
 returnExplanation.addEventListener("click", () => {
