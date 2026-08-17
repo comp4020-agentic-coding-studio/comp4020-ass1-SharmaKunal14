@@ -232,11 +232,26 @@
                 Open the shortcut again <span aria-hidden="true">→</span>
               </button>
 
+              <section class="endpoint-prompt open-insight" data-open-insight hidden aria-labelledby="open-insight-title">
+                <p class="step-label">Why the slower result lasts</p>
+                <h4 id="open-insight-title">Nobody saves time by leaving alone.</h4>
+                <div class="rescue-result open-insight__choice" aria-label="An individual driver's choice">
+                  <div><span>Stay on shortcut</span><strong>80 min</strong></div>
+                  <span aria-hidden="true">&lt;</span>
+                  <div><span>Leave alone</span><strong>85 min</strong></div>
+                </div>
+                <p>Each driver stays on the quicker route, even though the whole town used to take 65 minutes.</p>
+              </section>
+
               <section class="endpoint-prompt" data-endpoint-prompt hidden aria-labelledby="endpoint-title">
                 <div>
                   <p class="step-label">You reached the strange result</p>
                   <h4 id="endpoint-title">The same drivers are now 15 minutes slower.</h4>
                   <p>Keep the 4,000 drivers fixed and compare only the road network.</p>
+                </div>
+                <div class="rescue-result endpoint-prompt__proof" aria-label="What changed before the reveal">
+                  <div><span>Driver count</span><strong>4,000 → 4,000</strong></div>
+                  <div><span>Town average</span><strong>65 → 80 min</strong></div>
                 </div>
                 <button type="button" data-show-result>
                   Reveal the paradox <span aria-hidden="true">→</span>

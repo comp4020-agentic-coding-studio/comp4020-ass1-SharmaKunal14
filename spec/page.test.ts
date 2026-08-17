@@ -100,6 +100,10 @@ describe("transparent direct interactions", () => {
     expect(copy).toContain("Together, they made both narrow roads busier");
     expect(copy).toContain("The pattern has a name Braess’s paradox");
     expect(copy).toContain("Reveal the paradox");
+    expect(doc.querySelector(".endpoint-prompt__proof")?.textContent?.replace(/\s+/g, " ")).toContain("Driver count4,000 → 4,000");
+    expect(doc.querySelector(".endpoint-prompt__proof")?.textContent?.replace(/\s+/g, " ")).toContain("Town average65 → 80 min");
+    expect(copy).toContain("Nobody saves time by leaving alone");
+    expect(doc.querySelector(".open-insight__choice")?.textContent?.replace(/\s+/g, " ")).toContain("Stay on shortcut80 min < Leave alone85 min");
     expect(copy).toContain("Prove it backwards");
     expect(copy).toContain("Drivers locked 4,000 Shortcut Open");
     expect(copy).toContain("Shortcut closed · same experiment 80 → 65 min");
@@ -122,6 +126,7 @@ describe("transparent direct interactions", () => {
     expect(doc.querySelector("[data-closure-result]")).toBeNull();
     expect(doc.querySelector("[data-play], [data-animate]")).toBeNull();
     expect(doc.querySelector(".slider-block > [data-endpoint-prompt]")).not.toBeNull();
+    expect(doc.querySelector(".slider-block > [data-open-insight]")?.hasAttribute("hidden")).toBe(true);
     expect(doc.querySelector(".live-math ~ [data-endpoint-prompt]")).toBeNull();
   });
 

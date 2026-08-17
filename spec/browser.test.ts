@@ -503,6 +503,9 @@ describe("transparent desktop experiment", () => {
     expect(await text(page, "[data-average-time]")).toBe("80");
     expect(await text(page, "[data-average-change]")).toBe("15 min slower than without the shortcut");
     expect(await page.locator("[data-endpoint-prompt]").isVisible()).toBe(true);
+    expect(await text(page, ".endpoint-prompt__proof")).toContain("Driver count4,000 → 4,000");
+    expect(await text(page, ".endpoint-prompt__proof")).toContain("Town average65 → 80 min");
+    expect(await page.locator("[data-open-insight]").isHidden()).toBe(true);
     expect(await page.locator("[data-reveal]").isHidden()).toBe(true);
     expect(await page.locator("[data-toggle-road]").isHidden()).toBe(true);
     expect(Number.parseFloat(await page.locator("[data-endpoint-prompt]").evaluate((element) => getComputedStyle(element).animationDuration))).toBeGreaterThan(0.3);
@@ -525,6 +528,10 @@ describe("transparent desktop experiment", () => {
 
     await page.locator("[data-show-result]").click();
     expect(await page.locator("[data-reveal]").isVisible()).toBe(true);
+    expect(await page.locator("[data-open-insight]").isVisible()).toBe(true);
+    expect(await text(page, "[data-open-insight]")).toContain("Nobody saves time by leaving alone");
+    expect(await text(page, "[data-open-insight]")).toContain("Stay on shortcut80 min");
+    expect(await text(page, "[data-open-insight]")).toContain("Leave alone85 min");
     expect(await text(page, "[data-reveal]")).toContain("Braess’s paradox");
     expect(await text(page, "[data-reveal]")).toContain("One extra road made the same crowd slower");
     expect(await text(page, "[data-reveal]")).toContain("Shortcut closed 65 min 4,000 drivers split evenly");
@@ -591,6 +598,7 @@ describe("transparent desktop experiment", () => {
     expect(await page.locator("[data-toggle-road]").getAttribute("aria-checked")).toBe("false");
     expect(await text(page, "[data-network-state]")).toBe("Closed");
     expect(await page.locator("[data-reopen-shortcut]").isVisible()).toBe(true);
+    expect(await page.locator("[data-open-insight]").isHidden()).toBe(true);
     expect(await text(page, "[data-reopen-shortcut]")).toBe("Open the shortcut again →");
     expect(await page.locator("#shortcut-users").isDisabled()).toBe(true);
     expect(await page.locator("#shortcut-users").inputValue()).toBe("0");
@@ -626,6 +634,10 @@ describe("transparent desktop experiment", () => {
     expect(await page.locator("[data-toggle-road]").getAttribute("aria-checked")).toBe("true");
     expect(await text(page, "[data-network-state]")).toBe("Open");
     expect(await page.locator("[data-reopen-shortcut]").isHidden()).toBe(true);
+    expect(await page.locator("[data-open-insight]").isVisible()).toBe(true);
+    expect(await text(page, "[data-open-insight]")).toContain(
+      "Each driver stays on the quicker route, even though the whole town used to take 65 minutes",
+    );
     expect(await page.locator("#shortcut-users").isEnabled()).toBe(true);
     expect(await page.locator("#shortcut-users").inputValue()).toBe("4000");
     expect(await text(page, "[data-average-time]")).toBe("80");
